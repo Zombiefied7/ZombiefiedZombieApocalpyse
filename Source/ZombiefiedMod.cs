@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using HugsLib;
@@ -30,7 +30,11 @@ namespace Zombiefied
         public override void WorldLoaded()
         {
             base.Logger.Message("loaded", new object[0]);
-            this._ticksUntilNextZombieRaid = 7000;
+            this._ticksUntilNextZombieRaid = GenerateTicksUntilNextRaid();
+            if(_ticksUntilNextZombieRaid > 17777)
+            {
+                _ticksUntilNextZombieRaid = 17777;
+            }
 
             noisyLocationsPerMap = new List<Queue<IntVec3>>();
             noisyLocationTicksPerMap = new List<Queue<int>>();
@@ -131,7 +135,7 @@ namespace Zombiefied
             }
             */
             debugRemoveZombies.Value = false;
-            base.Logger.Message("found " + zCount + " zombies. " + zWrongFactionCount + " of them were repaired.", new object[0]);
+            base.Logger.Message("found " + zCount + " Zombies. " + zWrongFactionCount + " of them were repaired.", new object[0]);
         }
 
         private bool yes()
@@ -150,7 +154,8 @@ namespace Zombiefied
             headlineZombieOptions.CustomDrawer = new SettingHandle.DrawCustomControl(predicate);
             //headlineZombieOptions.CustomDrawerHeight = 37f;
 
-            disableAnimalZombies = base.Settings.GetHandle<bool>("disableAnimalZombies", "       Disable animal Zombies", "Zombies will ignore animals and no animal Zombies will wander in.", false, null, null);
+            disableAnimalZombies = base.Settings.GetHandle<bool>("disableAnimalZombies", "       Disable animal Zombies", "Animals will not resurrect and no animal Zombies will wander in.", false, null, null);
+            disableZombiesAttackingAnimals = base.Settings.GetHandle<bool>("disableZombiesAttackingAnimals", "       Disable Zombies attacking animals", "Zombies will ignore animals.", false, null, null);
             zombieSpeedMultiplier = base.Settings.GetHandle<float>("ZombieSpeedMultiplier", "       Zombie speed multiplier [RESTART]", "Zombie speed (in comparison to healthy) will be multiplied by this value.\n(0.03 -> Slowest, 3 -> Fastest)\n(Requires restart to work)", 0.23f, null, null);
             if(zombieSpeedMultiplier < 0.03f)
             {
@@ -202,13 +207,44 @@ namespace Zombiefied
         internal static SettingHandle<bool> headlineZombieOptions;
         //
         internal static SettingHandle<bool> disableAnimalZombies;
+        internal static SettingHandle<bool> disableZombiesAttackingAnimals;
         internal static SettingHandle<float> zombieSpeedMultiplier;
         internal static SettingHandle<int> zombieSoundReactionTimeInHours;
 
         internal static SettingHandle<bool> headlineZombieAmount;
         //
         internal static SettingHandle<float> zombieRaidFrequencyMultiplier;
+        public static float ZombieRaidFrequencyMultiplier
+        {
+            get
+            {
+                if(zombieRaidFrequencyMultiplier < 0.1f)
+                {
+                    return 0.1f;
+                }
+                else if (zombieRaidFrequencyMultiplier > 7f)
+                {
+                    return 7f;
+                }
+                return zombieRaidFrequencyMultiplier;
+            }
+        }
         internal static SettingHandle<float> zombieRaidAmountMultiplier;
+        public static float ZombieRaidAmountMultiplier
+        {
+            get
+            {
+                if (zombieRaidAmountMultiplier < 0.1f)
+                {
+                    return 0.1f;
+                }
+                else if (zombieRaidAmountMultiplier > 7f)
+                {
+                    return 7f;
+                }
+                return zombieRaidAmountMultiplier;
+            }
+        }
         internal static SettingHandle<int> zombieAmountSoftCap;
 
         internal static SettingHandle<bool> headlineNotifications;
@@ -234,13 +270,12 @@ namespace Zombiefied
             {
                 num = 0.7f;
             }
-            //if (easyMode)
-            {
-                num /= zombieRaidFrequencyMultiplier;
-            }
+
+            num /= ZombieRaidFrequencyMultiplier;
+
             if ((double)num < 0.2f)
             {
-                num = 0.07f;
+                num = 0.2f;
             }
             else if ((double)num > 7f)
             {
@@ -255,7 +290,7 @@ namespace Zombiefied
             //int num = UnityEngine.Random.Range((int)((float)ZombiesDefOf.ZombiesSettings.MinRaidTicksBase * challengeModifier), (int)((float)ZombiesDefOf.ZombiesSettings.MaxRaidTicksBase * challengeModifier));
             int num = Rand.RangeSeeded((int)((float)7000 * challengeModifier), (int)((float)280000 * challengeModifier), Find.TickManager.TicksAbs + Find.World.ConstantRandSeed);
             //if (first && num < ZombiesDefOf.ZombiesSettings.MinTicksBeforeFirstRaid)
-            base.Logger.Message("next zombieraid in " + num + " ticks.", new object[0]);
+            base.Logger.Message("next Zombieraid in " + num + " ticks.", new object[0]);
             return num;
         }
 
@@ -268,7 +303,7 @@ namespace Zombiefied
 
                 int currentMapIndex = Rand.RangeSeeded(0, Find.Maps.Count, Find.TickManager.TicksAbs);
 
-                base.Logger.Message("setting up zombieraid for map " + currentMapIndex + ".", new object[0]);
+                base.Logger.Message("setting up Zombieraid for map " + currentMapIndex + ".", new object[0]);
 
                 if (currentMapIndex < zombieAmountsPerMap.Count && zombieAmountsPerMap[currentMapIndex] < zombieAmountSoftCap)
                 {
@@ -286,11 +321,11 @@ namespace Zombiefied
                     {
                         IncidentDef.Named("ZombiePack").Worker.TryExecute(incidentParms);
                     }
-                    base.Logger.Message("zombieraid started on map " + currentMapIndex + ".", new object[0]);
+                    base.Logger.Message("Zombieraid started on map " + currentMapIndex + ".", new object[0]);
                 }
                 else
                 {
-                    base.Logger.Message("zombieraid failed on map " + currentMapIndex + " because map invalid or more zombies are already on the map than cap allows.", new object[0]);
+                    base.Logger.Message("Zombieraid failed on map " + currentMapIndex + " because map invalid or more Zombies are already on the map than cap allows.", new object[0]);
                 }
             }
         }
@@ -323,7 +358,9 @@ namespace Zombiefied
                 {
                     int zombieAmount = 0;
 
-                    //base.Logger.Message(m + "", new object[0]);
+                    int bestLocationScore = -7;
+                    IntVec3 bestLocation = IntVec3.Invalid;
+                    int bestLocationTicks = 0;
 
                     if (Find.Maps[m] != null && Find.Maps[m].mapPawns != null && Find.Maps[m].listerBuildings != null)
                     {
@@ -360,35 +397,68 @@ namespace Zombiefied
                                         }
                                         if (weapon && (pawn2.LastAttackedTarget != null && (Find.TickManager.TicksGame - pawn2.LastAttackTargetTick < tickAmount)))
                                         {
-                                            noisyLocationsPerMap[m].Enqueue(pawn2.Position);
-                                            noisyLocationTicksPerMap[m].Enqueue(pawn2.LastAttackTargetTick);
+                                            int tempScore = 7;
+                                            if (pawn2.Faction != null && pawn2.Faction.IsPlayer)
+                                            {
+                                                tempScore = 13;
+                                            }
+                                            if (tempScore > bestLocationScore)
+                                            {
+                                                bestLocationScore = tempScore;
+                                                bestLocation = pawn2.Position;
+                                                bestLocationTicks = pawn2.LastAttackTargetTick;
+                                            }
+
+                                            //noisyLocationsPerMap[m].Enqueue(pawn2.Position);
+                                            //noisyLocationTicksPerMap[m].Enqueue(pawn2.LastAttackTargetTick);
                                         }
                                     }
                                 }
                             }
                         }
 
-                        List<Building> allBuildings = Find.Maps[m].listerBuildings.allBuildingsColonist;
-                        if (allBuildings != null)
+                        if (bestLocationScore < 0)
                         {
-                            for (int i = 0; i < allBuildings.Count; i++)
+                            List<Building> allBuildings = Find.Maps[m].listerBuildings.allBuildingsColonist;
+                            if (allBuildings != null)
                             {
-                                Building_Turret building2 = allBuildings[i] as Building_Turret;
-                                if (building2 != null)
+                                for (int i = 0; i < allBuildings.Count; i++)
                                 {
-                                    if ((building2.LastAttackedTarget != null && (Find.TickManager.TicksGame - building2.LastAttackTargetTick < tickAmount)))
+                                    Building_Turret building2 = allBuildings[i] as Building_Turret;
+                                    if (building2 != null)
                                     {
-                                        noisyLocationsPerMap[m].Enqueue(building2.Position);
-                                        noisyLocationTicksPerMap[m].Enqueue(building2.LastAttackTargetTick);
+                                        if ((building2.LastAttackedTarget != null && (Find.TickManager.TicksGame - building2.LastAttackTargetTick < tickAmount)))
+                                        {
+                                            int tempScore = 3;
+                                            if (building2.Faction != null && building2.Faction.IsPlayer)
+                                            {
+                                                tempScore = 13;
+                                            }
+                                            if (tempScore > bestLocationScore)
+                                            {
+                                                bestLocationScore = tempScore;
+                                                bestLocation = building2.Position;
+                                                bestLocationTicks = building2.LastAttackTargetTick;
+                                            }
+
+                                            //noisyLocationsPerMap[m].Enqueue(building2.Position);
+                                            //noisyLocationTicksPerMap[m].Enqueue(building2.LastAttackTargetTick);
+                                        }
                                     }
                                 }
                             }
                         }
                     }
 
+                    if(bestLocationScore > 0)
+                    {
+                        noisyLocationsPerMap[m].Enqueue(bestLocation);
+                        noisyLocationTicksPerMap[m].Enqueue(bestLocationTicks);
+                    }
+
                     zombieAmountsPerMap[m] = zombieAmount;
 
-                    log += "map " + m + " has " + noisyLocationsPerMap[m].Count + " noisy locations and " + zombieAmountsPerMap[m] + " zombies.   ";
+                    log += "map " + m + " has " + noisyLocationsPerMap[m].Count + " noisy locations and " + zombieAmountsPerMap[m] + " Zombies.   ";
                 }
                 base.Logger.Message(log, new object[0]);
             }        
@@ -437,7 +507,7 @@ namespace Zombiefied
         // Token: 0x0600001E RID: 30 RVA: 0x00002BBC File Offset: 0x00000DBC
         private void HandleReanimation()
         {
-            if (Find.TickManager.TicksAbs % 8000 == 0)
+            if (Find.TickManager.TicksAbs % 1337 == 0)
             {
                 foreach (Map map in Find.Maps)
                 {
@@ -457,9 +527,12 @@ namespace Zombiefied
                                 }
                             }
                             //bool flag = corpse.InnerPawn.health.hediffSet.hediffs.Any((Hediff hediff) => hediff.def == HediffDef.Named("ZombieWoundInfection"));
-                            if (flag && corpse.InnerPawn.health.hediffSet.GetBrain() != null && corpse.InnerPawn.RaceProps.IsFlesh)
+                            if (flag && corpse.InnerPawn.health.hediffSet.GetBrain() != null && corpse.InnerPawn.RaceProps.IsFlesh && (!disableAnimalZombies || corpse.InnerPawn.RaceProps.intelligence > Intelligence.Animal))
                             {
-                                ReanimateDeath(corpse);
+                                if (Rand.RangeSeeded(0, 2, (Find.TickManager.TicksAbs + corpse.thingIDNumber)) == 1)
+                                {
+                                    ReanimateDeath(corpse);
+                                }
                             }
                         }
                     }
@@ -483,7 +556,7 @@ namespace Zombiefied
             }
 
             Thing t = GenSpawn.Spawn(zombiePawn, position, corpse.Map);
-            corpse.TakeDamage(new DamageInfo(DamageDefOf.Deterioration, 777f));
+            corpse.TakeDamage(new DamageInfo(DamageDefOf.Deterioration, 77777f));
 
             //for(int i = 0; i < Find.BattleLog.Battles.Count; i++)
             //{
@@ -634,6 +707,22 @@ namespace Zombiefied
             for (int i = 0; i < listPawnKindDef.Count; i++)
             {
                 PawnKindDef sourcePawnKindDef = listPawnKindDef[i];
+
+                string log = sourcePawnKindDef.defName + " ";
+                if (sourcePawnKindDef.weaponTags != null)
+                {
+                    for(int t = 0; t < sourcePawnKindDef.weaponTags.Count; t++)
+                    {
+                        if(sourcePawnKindDef.weaponTags[t].Contains("Melee") && sourcePawnKindDef.weaponTags[t].Contains("Neolithic"))
+                        {
+                            sourcePawnKindDef.weaponTags[t] = "NeolithicRangedChief";
+                            //sourcePawnKindDef.
+                        }
+                        log += sourcePawnKindDef.weaponTags[t] + " ";
+                    }
+                    //base.Logger.Message(log);
+                }
+                
 
                 if (sourcePawnKindDef.defName == null || (sourcePawnKindDef.defName.Length >= 6 && sourcePawnKindDef.defName.Substring(0, 6) == "Zombie") || DefDatabase<PawnKindDef>.GetNamed("Zombie" + sourcePawnKindDef.defName, false) != null)
                 {
@@ -805,7 +894,18 @@ namespace Zombiefied
                             newThingDef.race.makesFootprints = sourcePawnKindDef.race.race.makesFootprints;
                             //newThingDef.race.leatherInsulation = sourcePawnKindDef.race.race.leatherInsulation;
 
-                            newThingDef.race.lifeStageAges = zombieThingDef.race.lifeStageAges;
+                            newThingDef.race.lifeStageAges = new List<LifeStageAge>();
+                            for(int l = 0; l < sourcePawnKindDef.race.race.lifeStageAges.Count; l++)
+                            {
+                                if(sourcePawnKindDef.race.race.lifeStageAges[l].def.defName == "AnimalAdult")
+                                {
+                                    newThingDef.race.lifeStageAges.Add(zombieThingDef.race.lifeStageAges[2]);
+                                }
+                                else
+                                {
+                                    newThingDef.race.lifeStageAges.Add(sourcePawnKindDef.race.race.lifeStageAges[l]);
+                                }
+                            }
 
                             newThingDef.race.soundMeleeHitPawn = sourcePawnKindDef.race.race.soundMeleeHitPawn;
                             newThingDef.race.soundMeleeHitBuilding = sourcePawnKindDef.race.race.soundMeleeHitBuilding;
@@ -885,7 +985,7 @@ namespace Zombiefied
                     }
                 }
             }
-            base.Logger.Message("set up zombies for " + count + " animals.", new object[0]);
+            base.Logger.Message("set up Zombies for " + count + " animals.", new object[0]);
         }
     }
 }

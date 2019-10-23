@@ -13,19 +13,11 @@ namespace Zombiefied
     {
         protected void ResolveRaidPoints(IncidentParms parms)
         {
-            float factor = ZombiefiedMod.zombieRaidAmountMultiplier;
-            if (factor < 0.1f)
-            {
-                factor = 0.1f;
-            }
-            else if (factor > 17f)
-            {
-                factor = 17f;
-            }
+            float factor = ZombiefiedMod.ZombieRaidAmountMultiplier;
             parms.points = StorytellerUtility.DefaultThreatPointsNow(parms.target) * PointsFactor * factor;
-            if (parms.points > 7777f)
+            if (parms.points > 1333f * ZombiefiedMod.ZombieRaidAmountMultiplier)
             {
-                parms.points = 777f;
+                parms.points = 1333f * ZombiefiedMod.ZombieRaidAmountMultiplier;
             }
         }
 

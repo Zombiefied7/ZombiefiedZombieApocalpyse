@@ -13,19 +13,11 @@ namespace Zombiefied
     {
         protected void ResolveRaidPoints(IncidentParms parms)
         {
-            float factor = ZombiefiedMod.zombieRaidAmountMultiplier;
-            if (factor < 0.1f)
-            {
-                factor = 0.1f;
-            }
-            else if (factor > 17f)
-            {
-                factor = 17f;
-            }
+            float factor = ZombiefiedMod.ZombieRaidAmountMultiplier;
             parms.points = StorytellerUtility.DefaultThreatPointsNow(parms.target) * PointsFactor * factor;
-            if(parms.points > 7777f)
+            if(parms.points > 4444f * ZombiefiedMod.ZombieRaidAmountMultiplier)
             {
-                parms.points = 7777f;
+                parms.points = 4444f * ZombiefiedMod.ZombieRaidAmountMultiplier;
             }
         }
 
@@ -93,12 +85,14 @@ namespace Zombiefied
             }
             */
 
-            if(!TryResolveRaidFaction(parms))
+            ResolveRaidPoints(parms);
+
+            if (!TryResolveRaidFaction(parms))
             {
                 return false;
             }
 
-            ResolveRaidPoints(parms);
+            
 
             IntVec3 intVec;
             if (!RCellFinder.TryFindRandomPawnEntryCell(out intVec, map, CellFinder.EdgeRoadChance_Animal))

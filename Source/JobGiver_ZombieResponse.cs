@@ -91,7 +91,7 @@ namespace Zombiefied
             {
                 return false;
             }
-            if(ZombiefiedMod.disableAnimalZombies && !prey.RaceProps.Humanlike)
+            if(ZombiefiedMod.disableZombiesAttackingAnimals && !prey.RaceProps.Humanlike)
             {
                 return false;
             }

@@ -172,12 +172,12 @@ namespace Zombiefied
         //Tick + TickRare overrides for better performance
         public override void TickRare()
         {
-            if (Find.TickManager.TicksGame + thingIDNumber % 777 == 0)
-            {
-                base.TickRare();
-            }
-            else
-            {
+            //if (Find.TickManager.TicksGame + thingIDNumber % 7777 == 0)
+            //{
+            //    base.TickRare();
+            //}
+            //else
+            //{
                 if (AllComps != null)
                 {
                     int i = 0;
@@ -206,17 +206,17 @@ namespace Zombiefied
                 //{
                 //    GenTemperature.PushHeat(this, 0.3f * this.BodySize * 4.16666651f * ((!this.def.race.Humanlike) ? 0.6f : 1f));
                 //}
-            }
+            //}
         }
 
         public override void Tick()
         {
-            if (Find.TickManager.TicksGame + thingIDNumber % 777 == 0)
-            {
-                base.Tick();
-            }
-            else
-            {
+            //if (Find.TickManager.TicksGame + thingIDNumber % 7777 == 0)
+            //{
+            //    base.Tick();
+            //}
+            //else
+            //{
                 if (AllComps != null)
                 {
                     int i = 0;
@@ -304,7 +304,7 @@ namespace Zombiefied
                     this.ageTracker.AgeTick();
                     this.records.RecordsTick();
                 }
-            }
+            //}
         }
     }
 }

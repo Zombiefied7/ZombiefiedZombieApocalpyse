@@ -13,9 +13,9 @@ namespace Zombiefied
         {
             if(ZombiefiedMod.zombieAmountsPerMap != null && ZombiefiedMod.zombieAmountsPerMap.Count > pawn.Map.Index)
             {
-                if (ZombiefiedMod.zombieAmountsPerMap[pawn.Map.Index] > ZombiefiedMod.zombieAmountSoftCap)
+                if (ZombiefiedMod.zombieAmountsPerMap[pawn.Map.Index] > ZombiefiedMod.zombieAmountSoftCap + 7)
                 {
-                    if ((Find.TickManager.TicksAbs + pawn.thingIDNumber) % 77 == 0)
+                    if (Rand.RangeSeeded(0, 333, (Find.TickManager.TicksAbs + pawn.thingIDNumber)) == 7)
                     {
                         return true;
                     }

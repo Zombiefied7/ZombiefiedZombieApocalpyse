@@ -24,6 +24,7 @@ namespace Zombiefied
         }
     }
 
+    /*
     [HarmonyPatch(typeof(HediffSet), nameof(HediffSet.HasNaturallyHealingInjury))]
     class NaturallyHealingPatch
     {
@@ -37,6 +38,7 @@ namespace Zombiefied
             return true;
         }
     }
+    */
 
     [HarmonyPatch(typeof(Pawn_MindState), nameof(Pawn_MindState.Notify_DamageTaken))]
     class ManhunterPatch
