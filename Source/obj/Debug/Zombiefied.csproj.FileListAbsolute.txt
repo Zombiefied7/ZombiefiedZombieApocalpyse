@@ -36,3 +36,7 @@ C:\_Projekte\ZombiefiedZombieApocalpyse\Source\obj\Debug\Zombiefied.csprojAssemb
 C:\_Projekte\ZombiefiedZombieApocalpyse\Source\obj\Debug\Zombiefied.csproj.CoreCompileInputs.cache
 C:\_Projekte\ZombiefiedZombieApocalpyse\Source\obj\Debug\Zombiefied.dll
 C:\_Projekte\ZombiefiedZombieApocalpyse\Assemblies\Zombiefied.dll
+C:\_Spiele\steamapps\common\RimWorld\Mods\ZombiefiedZombieApocalpyse\Assemblies\Zombiefied.dll
+C:\_Spiele\steamapps\common\RimWorld\Mods\ZombiefiedZombieApocalpyse\Source\obj\Debug\Zombiefied.csprojAssemblyReference.cache
+C:\_Spiele\steamapps\common\RimWorld\Mods\ZombiefiedZombieApocalpyse\Source\obj\Debug\Zombiefied.csproj.CoreCompileInputs.cache
+C:\_Spiele\steamapps\common\RimWorld\Mods\ZombiefiedZombieApocalpyse\Source\obj\Debug\Zombiefied.dll

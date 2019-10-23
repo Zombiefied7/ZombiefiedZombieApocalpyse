@@ -270,12 +270,13 @@ namespace Zombiefied
             {
                 num = 0.7f;
             }
-
-            num /= ZombieRaidFrequencyMultiplier;
-
-            if ((double)num < 0.2f)
+            //if (easyMode)
+            //{
+                num /= ZombieRaidFrequencyMultiplier;
+            //}
+            if ((double)num < 0.17f)
             {
-                num = 0.2f;
+                num = 0.17f;
             }
             else if ((double)num > 7f)
             {
