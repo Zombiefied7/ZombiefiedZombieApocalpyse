@@ -1,0 +1,21 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<Defs>
+  <JobDef>
+		<defName>ZombieHunt</defName>
+		<driverClass>Zombiefied.JobDriver_ZombieHunt</driverClass>
+		<reportString>hunting TargetA.</reportString>
+    <casualInterruptible>false</casualInterruptible>
+    <checkOverrideOnDamage>OnlyIfInstigatorNotJobTarget</checkOverrideOnDamage>
+    <allowOpportunisticPrefix>true</allowOpportunisticPrefix>
+    <neverFleeFromEnemies>true</neverFleeFromEnemies>
+  </JobDef>
+  <JobDef>
+		<defName>ZombieMove</defName>
+		<driverClass>Zombiefied.JobDriver_ZombieMove</driverClass>
+		<reportString>moving TargetA.</reportString>
+    <casualInterruptible>false</casualInterruptible>
+    <checkOverrideOnDamage>OnlyIfInstigatorNotJobTarget</checkOverrideOnDamage>
+    <allowOpportunisticPrefix>true</allowOpportunisticPrefix>
+    <neverFleeFromEnemies>true</neverFleeFromEnemies>
+  </JobDef>
+</Defs>

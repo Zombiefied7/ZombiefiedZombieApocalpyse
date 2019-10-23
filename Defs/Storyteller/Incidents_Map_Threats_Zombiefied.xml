@@ -1,0 +1,34 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<Defs>
+
+	<!-- ============================== Big threats ==============================-->
+	
+  <IncidentDef>
+    <defName>ZombieHorde</defName>
+    <label>zombie horde</label>
+    <targetTags>
+      <li>Map_PlayerHome</li>
+    </targetTags>
+    <workerClass>Zombiefied.IncidentWorker_ZombieHorde</workerClass>
+    <baseChance>0</baseChance>
+    <category>ThreatSmall</category>
+    <minRefireDays>0</minRefireDays>
+    <pointsScaleable>true</pointsScaleable>
+	<tale>Raid</tale>
+  </IncidentDef>
+  
+  <IncidentDef>
+    <defName>ZombiePack</defName>
+    <label>zombie horde</label>
+    <targetTags>
+      <li>Map_PlayerHome</li>
+    </targetTags>
+    <workerClass>Zombiefied.IncidentWorker_ZombiePack</workerClass>
+    <baseChance>0</baseChance>
+    <category>ThreatSmall</category>
+    <minRefireDays>0</minRefireDays>
+    <pointsScaleable>true</pointsScaleable>
+	<tale>Raid</tale>
+  </IncidentDef>
+
+</Defs>

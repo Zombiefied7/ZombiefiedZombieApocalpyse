@@ -1,0 +1,50 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ModMetaData>
+	<name>Zombiefied (Zombie Apocalypse)</name>
+	<author>Zombiefied</author>
+	<supportedVersions><li>1.0</li></supportedVersions>
+	<description>&lt;size=22&gt;Zombie Apocalypse&lt;/size&gt;
+&lt;size=17&gt;A previously unknown desease, that causes the host to show unseen aggression and survivability, is spreading across the rim. Can you survive facing this new threat?&lt;/size&gt;
+
+Your average Zombiemod.
+
+&lt;size=22&gt;Zombies&lt;/size&gt;
+-Human Zombies
+-Animal Zombies
+-Humanoid Alien Zombies
+-Modded Animal Zombies
+
+This mod generates a unique ZombiePawn for every living Pawn in your modded game. When a Pawn(lifeform) dies due to Zombies, it will reanimate as a Zombie that matches it's original appearance and stats.
+
+&lt;size=22&gt;Features&lt;/size&gt;
+-Zombie generation for any given Pawn
+-Zombies get attracted by noise
+-Zombies will attack any lifeform on sight
+
+&lt;size=22&gt;Mod compatibility&lt;/size&gt;
+-Compatible with most modded animals
+-Compatible with "Humanoid Alien Races 2.0"
+-Compatible with "Multiplayer"
+
+&lt;size=22&gt;Latest Patch Notes&lt;/size&gt;
+2019.09.02:
+Features:
+-Added Zombie raid size multiplier		(find the multiplier in the mod options)
+-Added Zombie raid frequency multiplier		(find the multiplier in the mod options)
+-Added Multiplayer mod support
+-Improved performance
+	
+Bugfixes:
+-Neolithic weapons (i.e bows) don't attract Zombies anymore
+-Zombies are now hashed correctly		(no more Idle Zombies)
+-Zombies don't flee anymore
+-Zombies don't trigger raid music anymore
+-Normal events are less drowned by Zombiefied events
+-Zombiefied is now initialized at a better time	(less mod incompatibilities)
+-Zombies now get attracted by sound correctly
+-Mechanoids don't get infected by Zombies anymore
+-Less random errors on normal usage
+-Less random errors on reload
+
+</description>
+</ModMetaData>

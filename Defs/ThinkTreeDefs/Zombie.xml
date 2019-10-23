@@ -1,0 +1,56 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<Defs>
+
+	<ThinkTreeDef>
+		<defName>Zombie</defName>
+		<thinkRoot Class="ThinkNode_Priority">
+		<subNodes>
+        <!-- Downed -->
+        <li Class="ThinkNode_Subtree">
+          <treeDef>Downed</treeDef>
+        </li>
+		
+		<!-- Leave if timed out -->
+        <li Class="Zombiefied.ThinkNode_ConditionalExitMap_Zombiefied">
+          <subNodes>
+            <li Class="ThinkNode_Tagger">
+              <subNodes>
+                <li Class="JobGiver_ExitMapBest">
+                  <defaultLocomotion>Sprint</defaultLocomotion>     
+                </li>
+              </subNodes>
+            </li>
+          </subNodes>
+        </li>
+        
+        <!-- Do a queued job -->
+			
+		<li Class="Zombiefied.JobGiver_WanderZombieHerd">
+          <maxDanger>Deadly</maxDanger>
+          <ticksBetweenWandersRange>
+            <min>30</min>
+            <max>120</max>
+          </ticksBetweenWandersRange>
+		  <locomotionUrgency>Sprint</locomotionUrgency>
+        </li>
+		    
+        <!-- Idle error -->
+        <li Class="JobGiver_IdleError"/>
+      </subNodes>
+		</thinkRoot>
+	</ThinkTreeDef>
+	
+	<ThinkTreeDef>
+		<defName>ZombieConstant</defName>
+		<thinkRoot Class="ThinkNode_Priority">
+			<subNodes>
+        <li Class="Zombiefied.ThinkNode_ConditionalCanDoConstantThinkTreeJobNow_Zombiefied">
+          <subNodes>
+				<li Class="Zombiefied.JobGiver_ZombieResponse" />
+			</subNodes>
+        </li>
+      </subNodes>
+		</thinkRoot>
+	</ThinkTreeDef>
+	
+</Defs>

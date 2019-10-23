@@ -1,0 +1,201 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<Defs>
+
+  <ThingDef ParentName="BasePawn" Name="ZombieThingBase" Abstract="True">
+  
+	<thingClass>Zombiefied.Pawn_Zombiefied</thingClass>	
+    <statBases>
+	  <Flammability>0.4</Flammability>
+      <LeatherAmount>50</LeatherAmount>
+	  <PainShockThreshold>1.1</PainShockThreshold>
+	  <PsychicSensitivity>0</PsychicSensitivity>
+      <ToxicSensitivity>0</ToxicSensitivity>
+      <MoveSpeed>0.7837</MoveSpeed>
+      <ComfyTemperatureMin>-8</ComfyTemperatureMin>
+      <MarketValue>1000</MarketValue>
+    </statBases>
+    <tools>	
+        <li>
+		<label>left hand</label>
+        <capacities>
+          <li>ZombieScratch</li>
+        </capacities>
+        <power>7</power>
+        <cooldownTime>1.6</cooldownTime>
+        <linkedBodyPartsGroup>LeftHand</linkedBodyPartsGroup>
+        <surpriseAttack>
+          <extraMeleeDamages>
+            <li>
+              <def>Stun</def>
+              <amount>22</amount>
+            </li>
+          </extraMeleeDamages>
+        </surpriseAttack>
+		<chanceFactor>0.2</chanceFactor>
+      </li>
+      <li>
+		<label>right hand</label>
+        <capacities>
+          <li>ZombieScratch</li>
+        </capacities>
+        <power>7</power>
+        <cooldownTime>1.6</cooldownTime>
+        <linkedBodyPartsGroup>RightHand</linkedBodyPartsGroup>
+        <surpriseAttack>
+          <extraMeleeDamages>
+            <li>
+              <def>Stun</def>
+              <amount>22</amount>
+            </li>
+          </extraMeleeDamages>
+        </surpriseAttack>
+		<chanceFactor>0.2</chanceFactor>
+      </li>
+      <li>
+		<label>teeth</label>
+        <capacities>
+          <li>ZombieBite</li>
+        </capacities>
+        <power>7</power>
+        <cooldownTime>1.6</cooldownTime>
+        <linkedBodyPartsGroup>Teeth</linkedBodyPartsGroup>
+        <surpriseAttack>
+          <extraMeleeDamages>
+            <li>
+              <def>Stun</def>
+              <amount>22</amount>
+            </li>
+          </extraMeleeDamages>
+        </surpriseAttack>
+      </li>
+      <li>
+        <label>head</label>
+        <capacities>
+          <li>Blunt</li>
+        </capacities>
+        <power>5</power>
+        <cooldownTime>1.65</cooldownTime>
+        <linkedBodyPartsGroup>HeadAttackTool</linkedBodyPartsGroup>
+        <chanceFactor>0.07</chanceFactor>
+      </li>
+    </tools>
+    <race>
+      <body>Human</body>
+	  <fleshType>Zombiefied</fleshType>
+	  <intelligence>ToolUser</intelligence>
+	  <thinkTreeMain>Zombie</thinkTreeMain>
+	  <thinkTreeConstant>ZombieConstant</thinkTreeConstant>
+	  <leatherDef>Leather_Zombie</leatherDef>
+	  <trainability>Advanced</trainability>
+	  
+	  <needsRest>false</needsRest>  
+      <baseBodySize>1</baseBodySize>
+      <baseHungerRate>0</baseHungerRate>
+      <baseHealthScale>1</baseHealthScale>
+      <foodType>None</foodType>
+	  
+	  <makesFootprints>true</makesFootprints>
+	  
+	  <predator>false</predator>
+	  
+      <wildness>1</wildness>
+      <manhunterOnTameFailChance>0</manhunterOnTameFailChance>
+      <manhunterOnDamageChance>0</manhunterOnDamageChance>
+      <gestationPeriodDays>22.5</gestationPeriodDays>
+      <lifeExpectancy>80</lifeExpectancy>
+	  
+	  <hasGenders>true</hasGenders>
+      <nameGenerator>NamerAnimalGenericMale</nameGenerator>
+      <nameGeneratorFemale>NamerAnimalGenericFemale</nameGeneratorFemale>
+	  
+	  <hediffGiverSets>
+        <li>Zombiefied</li>
+      </hediffGiverSets>
+	  
+	  <specialShadowData>
+        <volume>(0.3, 0.8, 0.4)</volume>
+        <offset>(0,0,-0.3)</offset>
+      </specialShadowData>
+	  
+      <lifeStageAges>
+        <li>
+          <def>AnimalBaby</def>
+          <minAge>0</minAge>
+        </li>
+        <li>
+          <def>AnimalJuvenile</def>
+          <minAge>0.25</minAge>
+        </li>
+        <li>
+          <def>AnimalAdult</def>
+          <minAge>0.5</minAge>
+          <soundWounded>Pawn_Cougar_Injured</soundWounded>
+          <soundDeath>Pawn_Cougar_Death</soundDeath>
+        </li>
+      </lifeStageAges>
+      <soundMeleeHitPawn>Pawn_Melee_BigBash_HitPawn</soundMeleeHitPawn>
+      <soundMeleeHitBuilding>Pawn_Melee_BigBash_HitBuilding</soundMeleeHitBuilding>
+      <soundMeleeMiss>Pawn_Melee_BigBash_Miss</soundMeleeMiss>
+    </race>
+    <tradeTags>
+      <li>StandardAnimal</li>
+      <li>BadassAnimal</li>
+    </tradeTags>
+  </ThingDef>
+
+  <PawnKindDef Name="ZombieKindBase" Abstract="True">
+    <canArriveManhunter>false</canArriveManhunter>
+	<aiAvoidCover>true</aiAvoidCover>
+    <combatPower>0</combatPower>
+  </PawnKindDef>
+
+
+  <!--===============================================-->
+
+  <ThingDef ParentName="ZombieThingBase">
+    <defName>Zombie</defName>
+    <label>zombie</label>
+    <description>Run.</description>
+    <race>
+	  <meatColor>(70,40,26)</meatColor>
+    </race>
+  </ThingDef>
+
+  <PawnKindDef ParentName="ZombieKindBase">
+    <defName>Zombie</defName>
+    <label>zombie</label>
+    <race>Zombie</race>
+    <lifeStages>
+      <li>
+        <bodyGraphicData>
+          <texPath>Things/Pawn/Animal/Bear/Bear</texPath>
+          <drawSize>1.6</drawSize>
+          <color>(89,124,89)</color>
+        </bodyGraphicData>
+      </li>
+      <li>
+        <bodyGraphicData>
+          <texPath>Things/Pawn/Animal/Bear/Bear</texPath>
+          <drawSize>1.6</drawSize>
+          <color>(89,124,89)</color>
+          <shadowData>
+            <volume>(0.3, 0.3, 0.3)</volume>
+            <offset>(0,0,-0.3)</offset>
+          </shadowData>
+        </bodyGraphicData>
+      </li>
+      <li>
+        <bodyGraphicData>
+          <texPath>Things/Pawn/Animal/Bear/Bear</texPath>
+          <drawSize>1.6</drawSize>
+          <color>(89,124,89)</color>
+          <shadowData>
+            <volume>(0.4, 0.4, 0.4)</volume>
+            <offset>(0,0,-0.1)</offset>
+          </shadowData>
+        </bodyGraphicData>
+      </li>
+    </lifeStages>
+  </PawnKindDef>
+  <!--===============================================-->
+</Defs>

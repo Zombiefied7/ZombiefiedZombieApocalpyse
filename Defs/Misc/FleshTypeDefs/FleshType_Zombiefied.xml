@@ -1,0 +1,23 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+
+<Defs>
+
+  <FleshTypeDef>
+    <defName>Zombiefied</defName>
+    <ateDirect>AteZombieMeatDirect</ateDirect>
+    <ateAsIngredient>AteZombieMeatAsIngredient</ateAsIngredient>
+    <corpseCategory>CorpsesZombie</corpseCategory>
+    <wounds>
+      <li>
+        <texture>Things/Pawn/Wounds/WoundFleshA</texture>
+      </li>
+      <li>
+        <texture>Things/Pawn/Wounds/WoundFleshB</texture>
+      </li>
+      <li>
+        <texture>Things/Pawn/Wounds/WoundFleshC</texture>
+      </li>
+    </wounds>
+  </FleshTypeDef>
+
+</Defs>
