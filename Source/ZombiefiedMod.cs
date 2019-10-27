@@ -69,7 +69,7 @@ namespace Zombiefied
                         thing.Destroy(DestroyMode.Vanish);
                     }    
                     if (!debugRemoveZombies && thing is Pawn_Zombiefied)
-                    {           
+                    {
                         zCount++;
                         if (((Pawn)thing).Faction != zFaction)
                         {
@@ -608,12 +608,17 @@ namespace Zombiefied
             pawn.gender = sourcePawn.gender;
             pawn.needs.SetInitialLevels();
 
-            if (sourcePawn.IsColonist)
-            {
+            if (sourcePawn.Faction != null && sourcePawn.Faction.IsPlayer)
+            {                
+                NameSingle nameSingle = sourcePawn.Name as NameSingle;
+                if(nameSingle != null)
+                {
+                    pawn.Name = new NameSingle("Zombie " + nameSingle.Name);
+                }
                 NameTriple nameTriple = sourcePawn.Name as NameTriple;
                 if (nameTriple != null)
                 {
-                    pawn.Name = new NameTriple(nameTriple.First, "Zombie " + nameTriple.Nick, nameTriple.Last);
+                    pawn.Name = new NameSingle("Zombie " + nameTriple.Nick);
                 }
             }
 

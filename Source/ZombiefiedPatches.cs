@@ -61,4 +61,17 @@ namespace Zombiefied
             return true;
         }
     }
+
+    [HarmonyPatch(typeof(Fire), "DoFireDamage")]
+    class FirePatch
+    {
+        static bool Prefix(Fire __instance, ref Thing targ)
+        {
+            if (targ is Pawn_Zombiefied)
+            {
+                return Rand.ChanceSeeded(0.5f, (Find.TickManager.TicksAbs + targ.thingIDNumber));
+            }
+            return true;
+        }
+    }
 }
