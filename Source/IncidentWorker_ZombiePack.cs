@@ -15,9 +15,9 @@ namespace Zombiefied
         {
             float factor = ZombiefiedMod.ZombieRaidAmountMultiplier;
             parms.points = StorytellerUtility.DefaultThreatPointsNow(parms.target) * PointsFactor * factor;
-            if (parms.points > 1333f * ZombiefiedMod.ZombieRaidAmountMultiplier)
+            if (parms.points > 3777f * ZombiefiedMod.ZombieRaidAmountMultiplier)
             {
-                parms.points = 1333f * ZombiefiedMod.ZombieRaidAmountMultiplier;
+                parms.points = 3777f * ZombiefiedMod.ZombieRaidAmountMultiplier;
             }
         }
 
@@ -60,7 +60,7 @@ namespace Zombiefied
 
             Pawn reference = null;
 
-            int num = (int)(parms.points / 10f);
+            int num = (int)(parms.points / 100f);
             if(num < 2)
             {
                 num = 2;
@@ -92,6 +92,6 @@ namespace Zombiefied
             return true;
         }
 
-        private const float PointsFactor = 0.05f;
+        private const float PointsFactor = 1.7f;
     }
 }
