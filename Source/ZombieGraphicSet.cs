@@ -217,9 +217,17 @@ namespace Zombiefied
             {
                 path = apparel.def.apparel.wornGraphicPath + "_" + bodyType.ToString();
             }
+
             Graphic graphic = GraphicDatabase.Get<Graphic_Multi>(path, shader, apparel.def.graphicData.drawSize, color);
-            rec = new ApparelGraphicRecord(graphic, apparel);
-            return true;
+
+            if(graphic != null && graphic.MatEast != null && graphic.MatEast.mainTexture != null)
+            {
+                rec = new ApparelGraphicRecord(graphic, apparel);
+                return true;
+            }
+
+            rec = new ApparelGraphicRecord();
+            return false;
         }
 
         // Token: 0x04000063 RID: 99

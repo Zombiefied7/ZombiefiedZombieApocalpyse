@@ -24,22 +24,6 @@ namespace Zombiefied
         }
     }
 
-    /*
-    [HarmonyPatch(typeof(HediffSet), nameof(HediffSet.HasNaturallyHealingInjury))]
-    class NaturallyHealingPatch
-    {
-        static bool Prefix(ref bool __result, HediffSet __instance)
-        {
-            if (__instance.pawn is Pawn_Zombiefied)
-            {
-                __result = false;
-                return false;
-            }
-            return true;
-        }
-    }
-    */
-
     [HarmonyPatch(typeof(Pawn_MindState), nameof(Pawn_MindState.Notify_DamageTaken))]
     class ManhunterPatch
     {

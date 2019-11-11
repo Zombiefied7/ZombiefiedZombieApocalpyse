@@ -32,6 +32,7 @@ namespace Zombiefied
             {
                 return false;
             }
+            /*
             if (f.defeated)
             {
                 return false;
@@ -43,6 +44,7 @@ namespace Zombiefied
                     return false;
                 }
             }
+            */
             return true;
         }
 
@@ -66,24 +68,10 @@ namespace Zombiefied
             return result;
         }
 
-        public bool TryFindAnimalKind(float points, int tile, out PawnKindDef animalKind)
-        {
-            return (from k in DefDatabase<PawnKindDef>.AllDefs
-                    where  k.defName != null && k.defName.Contains("Zombie") && k.defName != "Zombie" && (tile == -1 || Find.World.tileTemperatures.SeasonAndOutdoorTemperatureAcceptableFor(tile, k.race))
-                    select k).TryRandomElementByWeight((PawnKindDef k) => 7f, out animalKind);
-        }
-
         // Token: 0x06000D17 RID: 3351 RVA: 0x00061114 File Offset: 0x0005F514
         protected override bool TryExecuteWorker(IncidentParms parms)
         {
             Map map = (Map)parms.target;
-            /*
-            PawnKindDef pawnKindDef;
-            if (!TryFindAnimalKind(parms.points, map.Tile, out pawnKindDef))
-            {
-                return false;
-            }
-            */
 
             ResolveRaidPoints(parms);
 
@@ -92,20 +80,18 @@ namespace Zombiefied
                 return false;
             }
 
-            
-
             IntVec3 intVec;
             if (!RCellFinder.TryFindRandomPawnEntryCell(out intVec, map, CellFinder.EdgeRoadChance_Animal))
             {
                 return false;
             }
-
             
             PawnGroupKindDef combat = PawnGroupKindDefOf.Combat;
             PawnGroupMakerParms defaultPawnGroupMakerParms = IncidentParmsUtility.GetDefaultPawnGroupMakerParms(combat, parms, false);
 
-            List<Pawn> list = PawnGroupMakerUtility.GeneratePawns(defaultPawnGroupMakerParms, true).ToList<Pawn>();
-            if (list.Count == 0)
+            List<Pawn> list = PawnGroupMakerUtility.GeneratePawns(defaultPawnGroupMakerParms, true).ToList<Pawn>();   
+
+            if (list.Count < 1)
             {
                 Log.Error("Got no pawns spawning raid from parms " + parms, false);
                 return false;
@@ -120,17 +106,6 @@ namespace Zombiefied
                 }
             }
 
-            /*
-            List<Pawn> list = new List<Pawn>(77);
-            for(int i = 0; i < 77; i++)
-            {            
-                list[i] = PawnGenerator.GeneratePawn(defaultPawnGroupMakerParms.groupKind., parms.faction);
-                Pawn pawn = list[i];
-                list[i] = ZombiefiedMod.GenerateZombieFromSource(list[i]);
-                pawn.Destroy(DestroyMode.Vanish);
-            }
-            */
-
             Rot4 rot = Rot4.FromAngleFlat((map.Center - intVec).AngleFlat);
 
             Faction zFaction = Faction.OfInsects;
@@ -141,14 +116,6 @@ namespace Zombiefied
                     zFaction = faction;
                 }
             }
-
-            /*
-            int maxAmount = 77;
-            if(list.Count < maxAmount)
-            {
-                maxAmount = list.Count;
-            }
-            */
 
             for (int i = 0; i < list.Count; i++)
             {

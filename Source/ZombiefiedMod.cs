@@ -101,39 +101,11 @@ namespace Zombiefied
                 }
                 if(broken)
                 {
-                    //bool wdhwiu = true;
-                    base.Logger.Message("found a broken site");
-                    //Predicate<RimWorld.Planet.Site> returnTrue = (p) => true;
-                    //Find.World.worldObjects.Sites.RemoveAll(returnTrue);
-                    //Find.World.worldObjects.Sites = new List<RimWorld.Planet.Site>();
-                    //Find.World.worldObjects.Remove(site);
-                    //site.CheckRemoveMapNow();
-                    //site.ShouldRemoveMapNow
+                    base.Logger.Message("found a broken site.");
+                    //handle broken site here
                 }
             }
 
-
-            /*
-            int zCount = 0;
-            int zWrongFactionCount = 0;
-            for (int i = 0; i < Find.Maps.Count; i++)
-            {
-                for (int i1 = 0; i1 < Find.Maps[i].mapPawns.AllPawnsSpawnedCount; i1++)
-                {
-                    Pawn pawn = Find.Maps[i].mapPawns.AllPawnsSpawned[i1];
-                    //pawn.Kill(new DamageInfo(DamageDefOf.Bomb, 70f));
-                    if (pawn is Pawn_Zombiefied)
-                    {                    
-                        zCount++;
-                        if (pawn.Faction != zFaction)
-                        {
-                            zWrongFactionCount++;
-                            pawn.SetFaction(zFaction);
-                        }
-                    }
-                }
-            }
-            */
             debugRemoveZombies.Value = false;
             base.Logger.Message("found " + zCount + " Zombies. " + zWrongFactionCount + " of them were repaired.", new object[0]);
         }
@@ -570,7 +542,6 @@ namespace Zombiefied
                 Find.LetterStack.ReceiveLetter("Zombie", "A zombie resurrected.", LetterDefOf.NeutralEvent, t, null);
             }
 
-
             Faction zFaction = Faction.OfInsects;
             foreach (Faction faction in Find.FactionManager.AllFactionsListForReading)
             {
@@ -728,7 +699,7 @@ namespace Zombiefied
                     }
                     //base.Logger.Message(log);
                 }
-                
+
 
                 if (sourcePawnKindDef.defName == null || (sourcePawnKindDef.defName.Length >= 6 && sourcePawnKindDef.defName.Substring(0, 6) == "Zombie") || DefDatabase<PawnKindDef>.GetNamed("Zombie" + sourcePawnKindDef.defName, false) != null)
                 {
@@ -736,258 +707,265 @@ namespace Zombiefied
                 }
                 else
                 {
-                    float rbFactor = 0.5f;
-                    float gFactor = 0.7f;
-                    if (sourcePawnKindDef.RaceProps.Animal)
+                    try
                     {
-                        count++;
-
-                        ThingDef newThingDef = new ThingDef();
-                        if (DefDatabase<ThingDef>.GetNamed("Zombie" + sourcePawnKindDef.race.defName, false) == null)
+                        float rbFactor = 0.5f;
+                        float gFactor = 0.7f;
+                        if (sourcePawnKindDef.RaceProps.Animal)
                         {
-                            newThingDef.defName = "Zombie" + sourcePawnKindDef.race.defName;
-                            newThingDef.label = "zombie " + sourcePawnKindDef.race.defName;
-                            newThingDef.description = sourcePawnKindDef.race.description;
+                            count++;
 
-                            newThingDef.thingClass = zombieThingDef.thingClass;
-                            newThingDef.category = ThingCategory.Pawn;
-                            newThingDef.selectable = true;
-                            newThingDef.tickerType = TickerType.Normal;
-                            newThingDef.altitudeLayer = AltitudeLayer.Pawn;
-                            newThingDef.useHitPoints = false;
-                            newThingDef.hasTooltip = true;
-                            newThingDef.soundImpactDefault = sourcePawnKindDef.race.soundImpactDefault;
-
-                            newThingDef.inspectorTabs = zombieThingDef.inspectorTabs;
-                            newThingDef.comps = zombieThingDef.comps;
-
-                            newThingDef.alwaysFlee = false;
-
-                            newThingDef.drawGUIOverlay = true;
-
-                            //int e = (int)(sourcePawnKindDef.race.shortHash);
-                            //ushort f = (ushort)(e + 7);
-                            //newThingDef.shortHash = f;
-                            InjectedDefHasher.GiveShortHashToDef(newThingDef, typeof(ThingDef));
-
-                            //reached
-
-                            Predicate<StatModifier> findMoveSpeed = delegate (StatModifier statMod)
+                            ThingDef newThingDef = new ThingDef();
+                            if (DefDatabase<ThingDef>.GetNamed("Zombie" + sourcePawnKindDef.race.defName, false) == null)
                             {
-                                if (statMod.stat.defName == "MoveSpeed")
+                                newThingDef.defName = "Zombie" + sourcePawnKindDef.race.defName;
+                                newThingDef.label = "zombie " + sourcePawnKindDef.race.defName;
+                                newThingDef.description = sourcePawnKindDef.race.description;
+
+                                newThingDef.thingClass = zombieThingDef.thingClass;
+                                newThingDef.category = ThingCategory.Pawn;
+                                newThingDef.selectable = true;
+                                newThingDef.tickerType = TickerType.Normal;
+                                newThingDef.altitudeLayer = AltitudeLayer.Pawn;
+                                newThingDef.useHitPoints = false;
+                                newThingDef.hasTooltip = true;
+                                newThingDef.soundImpactDefault = sourcePawnKindDef.race.soundImpactDefault;
+
+                                newThingDef.inspectorTabs = zombieThingDef.inspectorTabs;
+                                newThingDef.comps = zombieThingDef.comps;
+
+                                newThingDef.alwaysFlee = false;
+
+                                newThingDef.drawGUIOverlay = true;
+
+                                //int e = (int)(sourcePawnKindDef.race.shortHash);
+                                //ushort f = (ushort)(e + 7);
+                                //newThingDef.shortHash = f;
+                                InjectedDefHasher.GiveShortHashToDef(newThingDef, typeof(ThingDef));
+
+                                //reached
+
+                                Predicate<StatModifier> findMoveSpeed = delegate (StatModifier statMod)
                                 {
-                                    return true;
-                                }
-                                return false;
-                            };
+                                    if (statMod.stat.defName == "MoveSpeed")
+                                    {
+                                        return true;
+                                    }
+                                    return false;
+                                };
 
-                            Predicate<StatModifier> findLeatherAmount = delegate (StatModifier statMod)
-                            {
-                                if (statMod.stat.defName == "LeatherAmount")
+                                Predicate<StatModifier> findLeatherAmount = delegate (StatModifier statMod)
                                 {
-                                    return true;
-                                }
-                                return false;
-                            };
+                                    if (statMod.stat.defName == "LeatherAmount")
+                                    {
+                                        return true;
+                                    }
+                                    return false;
+                                };
 
-                            //reached
+                                //reached
 
-                            newThingDef.statBases = new List<StatModifier>();
+                                newThingDef.statBases = new List<StatModifier>();
 
-                            StatModifier newStat = new StatModifier();
-                            newStat.stat = StatDefOf.Flammability;
-                            newStat.value = 0.4f;
-                            newThingDef.statBases.Add(newStat);
+                                StatModifier newStat = new StatModifier();
+                                newStat.stat = StatDefOf.Flammability;
+                                newStat.value = 0.4f;
+                                newThingDef.statBases.Add(newStat);
 
-                            newStat = new StatModifier();
-                            newStat.stat = StatDefOf.PainShockThreshold;
-                            newStat.value = 70000f;
-                            newThingDef.statBases.Add(newStat);
+                                newStat = new StatModifier();
+                                newStat.stat = StatDefOf.PainShockThreshold;
+                                newStat.value = 70000f;
+                                newThingDef.statBases.Add(newStat);
 
-                            newStat = new StatModifier();
-                            newStat.stat = StatDefOf.LeatherAmount;
-                            newStat.value = sourcePawnKindDef.race.statBases.Find(findLeatherAmount).value;
-                            newThingDef.statBases.Add(newStat);
+                                newStat = new StatModifier();
+                                newStat.stat = StatDefOf.LeatherAmount;
+                                newStat.value = sourcePawnKindDef.race.statBases.Find(findLeatherAmount).value;
+                                newThingDef.statBases.Add(newStat);
 
-                            newStat = new StatModifier();
-                            newStat.stat = StatDefOf.PsychicSensitivity;
-                            newStat.value = 0f;
-                            newThingDef.statBases.Add(newStat);
+                                newStat = new StatModifier();
+                                newStat.stat = StatDefOf.PsychicSensitivity;
+                                newStat.value = 0f;
+                                newThingDef.statBases.Add(newStat);
 
-                            newStat = new StatModifier();
-                            newStat.stat = StatDefOf.ToxicSensitivity;
-                            newStat.value = 0f;
-                            newThingDef.statBases.Add(newStat);
+                                newStat = new StatModifier();
+                                newStat.stat = StatDefOf.ToxicSensitivity;
+                                newStat.value = 0f;
+                                newThingDef.statBases.Add(newStat);
 
-                            newStat = new StatModifier();
-                            newStat.stat = StatDefOf.MoveSpeed;
-                            newStat.value = sourcePawnKindDef.race.statBases.Find(findMoveSpeed).value * zombieSpeedMultiplier;
-                            newThingDef.statBases.Add(newStat);
+                                newStat = new StatModifier();
+                                newStat.stat = StatDefOf.MoveSpeed;
+                                newStat.value = sourcePawnKindDef.race.statBases.Find(findMoveSpeed).value * zombieSpeedMultiplier;
+                                newThingDef.statBases.Add(newStat);
 
-                            newStat = new StatModifier();
-                            newStat.stat = StatDefOf.MoveSpeed;
-                            zombieThingDef.statBases.Find(findMoveSpeed).value = 4.6f * zombieSpeedMultiplier;
+                                newStat = new StatModifier();
+                                newStat.stat = StatDefOf.MoveSpeed;
+                                zombieThingDef.statBases.Find(findMoveSpeed).value = 4.6f * zombieSpeedMultiplier;
 
 
-                            newThingDef.BaseMarketValue = sourcePawnKindDef.race.BaseMarketValue;
+                                newThingDef.BaseMarketValue = sourcePawnKindDef.race.BaseMarketValue;
 
-                            //reached
+                                //reached
 
-                            newThingDef.tools = new List<Tool>();
-                            int iTool = -1;
-                            foreach (Tool tool in sourcePawnKindDef.race.tools)
-                            {
-                                iTool++;
-
-                                Tool nTool = new Tool();
-
-                                nTool.capacities = new List<ToolCapacityDef>();
-                                if (tool.linkedBodyPartsGroup != null && tool.linkedBodyPartsGroup.defName == "Teeth")
+                                newThingDef.tools = new List<Tool>();
+                                int iTool = -1;
+                                foreach (Tool tool in sourcePawnKindDef.race.tools)
                                 {
-                                    nTool.capacities.Add(zBite);
+                                    iTool++;
+
+                                    Tool nTool = new Tool();
+
+                                    nTool.capacities = new List<ToolCapacityDef>();
+                                    if (tool.linkedBodyPartsGroup != null && tool.linkedBodyPartsGroup.defName == "Teeth")
+                                    {
+                                        nTool.capacities.Add(zBite);
+                                    }
+                                    else
+                                    {
+                                        nTool.capacities.Add(zScratch);
+                                    }
+
+                                    nTool.id = "" + iTool;
+
+                                    nTool.label = tool.label;
+                                    nTool.labelUsedInLogging = tool.labelUsedInLogging;
+                                    nTool.power = tool.power;
+                                    nTool.cooldownTime = tool.cooldownTime;
+                                    nTool.linkedBodyPartsGroup = tool.linkedBodyPartsGroup;
+                                    nTool.surpriseAttack = tool.surpriseAttack;
+                                    nTool.chanceFactor = tool.chanceFactor;
+
+                                    newThingDef.tools.Add(nTool);
                                 }
-                                else
+
+                                newThingDef.race = new RaceProperties();
+
+                                newThingDef.race.corpseDef = zombieThingDef.race.corpseDef;
+                                newThingDef.race.deathActionWorkerClass = zombieThingDef.race.deathActionWorkerClass;
+
+                                Color color = new Color(rbFactor, gFactor, rbFactor);
+                                newThingDef.race.meatColor = color;
+
+                                newThingDef.race.leatherDef = zombieThingDef.race.leatherDef;
+                                //newThingDef.race.leatherColor = color;
+                                //newThingDef.race.leatherLabel = "zombie" + sourcePawnKindDef.race.race.leatherLabel;
+                                newThingDef.race.useLeatherFrom = zombieThingDef;
+                                newThingDef.race.useMeatFrom = zombieThingDef;
+
+                                newThingDef.race.wildness = 1f;
+
+                                newThingDef.race.intelligence = zombieThingDef.race.intelligence;
+                                newThingDef.race.thinkTreeMain = zombieThingDef.race.thinkTreeMain;
+                                newThingDef.race.thinkTreeConstant = zombieThingDef.race.thinkTreeConstant;
+                                newThingDef.race.hasGenders = sourcePawnKindDef.race.race.hasGenders;
+                                newThingDef.race.nameCategory = zombieThingDef.race.nameCategory;
+                                newThingDef.race.manhunterOnDamageChance = zombieThingDef.race.manhunterOnDamageChance;
+                                newThingDef.race.manhunterOnTameFailChance = zombieThingDef.race.manhunterOnTameFailChance;
+                                newThingDef.race.nameOnNuzzleChance = zombieThingDef.race.nameOnNuzzleChance;
+                                newThingDef.race.hediffGiverSets = zombieThingDef.race.hediffGiverSets;
+
+                                newThingDef.race.body = sourcePawnKindDef.race.race.body;
+                                newThingDef.race.needsRest = false;
+                                newThingDef.race.baseBodySize = sourcePawnKindDef.race.race.baseBodySize;
+                                newThingDef.race.baseHungerRate = sourcePawnKindDef.race.race.baseHungerRate;
+                                newThingDef.race.baseHealthScale = sourcePawnKindDef.race.race.baseHealthScale;
+                                newThingDef.race.foodType = zombieThingDef.race.foodType;
+                                newThingDef.race.predator = zombieThingDef.race.predator;
+                                newThingDef.race.makesFootprints = sourcePawnKindDef.race.race.makesFootprints;
+                                //newThingDef.race.leatherInsulation = sourcePawnKindDef.race.race.leatherInsulation;
+
+                                newThingDef.race.lifeStageAges = new List<LifeStageAge>();
+                                for (int l = 0; l < sourcePawnKindDef.race.race.lifeStageAges.Count; l++)
                                 {
-                                    nTool.capacities.Add(zScratch);
+                                    if (sourcePawnKindDef.race.race.lifeStageAges[l].def.defName == "AnimalAdult")
+                                    {
+                                        newThingDef.race.lifeStageAges.Add(zombieThingDef.race.lifeStageAges[2]);
+                                    }
+                                    else
+                                    {
+                                        newThingDef.race.lifeStageAges.Add(sourcePawnKindDef.race.race.lifeStageAges[l]);
+                                    }
                                 }
-                                
-                                nTool.id = "" + iTool;
 
-                                nTool.label = tool.label;
-                                nTool.labelUsedInLogging = tool.labelUsedInLogging;
-                                nTool.power = tool.power;
-                                nTool.cooldownTime = tool.cooldownTime;
-                                nTool.linkedBodyPartsGroup = tool.linkedBodyPartsGroup;
-                                nTool.surpriseAttack = tool.surpriseAttack;
-                                nTool.chanceFactor = tool.chanceFactor;
+                                newThingDef.race.soundMeleeHitPawn = sourcePawnKindDef.race.race.soundMeleeHitPawn;
+                                newThingDef.race.soundMeleeHitBuilding = sourcePawnKindDef.race.race.soundMeleeHitBuilding;
+                                newThingDef.race.soundMeleeMiss = sourcePawnKindDef.race.race.soundMeleeMiss;
 
-                                newThingDef.tools.Add(nTool);
+                                newThingDef.race.ResolveReferencesSpecial();
+
+                                newThingDef.tradeTags = zombieThingDef.tradeTags;
+
+                                newThingDef.recipes = zombieThingDef.recipes;
+
+                                newThingDef.ResolveReferences();
+
+                                DefDatabase<ThingDef>.Add(newThingDef);
                             }
 
-                            newThingDef.race = new RaceProperties();
+                            //not reached
 
-                            newThingDef.race.corpseDef = zombieThingDef.race.corpseDef;
-                            newThingDef.race.deathActionWorkerClass = zombieThingDef.race.deathActionWorkerClass;
+                            PawnKindDef newKindDef = new PawnKindDef();
+                            //newKindDef = PawnKindDef.Named("Zombie");
 
-                            Color color = new Color(rbFactor, gFactor, rbFactor);
-                            newThingDef.race.meatColor = color;
+                            newKindDef.defName = "Zombie" + sourcePawnKindDef.defName;
+                            newKindDef.label = "zombie " + sourcePawnKindDef.label;
+                            newKindDef.race = newThingDef;
+                            //newKindDef.race = ThingDef.Named("Zombie");
 
-                            newThingDef.race.leatherDef = zombieThingDef.race.leatherDef;
-                            //newThingDef.race.leatherColor = color;
-                            //newThingDef.race.leatherLabel = "zombie" + sourcePawnKindDef.race.race.leatherLabel;
-                            newThingDef.race.useLeatherFrom = zombieThingDef;
-                            newThingDef.race.useMeatFrom = zombieThingDef;
+                            newKindDef.defaultFactionType = PawnKindDef.Named("Zombie").defaultFactionType;
+                            newKindDef.combatPower = 0;// sourcePawnKindDef.combatPower / 2;
+                            newKindDef.canArriveManhunter = false;
 
-                            newThingDef.race.wildness = 1f;
+                            //int s = (int)(sourcePawnKindDef.shortHash);
+                            //ushort z = (ushort)(s + 7);
+                            //newKindDef.shortHash = z;
+                            InjectedDefHasher.GiveShortHashToDef(newKindDef, typeof(PawnKindDef));
 
-                            newThingDef.race.intelligence = zombieThingDef.race.intelligence;
-                            newThingDef.race.thinkTreeMain = zombieThingDef.race.thinkTreeMain;
-                            newThingDef.race.thinkTreeConstant = zombieThingDef.race.thinkTreeConstant;
-                            newThingDef.race.hasGenders = sourcePawnKindDef.race.race.hasGenders;
-                            newThingDef.race.nameCategory = zombieThingDef.race.nameCategory;
-                            newThingDef.race.manhunterOnDamageChance = zombieThingDef.race.manhunterOnDamageChance;
-                            newThingDef.race.manhunterOnTameFailChance = zombieThingDef.race.manhunterOnTameFailChance;
-                            newThingDef.race.nameOnNuzzleChance = zombieThingDef.race.nameOnNuzzleChance;
-                            newThingDef.race.hediffGiverSets = zombieThingDef.race.hediffGiverSets;
+                            //newKindDef.lifeStages = PawnKindDef.Named("Zombie").lifeStages;
 
-                            newThingDef.race.body = sourcePawnKindDef.race.race.body;
-                            newThingDef.race.needsRest = false;
-                            newThingDef.race.baseBodySize = sourcePawnKindDef.race.race.baseBodySize;
-                            newThingDef.race.baseHungerRate = sourcePawnKindDef.race.race.baseHungerRate;
-                            newThingDef.race.baseHealthScale = sourcePawnKindDef.race.race.baseHealthScale;
-                            newThingDef.race.foodType = zombieThingDef.race.foodType;
-                            newThingDef.race.predator = zombieThingDef.race.predator;
-                            newThingDef.race.makesFootprints = sourcePawnKindDef.race.race.makesFootprints;
-                            //newThingDef.race.leatherInsulation = sourcePawnKindDef.race.race.leatherInsulation;
+                            newKindDef.lifeStages = new List<PawnKindLifeStage>();
 
-                            newThingDef.race.lifeStageAges = new List<LifeStageAge>();
-                            for(int l = 0; l < sourcePawnKindDef.race.race.lifeStageAges.Count; l++)
+                            //newKindDef.lifeStages = sourcePawnKindDef.lifeStages;
+                            for (int j = 0; j < sourcePawnKindDef.lifeStages.Count; j++)
                             {
-                                if(sourcePawnKindDef.race.race.lifeStageAges[l].def.defName == "AnimalAdult")
+                                newKindDef.lifeStages.Add(new PawnKindLifeStage());
+
+                                newKindDef.lifeStages[j].label = sourcePawnKindDef.lifeStages[j].label;
+                                newKindDef.lifeStages[j].labelPlural = sourcePawnKindDef.lifeStages[j].labelPlural;
+                                newKindDef.lifeStages[j].labelMale = sourcePawnKindDef.lifeStages[j].labelMale;
+                                newKindDef.lifeStages[j].labelMalePlural = sourcePawnKindDef.lifeStages[j].labelMalePlural;
+                                newKindDef.lifeStages[j].labelFemale = sourcePawnKindDef.lifeStages[j].labelFemale;
+                                newKindDef.lifeStages[j].labelFemalePlural = sourcePawnKindDef.lifeStages[j].labelFemalePlural;
+
+                                if (sourcePawnKindDef.lifeStages[j].bodyGraphicData != null)
                                 {
-                                    newThingDef.race.lifeStageAges.Add(zombieThingDef.race.lifeStageAges[2]);
+                                    newKindDef.lifeStages[j].bodyGraphicData = new GraphicData();
+                                    newKindDef.lifeStages[j].bodyGraphicData.CopyFrom(sourcePawnKindDef.lifeStages[j].bodyGraphicData);
+                                    newKindDef.lifeStages[j].bodyGraphicData.color = new Color(sourcePawnKindDef.lifeStages[j].bodyGraphicData.color.r * rbFactor, sourcePawnKindDef.lifeStages[j].bodyGraphicData.color.g * gFactor, sourcePawnKindDef.lifeStages[j].bodyGraphicData.color.b * rbFactor);
                                 }
-                                else
+
+                                if (sourcePawnKindDef.lifeStages[j].femaleGraphicData != null)
                                 {
-                                    newThingDef.race.lifeStageAges.Add(sourcePawnKindDef.race.race.lifeStageAges[l]);
+                                    newKindDef.lifeStages[j].femaleGraphicData = new GraphicData();
+                                    newKindDef.lifeStages[j].femaleGraphicData.CopyFrom(sourcePawnKindDef.lifeStages[j].femaleGraphicData);
+                                    newKindDef.lifeStages[j].femaleGraphicData.color = new Color(sourcePawnKindDef.lifeStages[j].femaleGraphicData.color.r * rbFactor, sourcePawnKindDef.lifeStages[j].femaleGraphicData.color.g * gFactor, sourcePawnKindDef.lifeStages[j].femaleGraphicData.color.b * rbFactor);
                                 }
+
+                                if (sourcePawnKindDef.lifeStages[j].dessicatedBodyGraphicData != null)
+                                {
+                                    newKindDef.lifeStages[j].dessicatedBodyGraphicData = new GraphicData();
+                                    newKindDef.lifeStages[j].dessicatedBodyGraphicData.CopyFrom(sourcePawnKindDef.lifeStages[j].dessicatedBodyGraphicData);
+                                }
+
+                                //newKindDef.lifeStages[j].ResolveReferences();
+
+                                //newKindDef.lifeStages.Add(n);
                             }
-
-                            newThingDef.race.soundMeleeHitPawn = sourcePawnKindDef.race.race.soundMeleeHitPawn;
-                            newThingDef.race.soundMeleeHitBuilding = sourcePawnKindDef.race.race.soundMeleeHitBuilding;
-                            newThingDef.race.soundMeleeMiss = sourcePawnKindDef.race.race.soundMeleeMiss;
-
-                            newThingDef.race.ResolveReferencesSpecial();
-
-                            newThingDef.tradeTags = zombieThingDef.tradeTags;
-
-                            newThingDef.recipes = zombieThingDef.recipes;
-
-                            newThingDef.ResolveReferences();
-
-                            DefDatabase<ThingDef>.Add(newThingDef);
+                            DefDatabase<PawnKindDef>.Add(newKindDef);
                         }
-
-                        //not reached
-
-                        PawnKindDef newKindDef = new PawnKindDef();
-                        //newKindDef = PawnKindDef.Named("Zombie");
-
-                        newKindDef.defName = "Zombie" + sourcePawnKindDef.defName;
-                        newKindDef.label = "zombie " + sourcePawnKindDef.label;
-                        newKindDef.race = newThingDef;
-                        //newKindDef.race = ThingDef.Named("Zombie");
-
-                        newKindDef.defaultFactionType = PawnKindDef.Named("Zombie").defaultFactionType;
-                        newKindDef.combatPower = 0;// sourcePawnKindDef.combatPower / 2;
-                        newKindDef.canArriveManhunter = false;
-
-                        //int s = (int)(sourcePawnKindDef.shortHash);
-                        //ushort z = (ushort)(s + 7);
-                        //newKindDef.shortHash = z;
-                        InjectedDefHasher.GiveShortHashToDef(newKindDef, typeof(PawnKindDef));
-
-                        //newKindDef.lifeStages = PawnKindDef.Named("Zombie").lifeStages;
-
-                        newKindDef.lifeStages = new List<PawnKindLifeStage>();
-
-                        //newKindDef.lifeStages = sourcePawnKindDef.lifeStages;
-                        for (int j = 0; j < sourcePawnKindDef.lifeStages.Count; j++)
-                        {
-                            newKindDef.lifeStages.Add(new PawnKindLifeStage());
-
-                            newKindDef.lifeStages[j].label = sourcePawnKindDef.lifeStages[j].label;
-                            newKindDef.lifeStages[j].labelPlural = sourcePawnKindDef.lifeStages[j].labelPlural;
-                            newKindDef.lifeStages[j].labelMale = sourcePawnKindDef.lifeStages[j].labelMale;
-                            newKindDef.lifeStages[j].labelMalePlural = sourcePawnKindDef.lifeStages[j].labelMalePlural;
-                            newKindDef.lifeStages[j].labelFemale = sourcePawnKindDef.lifeStages[j].labelFemale;
-                            newKindDef.lifeStages[j].labelFemalePlural = sourcePawnKindDef.lifeStages[j].labelFemalePlural;
-
-                            if (sourcePawnKindDef.lifeStages[j].bodyGraphicData != null)
-                            {
-                                newKindDef.lifeStages[j].bodyGraphicData = new GraphicData();
-                                newKindDef.lifeStages[j].bodyGraphicData.CopyFrom(sourcePawnKindDef.lifeStages[j].bodyGraphicData);
-                                newKindDef.lifeStages[j].bodyGraphicData.color = new Color(sourcePawnKindDef.lifeStages[j].bodyGraphicData.color.r * rbFactor, sourcePawnKindDef.lifeStages[j].bodyGraphicData.color.g * gFactor, sourcePawnKindDef.lifeStages[j].bodyGraphicData.color.b * rbFactor);
-                            }
-
-                            if (sourcePawnKindDef.lifeStages[j].femaleGraphicData != null)
-                            {
-                                newKindDef.lifeStages[j].femaleGraphicData = new GraphicData();
-                                newKindDef.lifeStages[j].femaleGraphicData.CopyFrom(sourcePawnKindDef.lifeStages[j].femaleGraphicData);
-                                newKindDef.lifeStages[j].femaleGraphicData.color = new Color(sourcePawnKindDef.lifeStages[j].femaleGraphicData.color.r * rbFactor, sourcePawnKindDef.lifeStages[j].femaleGraphicData.color.g * gFactor, sourcePawnKindDef.lifeStages[j].femaleGraphicData.color.b * rbFactor);
-                            }
-
-                            if (sourcePawnKindDef.lifeStages[j].dessicatedBodyGraphicData != null)
-                            {
-                                newKindDef.lifeStages[j].dessicatedBodyGraphicData = new GraphicData();
-                                newKindDef.lifeStages[j].dessicatedBodyGraphicData.CopyFrom(sourcePawnKindDef.lifeStages[j].dessicatedBodyGraphicData);
-                            }
-
-                            //newKindDef.lifeStages[j].ResolveReferences();
-
-                            //newKindDef.lifeStages.Add(n);
-                        }
-                        DefDatabase<PawnKindDef>.Add(newKindDef);
+                    }
+                    catch
+                    {
+                        base.Logger.Warning("Error while setting up Zombie for " + sourcePawnKindDef.defName + ".", new object[0]);
                     }
                 }
             }
