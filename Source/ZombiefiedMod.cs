@@ -126,8 +126,8 @@ namespace Zombiefied
             headlineZombieOptions.CustomDrawer = new SettingHandle.DrawCustomControl(predicate);
             //headlineZombieOptions.CustomDrawerHeight = 37f;
 
-            disableAnimalZombies = base.Settings.GetHandle<bool>("disableAnimalZombies", "       Disable animal Zombies", "Animals will not resurrect and no animal Zombies will wander in.", false, null, null);
-            disableZombiesAttackingAnimals = base.Settings.GetHandle<bool>("disableZombiesAttackingAnimals", "       Disable Zombies attacking animals", "Zombies will ignore animals.", false, null, null);
+            disableAnimalZombies = base.Settings.GetHandle<bool>("disableAnimalZombies", "       Disable animal zombies", "Animals will not resurrect and no animal zombies will wander in.", false, null, null);
+            disableZombiesAttackingAnimals = base.Settings.GetHandle<bool>("disableZombiesAttackingAnimals", "       Disable zombies attacking animals", "Zombies will ignore animals.", false, null, null);
             zombieSpeedMultiplier = base.Settings.GetHandle<float>("ZombieSpeedMultiplier", "       Zombie speed multiplier [RESTART]", "Zombie speed (in comparison to healthy) will be multiplied by this value.\n(0.03 -> Slowest, 3 -> Fastest)\n(Requires restart to work)", 0.23f, null, null);
             if(zombieSpeedMultiplier < 0.03f)
             {
@@ -138,14 +138,14 @@ namespace Zombiefied
                 zombieSpeedMultiplier.Value = 3f;
             }
 
-            zombieSoundReactionTimeInHours = base.Settings.GetHandle<int>("ZombieSoundReactionTimeInHours", "       Zombie sound memory time", "The amount of time Zombies will remember a sound's location.\n(in Hours, ingame time)", 5, null, null);
+            zombieSoundReactionTimeInHours = base.Settings.GetHandle<int>("ZombieSoundReactionTimeInHours", "       Zombie sound memory time", "The amount of time zombies will remember a sound's location.\n(in hours, ingame time)", 5, null, null);
 
             headlineZombieAmount = base.Settings.GetHandle<bool>("headlineAmounts", "\nAmount settings:", "Amount settings", false, null, null);
             headlineZombieAmount.CustomDrawer = new SettingHandle.DrawCustomControl(predicate);
             //headlineZombieAmount.CustomDrawerHeight = 37f;
 
             //easyMode = base.Settings.GetHandle<bool>("EasyMode", "Easy mode", "Keep in mind that you are not meant to kill all zombies at all times and losing is part of the game.", false, null, null);
-            zombieAmountSoftCap = base.Settings.GetHandle<int>("ZombieAmountSoftCap", "       Zombie amount soft cap", "The expected amount of Zombies per map.", 133, null, null);
+            zombieAmountSoftCap = base.Settings.GetHandle<int>("ZombieAmountSoftCap", "       Zombie amount soft cap", "The expected amount of zombies per map.", 133, null, null);
 
             zombieRaidAmountMultiplier = base.Settings.GetHandle<float>("ZombieRaidAmountMultiplier", "       Zombie raid size multiplier", "Zombie raid size will be multiplied by this value.\n(0.1 -> Easiest, 7 -> Hardest)", 1f, null, null);
             zombieRaidFrequencyMultiplier = base.Settings.GetHandle<float>("ZombieRaidFrequencyMultiplier", "       Zombie raid frequency multiplier", "Zombie raid frequency will be multiplied by this value.\n(0.1 -> Easiest, 7 -> Hardest)", 1f, null, null);
@@ -154,14 +154,14 @@ namespace Zombiefied
             headlineNotifications.CustomDrawer = new SettingHandle.DrawCustomControl(predicate);
             //headlineNotifications.CustomDrawerHeight = 37f;
 
-            zombieRaidNotifications = base.Settings.GetHandle<bool>("ZombieRaidNotifications", "       Zombie raid notifications", "Get a notification when Zombies wander in.", true, null, null);
-            zombieResurrectNotifications = base.Settings.GetHandle<bool>("ZombieResurrectNotifications", "       Zombie resurrect notifications", "Get a notification when a Zombie resurrects.", false, null, null);
+            zombieRaidNotifications = base.Settings.GetHandle<bool>("ZombieRaidNotifications", "       Zombie raid notifications", "Get a notification when zombies wander in.", true, null, null);
+            zombieResurrectNotifications = base.Settings.GetHandle<bool>("ZombieResurrectNotifications", "       Zombie resurrect notifications", "Get a notification when a zombie resurrects.", false, null, null);
 
             headlineDebug = base.Settings.GetHandle<bool>("headlineDebug", "\nDebug settings:", "Debug settings", false, null, null);
             headlineDebug.CustomDrawer = new SettingHandle.DrawCustomControl(predicate);
             //headlineDebug.CustomDrawerHeight = 37f;
 
-            debugRemoveZombies = base.Settings.GetHandle<bool>("DebugRemoveZombies", "       Debug remove Zombies [RELOAD]", "Enable this and reload to remove all Zombies on next load.", false, null, null);
+            debugRemoveZombies = base.Settings.GetHandle<bool>("DebugRemoveZombies", "       Debug remove zombies [RELOAD]", "Enable this and reload to remove all zombies on next load.", false, null, null);
 
             /*
             zombieSoundReactionTimeInHours.CustomDrawerHeight = 77;
@@ -263,7 +263,7 @@ namespace Zombiefied
             //int num = UnityEngine.Random.Range((int)((float)ZombiesDefOf.ZombiesSettings.MinRaidTicksBase * challengeModifier), (int)((float)ZombiesDefOf.ZombiesSettings.MaxRaidTicksBase * challengeModifier));
             int num = Rand.RangeSeeded((int)((float)7000 * challengeModifier), (int)((float)280000 * challengeModifier), Find.TickManager.TicksAbs + Find.World.ConstantRandSeed);
             //if (first && num < ZombiesDefOf.ZombiesSettings.MinTicksBeforeFirstRaid)
-            base.Logger.Message("next Zombieraid in " + num + " ticks.", new object[0]);
+            base.Logger.Message("next zombieraid in " + num + " ticks.", new object[0]);
             return num;
         }
 
@@ -276,7 +276,7 @@ namespace Zombiefied
 
                 int currentMapIndex = Rand.RangeSeeded(0, Find.Maps.Count, Find.TickManager.TicksAbs);
 
-                base.Logger.Message("setting up Zombieraid for map " + currentMapIndex + ".", new object[0]);
+                base.Logger.Message("setting up zombieraid for map " + currentMapIndex + ".", new object[0]);
 
                 if (currentMapIndex < zombieAmountsPerMap.Count && zombieAmountsPerMap[currentMapIndex] < zombieAmountSoftCap)
                 {
@@ -298,7 +298,7 @@ namespace Zombiefied
                 }
                 else
                 {
-                    base.Logger.Message("Zombieraid failed on map " + currentMapIndex + " because map invalid or more Zombies are already on the map than cap allows.", new object[0]);
+                    base.Logger.Message("Zombieraid failed on map " + currentMapIndex + " because map invalid or more zombies are already on the map than cap allows.", new object[0]);
                 }
             }
         }
@@ -431,7 +431,7 @@ namespace Zombiefied
 
                     zombieAmountsPerMap[m] = zombieAmount;
 
-                    log += "map " + m + " has " + noisyLocationsPerMap[m].Count + " noisy locations and " + zombieAmountsPerMap[m] + " Zombies.   ";
+                    log += "map " + m + " has " + noisyLocationsPerMap[m].Count + " noisy locations and " + zombieAmountsPerMap[m] + " zombies.   ";
                 }
                 base.Logger.Message(log, new object[0]);
             }        
@@ -480,31 +480,38 @@ namespace Zombiefied
         // Token: 0x0600001E RID: 30 RVA: 0x00002BBC File Offset: 0x00000DBC
         private void HandleReanimation()
         {
-            if (Find.TickManager.TicksAbs % 1337 == 0)
+            if (Find.TickManager.TicksAbs % 1777 == 7)
             {
                 foreach (Map map in Find.Maps)
                 {
-                    List<Thing> list = map.listerThings.ThingsInGroup(ThingRequestGroup.Corpse);
+                    //List<Thing> list = map.listerThings.ThingsInGroup(ThingRequestGroup.Corpse);
+                    List<Thing> list = map.listerThings.AllThings;
                     if (list != null)
                     {
                         for (int i = 0; i < list.Count; i++)
                         {
-                            Thing thing = list[i];
-                            Corpse corpse = (Corpse)thing;
-                            bool flag = false;
-                            foreach(Hediff hediff in corpse.InnerPawn.health.hediffSet.hediffs)
+                            Corpse corpse = list[i] as Corpse;
+                            if (corpse != null)
                             {
-                                if(hediff.def.defName.Equals("ZombieWoundInfection"))
+                                bool flag = false;
+                                foreach (Hediff hediff in corpse.InnerPawn.health.hediffSet.hediffs)
                                 {
-                                    flag = true;
+                                    if (hediff.def.defName.Equals("ZombieWoundInfection"))
+                                    {
+                                        flag = true;
+                                    }
                                 }
-                            }
-                            //bool flag = corpse.InnerPawn.health.hediffSet.hediffs.Any((Hediff hediff) => hediff.def == HediffDef.Named("ZombieWoundInfection"));
-                            if (flag && corpse.InnerPawn.health.hediffSet.GetBrain() != null && corpse.InnerPawn.RaceProps.IsFlesh && (!disableAnimalZombies || corpse.InnerPawn.RaceProps.intelligence > Intelligence.Animal))
-                            {
-                                if (Rand.RangeSeeded(0, 2, (Find.TickManager.TicksAbs + corpse.thingIDNumber)) == 1)
+                                if (flag && corpse.InnerPawn.health.hediffSet.GetBrain() != null && corpse.InnerPawn.RaceProps.IsFlesh && (!disableAnimalZombies || corpse.InnerPawn.RaceProps.intelligence > Intelligence.Animal))
                                 {
-                                    ReanimateDeath(corpse);
+                                    int ageToReanimate = 2500;
+                                    if (corpse.InnerPawn != null && corpse.InnerPawn.Faction != null && corpse.InnerPawn.Faction.IsPlayer)
+                                    {
+                                        ageToReanimate = 17500;
+                                    }
+                                    if (corpse.Age > ageToReanimate)
+                                    {
+                                        ReanimateDeath(corpse);
+                                    }
                                 }
                             }
                         }
@@ -519,6 +526,7 @@ namespace Zombiefied
         {
             //base.Logger.Message(corpse.InnerPawn.story.HeadGraphicPath, new object[0]);
             Pawn_Zombiefied zombiePawn = ZombiefiedMod.GenerateZombieFromSource(corpse.InnerPawn);
+            //Pawn zombiePawn = PawnGenerator.GeneratePawn(PawnKindDefOf.Alphabeaver, Faction.OfPlayer);
             IntVec3 position = corpse.Position;
             Building building = StoreUtility.StoringThing(corpse) as Building;
             Building_Storage building_Storage = (Building_Storage)building;
@@ -564,6 +572,13 @@ namespace Zombiefied
             }
 
             Pawn pawn = PawnGenerator.GeneratePawn(newKindDef);
+            Pawn_Zombiefied z = pawn as Pawn_Zombiefied;
+            if (z != null)
+            {
+                z.newGraphics(sourcePawn);
+                z.copyInjuries(sourcePawn);
+            }
+
 
             Faction zFaction = Faction.OfInsects;
             foreach (Faction faction in Find.FactionManager.AllFactionsListForReading)
@@ -577,7 +592,7 @@ namespace Zombiefied
 
             pawn.records = sourcePawn.records;
             pawn.gender = sourcePawn.gender;
-            pawn.needs.SetInitialLevels();
+            //pawn.needs.SetInitialLevels();
 
             if (sourcePawn.Faction != null && sourcePawn.Faction.IsPlayer)
             {                
@@ -596,15 +611,10 @@ namespace Zombiefied
             pawn.ageTracker.AgeBiologicalTicks = sourcePawn.ageTracker.AgeBiologicalTicks;
             pawn.ageTracker.BirthAbsTicks = sourcePawn.ageTracker.BirthAbsTicks;
             pawn.ageTracker.AgeChronologicalTicks = sourcePawn.ageTracker.AgeChronologicalTicks;
+            
+            
 
-            Pawn_Zombiefied z = pawn as Pawn_Zombiefied;
-            if (z != null)
-            {
-                z.newGraphics(sourcePawn);
-                z.copyInjuries(sourcePawn);
-            }
-
-            return pawn as Pawn_Zombiefied;
+            return z;
         }
 
         public void InitializeCustom()
@@ -680,6 +690,7 @@ namespace Zombiefied
             //Pawn pawntest;
             //pawntest.Map.listerThings.Add
 
+            bool first = true;
             List<PawnKindDef> listPawnKindDef = DefDatabase<PawnKindDef>.AllDefsListForReading;
             for (int i = 0; i < listPawnKindDef.Count; i++)
             {
@@ -763,6 +774,60 @@ namespace Zombiefied
                                     return false;
                                 };
 
+                                Predicate<StatModifier> findArmorRating_Sharp = delegate (StatModifier statMod)
+                                {
+                                    if (statMod.stat.defName == "ArmorRating_Sharp")
+                                    {
+                                        return true;
+                                    }
+                                    return false;
+                                };
+
+                                Predicate<StatModifier> findArmorRating_Blunt = delegate (StatModifier statMod)
+                                {
+                                    if (statMod.stat.defName == "ArmorRating_Blunt")
+                                    {
+                                        return true;
+                                    }
+                                    return false;
+                                };
+
+                                Predicate<StatModifier> findArmorRating_Heat = delegate (StatModifier statMod)
+                                {
+                                    if (statMod.stat.defName == "ArmorRating_Heat")
+                                    {
+                                        return true;
+                                    }
+                                    return false;
+                                };
+
+                                Predicate<StatModifier> findMeleeDodgeChance = delegate (StatModifier statMod)
+                                {
+                                    if (statMod.stat.defName == "MeleeDodgeChance")
+                                    {
+                                        return true;
+                                    }
+                                    return false;
+                                };
+
+                                Predicate<StatModifier> findMeleeCritChance = delegate (StatModifier statMod)
+                                {
+                                    if (statMod.stat.defName == "MeleeCritChance")
+                                    {
+                                        return true;
+                                    }
+                                    return false;
+                                };
+
+                                Predicate<StatModifier> findMeleeParryChance = delegate (StatModifier statMod)
+                                {
+                                    if (statMod.stat.defName == "MeleeParryChance")
+                                    {
+                                        return true;
+                                    }
+                                    return false;
+                                };
+
                                 //reached
 
                                 newThingDef.statBases = new List<StatModifier>();
@@ -782,6 +847,36 @@ namespace Zombiefied
                                 newStat.value = sourcePawnKindDef.race.statBases.Find(findLeatherAmount).value;
                                 newThingDef.statBases.Add(newStat);
 
+                                StatModifier statSharp = sourcePawnKindDef.race.statBases.Find(findArmorRating_Sharp);
+                                if (statSharp != null)
+                                {
+                                    newStat = new StatModifier();
+                                    newStat.stat = StatDefOf.ArmorRating_Sharp;
+                                    newStat.value = statSharp.value;
+                                    newThingDef.statBases.Add(newStat);
+                                }
+
+                                StatModifier statBlunt = sourcePawnKindDef.race.statBases.Find(findArmorRating_Blunt);
+                                if (statBlunt != null)
+                                {
+                                    newStat = new StatModifier();
+                                    newStat.stat = StatDefOf.ArmorRating_Blunt;
+                                    newStat.value = statBlunt.value;
+                                    newThingDef.statBases.Add(newStat);
+                                }
+
+                                /*
+                                StatModifier statHeat = sourcePawnKindDef.race.statBases.Find(findArmorRating_Heat);
+                                if (statHeat != null)
+                                {
+                                    newStat = new StatModifier();
+                                    newStat.stat = StatDefOf.ArmorRating_Heat;
+                                    newStat.value = statHeat.value;
+                                    newThingDef.statBases.Add(newStat);
+                                }
+                                */
+
+
                                 newStat = new StatModifier();
                                 newStat.stat = StatDefOf.PsychicSensitivity;
                                 newStat.value = 0f;
@@ -797,10 +892,47 @@ namespace Zombiefied
                                 newStat.value = sourcePawnKindDef.race.statBases.Find(findMoveSpeed).value * zombieSpeedMultiplier;
                                 newThingDef.statBases.Add(newStat);
 
-                                newStat = new StatModifier();
-                                newStat.stat = StatDefOf.MoveSpeed;
-                                zombieThingDef.statBases.Find(findMoveSpeed).value = 4.6f * zombieSpeedMultiplier;
+                                //setup standard zombie
+                                if(first)
+                                {
+                                    zombieThingDef.statBases.Find(findMoveSpeed).value = 4.6f * zombieSpeedMultiplier;
+                                }
+                                //setup standard zombie
 
+                                //CE SUPPORT
+                                StatModifier statCEDodge;
+                                statCEDodge = sourcePawnKindDef.race.statBases.Find(findMeleeDodgeChance);
+                                if(statCEDodge != null)
+                                {
+                                    //Log.Message("found CE for " + sourcePawnKindDef.defName);
+                                    newThingDef.statBases.Add(statCEDodge);
+                                    if (first)
+                                    {
+                                        zombieThingDef.statBases.Add(statCEDodge);
+                                    }
+                                }
+                                StatModifier statCECrit;
+                                statCECrit = sourcePawnKindDef.race.statBases.Find(findMeleeCritChance);
+                                if (statCECrit != null)
+                                {
+                                    newThingDef.statBases.Add(statCECrit);
+                                    if (first)
+                                    {
+                                        zombieThingDef.statBases.Add(statCECrit);
+                                    }
+                                }
+                                StatModifier statCEParry;
+                                statCEParry = sourcePawnKindDef.race.statBases.Find(findMeleeParryChance);
+                                if (statCEParry != null)
+                                {
+                                    newThingDef.statBases.Add(statCEParry);
+                                    if (first)
+                                    {
+                                        zombieThingDef.statBases.Add(statCEParry);
+                                    }
+                                }
+                                //CE SUPPORT
+                                first = false;
 
                                 newThingDef.BaseMarketValue = sourcePawnKindDef.race.BaseMarketValue;
 
@@ -965,11 +1097,11 @@ namespace Zombiefied
                     }
                     catch
                     {
-                        base.Logger.Warning("Error while setting up Zombie for " + sourcePawnKindDef.defName + ".", new object[0]);
+                        base.Logger.Warning("Error while setting up zombie for " + sourcePawnKindDef.defName + ".", new object[0]);
                     }
                 }
             }
-            base.Logger.Message("set up Zombies for " + count + " animals.", new object[0]);
+            base.Logger.Message("set up zombies for " + count + " animals.", new object[0]);
         }
     }
 }

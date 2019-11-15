@@ -23,7 +23,7 @@ namespace Zombiefied
         {
             BodyPartRecord temp = pawn.health.hediffSet.GetRandomNotMissingPart(dinfo.Def, dinfo.Height, BodyPartDepth.Outside);
 
-            if(i > 3 || pawn.health.Downed || (!temp.def.defName.ToUpper().Contains("TORSO") && !temp.def.defName.ToUpper().Contains("BODY") && !temp.def.defName.ToUpper().Contains("NECK") && !temp.def.defName.ToUpper().Contains("HEAD")))
+            if(i > 7 || pawn.health.Downed || (!temp.def.defName.ToUpper().Contains("TORSO") && !temp.def.defName.ToUpper().Contains("BODY") && !temp.def.defName.ToUpper().Contains("NECK") && !temp.def.defName.ToUpper().Contains("HEAD")))
             {
                 return temp;
             }

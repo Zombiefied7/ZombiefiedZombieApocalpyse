@@ -32,6 +32,7 @@ namespace Zombiefied
             if (__instance.pawn.AnimalOrWildMan() && dinfo.Instigator is Pawn_Zombiefied)
             {
                 __instance.mentalStateHandler.Notify_DamageTaken(dinfo);
+                /*
                 if (dinfo.Def.ExternalViolenceFor(__instance.pawn))
                 {
                     __instance.lastHarmTick = Find.TickManager.TicksGame;
@@ -40,12 +41,53 @@ namespace Zombiefied
                         __instance.lastDisturbanceTick = Find.TickManager.TicksGame;
                     }
                 }
+                */
                 return false;
             }
             return true;
         }
     }
 
+    [HarmonyPatch(typeof(StatExtension), nameof(StatExtension.GetStatValue))]
+    class StatPatch
+    {
+        static bool Prefix(ref Thing thing, ref StatDef stat, ref float __result)
+        {
+            Pawn_Zombiefied zomb = thing as Pawn_Zombiefied; 
+            if (zomb != null)
+            {
+                if(stat.defName.Equals("ArmorRating_Sharp"))
+                {
+                    if(zomb.armorRating_Sharp > 0f)
+                    {
+                        __result = zomb.armorRating_Sharp;
+                        return false;
+                    }                    
+                }
+
+                if (stat.defName.Equals("ArmorRating_Blunt"))
+                {
+                    if (zomb.armorRating_Blunt > 0f)
+                    {
+                        __result = zomb.armorRating_Blunt;
+                        return false;
+                    }
+                }
+
+                if (stat.defName.Equals("ArmorRating_Heat"))
+                {
+                    if (zomb.armorRating_Heat > 0f)
+                    {
+                        __result = zomb.armorRating_Heat;
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
+    }
+
+    /*
     [HarmonyPatch(typeof(Fire), "DoFireDamage")]
     class FirePatch
     {
@@ -58,4 +100,5 @@ namespace Zombiefied
             return true;
         }
     }
+    */
 }

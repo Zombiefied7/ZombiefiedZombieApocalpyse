@@ -15,9 +15,9 @@ namespace Zombiefied
         {
             float factor = ZombiefiedMod.ZombieRaidAmountMultiplier;
             parms.points = StorytellerUtility.DefaultThreatPointsNow(parms.target) * PointsFactor * factor;
-            if(parms.points > 4444f * ZombiefiedMod.ZombieRaidAmountMultiplier)
+            if (parms.points > 3333f * ZombiefiedMod.ZombieRaidAmountMultiplier)
             {
-                parms.points = 4444f * ZombiefiedMod.ZombieRaidAmountMultiplier;
+                parms.points = 3333f * ZombiefiedMod.ZombieRaidAmountMultiplier;
             }
         }
 
@@ -28,7 +28,7 @@ namespace Zombiefied
             {
                 return false;
             }
-            if(!f.def.humanlikeFaction)
+            if (!f.def.humanlikeFaction)
             {
                 return false;
             }
@@ -68,6 +68,7 @@ namespace Zombiefied
             return result;
         }
 
+
         // Token: 0x06000D17 RID: 3351 RVA: 0x00061114 File Offset: 0x0005F514
         protected override bool TryExecuteWorker(IncidentParms parms)
         {
@@ -85,11 +86,11 @@ namespace Zombiefied
             {
                 return false;
             }
-            
+
             PawnGroupKindDef combat = PawnGroupKindDefOf.Combat;
             PawnGroupMakerParms defaultPawnGroupMakerParms = IncidentParmsUtility.GetDefaultPawnGroupMakerParms(combat, parms, false);
 
-            List<Pawn> list = PawnGroupMakerUtility.GeneratePawns(defaultPawnGroupMakerParms, true).ToList<Pawn>();   
+            List<Pawn> list = PawnGroupMakerUtility.GeneratePawns(defaultPawnGroupMakerParms, true).ToList<Pawn>();
 
             if (list.Count < 1)
             {
@@ -123,19 +124,19 @@ namespace Zombiefied
                 IntVec3 loc = CellFinder.RandomClosewalkCellNear(intVec, map, 10, null);
                 pawn.SetFactionDirect(zFaction);
                 pawn.apparel.DestroyAll();
-                Pawn_Zombiefied zomb = (Pawn_Zombiefied)GenSpawn.Spawn(pawn, loc, map, rot);    
-                if(zomb != null)
+                Pawn_Zombiefied zomb = (Pawn_Zombiefied)GenSpawn.Spawn(pawn, loc, map, rot);
+                if (zomb != null)
                 {
                     zomb.RemoveApparel();
                 }
             }
 
-            if(ZombiefiedMod.zombieRaidNotifications)
+            if (ZombiefiedMod.zombieRaidNotifications)
             {
-                Find.LetterStack.ReceiveLetter("Zombies", "Some Zombies walked into your territory. You might want to deal with them before they deal with you."
+                Find.LetterStack.ReceiveLetter("Zombies", "Some zombies walked into your territory. You might want to deal with them before they deal with you."
                 , LetterDefOf.NeutralEvent, list[0], null);
                 Find.TickManager.slower.SignalForceNormalSpeedShort();
-            }                   
+            }
             LessonAutoActivator.TeachOpportunity(ConceptDefOf.ForbiddingDoors, OpportunityType.Critical);
             LessonAutoActivator.TeachOpportunity(ConceptDefOf.AllowedAreas, OpportunityType.Important);
             return true;

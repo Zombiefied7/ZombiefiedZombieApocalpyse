@@ -746,7 +746,7 @@ namespace Zombiefied
         {
             for (int i = 0; i < 30; i++)
             {
-                result = root + IntVec3.FromVector3(Vector3Utility.HorizontalVectorFromAngle((float)Rand.Range(0, 360)) * dist);
+                result = root + IntVec3.FromVector3(Vector3Utility.HorizontalVectorFromAngle((float)Rand.RangeSeeded(0, 360, Find.TickManager.TicksAbs + pawn.thingIDNumber)) * dist);
                 if (result.Walkable(pawn.Map) && result.DistanceToSquared(pawn.Position) < result.DistanceToSquared(root) && GenSight.LineOfSight(root, result, pawn.Map, true, null, 0, 0))
                 {
                     return true;

@@ -15,10 +15,13 @@ namespace Zombiefied
             {
                 if (ZombiefiedMod.zombieAmountsPerMap[pawn.Map.Index] > ZombiefiedMod.zombieAmountSoftCap + 7)
                 {
-                    if (Rand.RangeSeeded(0, 333, (Find.TickManager.TicksAbs + pawn.thingIDNumber)) == 7)
+                    if(!(pawn.Name is NameSingle))
                     {
-                        return true;
-                    }
+                        if (Rand.RangeSeeded(0, (int)(333 * pawn.BodySize), (Find.TickManager.TicksAbs + pawn.thingIDNumber)) == 7)
+                        {
+                            return true;
+                        }
+                    }                  
                 }
             }       
             return false;

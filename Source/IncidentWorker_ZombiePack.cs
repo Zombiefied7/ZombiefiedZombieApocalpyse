@@ -84,7 +84,7 @@ namespace Zombiefied
             }
             if (ZombiefiedMod.zombieRaidNotifications)
             {
-                Find.LetterStack.ReceiveLetter("Zombies", "Some Zombies walked into your territory. You might want to deal with them before they deal with you."
+                Find.LetterStack.ReceiveLetter("Zombies", "Some zombies walked into your territory. You might want to deal with them before they deal with you."
                 , LetterDefOf.NeutralEvent, reference , null);
                 Find.TickManager.slower.SignalForceNormalSpeedShort();
             }

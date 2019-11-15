@@ -228,15 +228,21 @@ namespace Zombiefied
                 {
                     if (predator != pawn2)
                     {
-                        if (IsAcceptableWanderFor(predator, pawn2, 10f))
+                        Pawn_Zombiefied pawnZ2 = pawn2 as Pawn_Zombiefied;
+                        if (pawnZ2 != null)
                         {
-                            Pawn_Zombiefied pawnZ2 = pawn2 as Pawn_Zombiefied;
-                            if (pawnZ2 != null)
+                            if (IsAcceptableWanderFor(predator, pawn2, 10f))
                             {
+
                                 float score = 0f;
-                                if ((pawn2.CurJob != null && pawn2.CurJob.def.Equals(JobDefOf.AttackMelee)) || pawnZ2.hunting)
-                                {
+                                if (pawn2.CurJob != null && pawn2.CurJob.def.Equals(ZombiefiedMod.zombieHunt))
+                                {                                   
                                     score += 17f;
+                                    hunting = true;
+                                }
+                                if (pawnZ2.hunting)
+                                {
+                                    score += 13f;
                                 }
                                 if (Rand.RangeSeeded(0f, 1f, Find.TickManager.TicksAbs) > 0.5f)
                                 {
@@ -248,11 +254,24 @@ namespace Zombiefied
                                 if (pawn == null || score > num)
                                 {
                                     pawn = pawn2;
-
-                                    hunting = pawnZ2.hunting;
                                     num = score;
                                 }
                             }
+                        }
+                    }
+                }
+                if (allPawnsSpawned.Count > 77)
+                {
+                    i++;
+                    //skip every other pawn if theres a lot
+                    if (allPawnsSpawned.Count > 133)
+                    {
+                        i++;
+                        //skip 2 pawns if theres a lot
+                        if (allPawnsSpawned.Count > 233)
+                        {
+                            i++;
+                            //skip 3 pawns if theres a lot
                         }
                     }
                 }
@@ -267,10 +286,10 @@ namespace Zombiefied
 
         public bool IsAcceptableWanderFor(Pawn predator, Pawn prey, float radius)
         {
-            if (prey as Pawn_Zombiefied == null)
-            {
-                return false;
-            }
+            //if (prey as Pawn_Zombiefied == null)
+            //{
+            //    return false;
+            //}
             if (!predator.CanReach(prey, PathEndMode.OnCell, Danger.Deadly, false, TraverseMode.ByPawn))
             {
                 return false;

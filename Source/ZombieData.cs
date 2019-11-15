@@ -21,6 +21,10 @@ namespace Zombiefied
             
             this.hairGraphicPath = "Things/Pawn/Humanlike/Hairs/Bob";
             this.crownType = CrownType.Average;
+
+            this.wornApparelDefs = new List<ThingDef>();
+            this.wornApparelColors = new List<Color>();
+
         }
 
         // Token: 0x0600006B RID: 107 RVA: 0x00004630 File Offset: 0x00002830
@@ -32,23 +36,40 @@ namespace Zombiefied
         }
 
         // Token: 0x0600006C RID: 108 RVA: 0x00004648 File Offset: 0x00002848
-        public ZombieData(Pawn pawn, string shaderCutoutPath)
+        public ZombieData(Pawn pawn)
         {
             this.bodyType = pawn.story.bodyType;
-            this.headGraphicPath = pawn.story.HeadGraphicPath;
-            //this.headGraphicPath = "Things/Zabrak/Heads/Female_Average_Normal";
+
+            if(pawn.Corpse == null)
+            {
+                this.headGraphicPath = pawn.story.HeadGraphicPath;
+            }
+            else
+            {
+                string reflectedPath = pawn.story.GetFieldValue<string>("headGraphicPath");
+                //Log.Message("++" + reflectedPath + "++");
+                if (reflectedPath != null && reflectedPath.Length > 7)
+                {
+                    this.headGraphicPath = reflectedPath;
+                }
+                else
+                {
+                    this.headGraphicPath = "Things/Pawn/Humanlike/Heads/None_Average_Skull";
+                }
+            }        
+
             this.hairGraphicPath = pawn.story.hairDef.texPath;
             this.crownType = pawn.story.crownType;
+
             this.color = new Color(pawn.story.SkinColor.r * 0.5f, pawn.story.SkinColor.g * 0.7f, pawn.story.SkinColor.b * 0.5f);
             this.hairColor = pawn.story.hairColor;
-            this.shaderCutoutPath = shaderCutoutPath;
+            this.shaderCutoutPath = "Map/Cutout";
             this.wornApparelDefs = pawn.apparel.WornApparel.ConvertAll<ThingDef>((Apparel ap) => ap.def);
-            wornApparelColors = new List<Color>();
+            this.wornApparelColors = new List<Color>();
             foreach(Apparel worn in pawn.apparel.WornApparel)
             {
-                wornApparelColors.Add(worn.DrawColor);
+                this.wornApparelColors.Add(worn.DrawColor);
             }
-            //this.wornApparel = pawn.apparel.WornApparel;
         }
 
         // Token: 0x0600006D RID: 109 RVA: 0x000046E8 File Offset: 0x000028E8
@@ -63,7 +84,6 @@ namespace Zombiefied
             this.shaderCutoutPath = shaderCutoutPath;
             //this.wornApparelDefs = new List<ThingDef>(source.wornApparelDefs);
         }
-
 
         /*
         // Token: 0x0600006E RID: 110 RVA: 0x0000474C File Offset: 0x0000294C

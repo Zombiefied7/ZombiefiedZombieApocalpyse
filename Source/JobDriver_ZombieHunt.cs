@@ -60,8 +60,8 @@ namespace Zombiefied
                 if (thing != null)
                 {
                     this.job.targetA = thing;
-                    this.job.maxNumMeleeAttacks = Rand.RangeInclusive(2, 5);
-                    this.job.expiryInterval = Rand.Range(2000, 4000);
+                    this.job.maxNumMeleeAttacks = Rand.RangeSeeded(2, 7, Find.TickManager.TicksAbs + pawn.thingIDNumber);
+                    this.job.expiryInterval = Rand.RangeSeeded(2000, 4000, Find.TickManager.TicksAbs + pawn.thingIDNumber);
                     return;
                 }
             }

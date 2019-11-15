@@ -54,6 +54,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ReflectionClass.cs" />
     <Compile Include="ZombiefiedPatches.cs" />
     <Compile Include="IncidentWorker_ZombieHorde.cs" />
     <Compile Include="IncidentWorker_ZombiePack.cs" />

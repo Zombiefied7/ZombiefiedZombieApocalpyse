@@ -14,14 +14,22 @@ namespace Zombiefied
         public bool attracted = false;
         public bool fired = false;
 
+        public float armorRating_Sharp = 0f;
+        public float armorRating_Blunt = 0f;
+        public float armorRating_Heat = 0f;
+
         public Pawn_Zombiefied() : base()
         {
+
         }
 
         public override void ExposeData()
         {
             base.ExposeData();
             Scribe_Deep.Look<ZombieData>(ref this.dataZ, "zombieData", new object[0]);
+            Scribe_Values.Look<float>(ref this.armorRating_Sharp, "armorRating_Sharp");
+            Scribe_Values.Look<float>(ref this.armorRating_Blunt, "armorRating_Blunt");
+            Scribe_Values.Look<float>(ref this.armorRating_Heat, "armorRating_Heat");
         }
 
         public void newGraphics(ZombieData data)
@@ -33,8 +41,7 @@ namespace Zombiefied
         {
             if (pawn.RaceProps.Humanlike)
             {
-                GenerateAgeFromSource(pawn, this);
-                dataZ = new ZombieData(pawn, "Map/Cutout");
+                dataZ = new ZombieData(pawn);
 
                 newGraphics(dataZ);
             }
@@ -42,6 +49,7 @@ namespace Zombiefied
 
         public void newGraphics()
         {
+            
             if (dataZ != null)
             {
                 newGraphics(dataZ);
@@ -68,6 +76,25 @@ namespace Zombiefied
                 newGraphics(human);
             }
         }
+
+        public override void DrawAt(Vector3 drawLoc, bool flip = false)
+        {
+            if (def.defName != "Zombie")
+            {
+                base.DrawAt(drawLoc, flip);
+            }
+            else if (drawerZ != null)
+            {
+                this.drawerZ.DrawAt(drawLoc);
+            }
+            else
+            {
+                newGraphics();
+            }
+        }
+
+        public ZombieData dataZ;
+        public Pawn_DrawTracker_Zombiefied drawerZ;
 
         public void copyInjuries(Pawn sourcePawn)
         {
@@ -128,56 +155,58 @@ namespace Zombiefied
                     }
                 }
             }
+
+            health.AddHediff(HediffDef.Named("Zombiefied"));
             RemoveApparel();
+
+            armorRating_Sharp = TryDrawOverallArmor(sourcePawn, StatDefOf.ArmorRating_Sharp);
+            armorRating_Blunt = TryDrawOverallArmor(sourcePawn, StatDefOf.ArmorRating_Blunt);
+            //armorRating_Heat = TryDrawOverallArmor(sourcePawn, StatDefOf.ArmorRating_Heat);
+        }
+
+        private float TryDrawOverallArmor(Pawn sourcePawn, StatDef stat)
+        {
+            float num = 0f;
+            float num2 = Mathf.Clamp01(sourcePawn.GetStatValue(stat, true) / 2f);
+            List<BodyPartRecord> allParts = sourcePawn.RaceProps.body.AllParts;
+            List<Apparel> list = (sourcePawn.apparel == null) ? null : sourcePawn.apparel.WornApparel;
+            for (int i = 0; i < allParts.Count; i++)
+            {
+                float num3 = 1f - num2;
+                if (list != null)
+                {
+                    for (int j = 0; j < list.Count; j++)
+                    {
+                        if (list[j].def.apparel.CoversBodyPart(allParts[i]))
+                        {
+                            float num4 = Mathf.Clamp01(list[j].GetStatValue(stat, true) / 2f);
+                            num3 *= 1f - num4;
+                        }
+                    }
+                }
+                num += allParts[i].coverageAbs * (1f - num3);
+            }
+            num = Mathf.Clamp(num * 2f, 0f, 2f);
+            return num;
         }
 
         public void RemoveApparel()
-        {
-            health.AddHediff(HediffDef.Named("Zombiefied"));
-            //remove apparel
+        {     
             if (apparel != null)
             {
                 apparel.DestroyAll();
             }
         }
 
-        public override void DrawAt(Vector3 drawLoc, bool flip = false)
-        {
-            if (def.defName != "Zombie")
-            {
-                base.DrawAt(drawLoc, flip);
-            }
-            else if (drawerZ != null)
-            {
-                this.drawerZ.DrawAt(drawLoc);
-                //this.renderer.Render(graphics, drawLoc, Quaternion.identity, true, base.Rotation, base.Rotation, RotDrawMode.Fresh, false, false, 1f);
-            }
-            else
-            {
-                newGraphics();
-            }
-        }
-
-        public ZombieData dataZ;
-        public Pawn_DrawTracker_Zombiefied drawerZ;
-
-        private static void GenerateAgeFromSource(Pawn sourcePawn, Pawn pawn)
-        {
-            pawn.ageTracker.AgeBiologicalTicks = sourcePawn.ageTracker.AgeBiologicalTicks;
-            pawn.ageTracker.BirthAbsTicks = sourcePawn.ageTracker.BirthAbsTicks;
-            pawn.ageTracker.AgeChronologicalTicks = sourcePawn.ageTracker.AgeChronologicalTicks;
-        }
-
-
         //Tick + TickRare overrides for better performance
         public override void TickRare()
         {
-            //if (Find.TickManager.TicksGame + thingIDNumber % 7777 == 0)
+            //if (Find.TickManager.TicksGame + thingIDNumber % 77777 == 0)
             //{
             //    base.TickRare();
             //}
             //else
-            //{
+            {
                 if (AllComps != null)
                 {
                     int i = 0;
@@ -206,17 +235,17 @@ namespace Zombiefied
                 //{
                 //    GenTemperature.PushHeat(this, 0.3f * this.BodySize * 4.16666651f * ((!this.def.race.Humanlike) ? 0.6f : 1f));
                 //}
-            //}
+            }
         }
 
         public override void Tick()
         {
-            //if (Find.TickManager.TicksGame + thingIDNumber % 7777 == 0)
+            //if (Find.TickManager.TicksGame + thingIDNumber % 77777 == 0)
             //{
             //    base.Tick();
             //}
             //else
-            //{
+            {
                 if (AllComps != null)
                 {
                     int i = 0;
@@ -229,7 +258,7 @@ namespace Zombiefied
                 }
                 //base.Tick();
 
-                if (Find.TickManager.TicksGame % 250 == 0)
+                if (Find.TickManager.TicksGame + thingIDNumber % 250 == 0)
                 {
                     this.TickRare();
                 }
@@ -304,7 +333,7 @@ namespace Zombiefied
                     this.ageTracker.AgeTick();
                     this.records.RecordsTick();
                 }
-            //}
+            }
         }
     }
 }
