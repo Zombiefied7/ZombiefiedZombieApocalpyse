@@ -76,7 +76,7 @@ namespace Zombiefied
                             zWrongFactionCount++;
                             ((Pawn)thing).SetFaction(zFaction);
                         }
-                        ((Pawn_Zombiefied)thing).RemoveApparel();
+                        ((Pawn_Zombiefied)thing).FixZombie();
                     }
                 }
             }

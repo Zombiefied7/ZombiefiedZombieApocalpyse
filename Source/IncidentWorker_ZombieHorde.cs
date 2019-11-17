@@ -127,7 +127,7 @@ namespace Zombiefied
                 Pawn_Zombiefied zomb = (Pawn_Zombiefied)GenSpawn.Spawn(pawn, loc, map, rot);
                 if (zomb != null)
                 {
-                    zomb.RemoveApparel();
+                    zomb.FixZombie();
                 }
             }
 

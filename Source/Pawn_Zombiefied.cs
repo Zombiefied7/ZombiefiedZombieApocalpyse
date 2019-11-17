@@ -155,9 +155,8 @@ namespace Zombiefied
                     }
                 }
             }
-
-            health.AddHediff(HediffDef.Named("Zombiefied"));
-            RemoveApparel();
+           
+            FixZombie();
 
             armorRating_Sharp = TryDrawOverallArmor(sourcePawn, StatDefOf.ArmorRating_Sharp);
             armorRating_Blunt = TryDrawOverallArmor(sourcePawn, StatDefOf.ArmorRating_Blunt);
@@ -190,8 +189,9 @@ namespace Zombiefied
             return num;
         }
 
-        public void RemoveApparel()
-        {     
+        public void FixZombie()
+        {
+            health.AddHediff(HediffDef.Named("Zombiefied"));
             if (apparel != null)
             {
                 apparel.DestroyAll();
