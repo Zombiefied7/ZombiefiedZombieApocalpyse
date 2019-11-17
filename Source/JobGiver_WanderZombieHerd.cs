@@ -43,6 +43,8 @@ namespace Zombiefied
                 IntVec3 thing2 = ZombiefiedMod.BestNoisyLocation(pawn);
                 if (thing2 != IntVec3.Invalid)
                 {
+                    ((Pawn_Zombiefied)pawn).attracted = true;
+
                     bool found = false;
                     using (PawnPath pawnPath = pawn.Map.pathFinder.FindPath(pawn.Position, thing2, TraverseParms.For(pawn, Danger.Deadly, TraverseMode.PassDoors, false), PathEndMode.OnCell))
                     {
@@ -70,7 +72,7 @@ namespace Zombiefied
                             {
                                 randomCell = pawnPath.NodesReversed[pawnPath.NodesReversed.Count - wanderLength];
 
-                                ((Pawn_Zombiefied)pawn).attracted = true;
+                                
                                 return new Job(ZombiefiedMod.zombieMove, randomCell)
                                 {
                                     //expiryInterval = 777
@@ -115,39 +117,21 @@ namespace Zombiefied
                             }
                         }
                     }
-
-                    /*
-                    PawnPath path = pawn.Map.pathFinder.FindPath(pawn.Position, thing2, TraverseParms.For(pawn, Danger.Deadly, TraverseMode.PassDoors, false), PathEndMode.OnCell);
-                    if (path.Found)
-                    {
-                        IntVec3 loc;
-                        IntVec3 randomCell;
-                        if (path.TryFindLastCellBeforeBlockingDoor(pawn, out loc))
-                        {
-                            path.Dispose();
-                            path = pawn.Map.pathFinder.FindPath(pawn.Position, loc, TraverseParms.For(pawn, Danger.Deadly, TraverseMode.PassDoors, false), PathEndMode.OnCell);
-                        }
-
-                        int maxLength = Rand.RangeSeeded(12, 17, Find.TickManager.TicksAbs + pawn.thingIDNumber);
-                        if (path.NodesReversed.Count > maxLength)
-                        {
-                            randomCell = path.NodesReversed[path.NodesReversed.Count - maxLength];
-                            path.Dispose();
-                            ((Pawn_Zombiefied)pawn).attracted = true;
-                            return new Job(ZombiefiedMod.zombieMove, randomCell)
-                            {
-                                //expiryInterval = 777
-                            };
-                        }
-                        else
-                        {
-                            randomCell = CellFinder.RandomClosewalkCellNear(path.LastNode, pawn.Map, 4);
-                        }
-                    }     
-                    */
                 }
             }
-            ((Pawn_Zombiefied)pawn).attracted = false;
+            else
+            {
+
+                ((Pawn_Zombiefied)pawn).attracted = false;
+                IntVec3 exactWanderDestAttracted = RCellFinder.RandomWanderDestFor(pawn, pawn.Position, 4, this.wanderDestValidator, Danger.Deadly);
+                if (exactWanderDestAttracted.IsValid)
+                {
+                    Job jobAttracted = new Job(ZombiefiedMod.zombieMove, exactWanderDestAttracted);
+                    pawn.Map.pawnDestinationReservationManager.Reserve(pawn, jobAttracted, exactWanderDestAttracted);
+                    jobAttracted.locomotionUrgency = this.locomotionUrgency;
+                    return jobAttracted;
+                }
+            }
 
             if (!((Pawn_Zombiefied)pawn).fired)
             {

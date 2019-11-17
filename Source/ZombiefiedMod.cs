@@ -559,6 +559,7 @@ namespace Zombiefied
                 }
             }
             zombiePawn.SetFactionDirect(zFaction);
+            zombiePawn.FixZombie();
 
             return zombiePawn;
         }
