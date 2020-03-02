@@ -30,7 +30,6 @@
 	<colorSpectrum>
       <li>(0.5, 0.7, 0.5)</li>
     </colorSpectrum>
-    <homeIconPath>World/WorldObjects/DefaultFactionBase</homeIconPath>
     <allowedArrivalTemperatureRange>
       <min>0</min>
       <max>45</max>

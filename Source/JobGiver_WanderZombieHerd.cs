@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using RimWorld;
+using UnityEngine;
 using Verse;
 using Verse.AI;
 
@@ -17,7 +18,7 @@ namespace Zombiefied
         {
             this.maxDanger = Danger.Deadly;
             this.priority = 77777777777777f;
-            this.wanderRadius = 5f;
+            this.wanderRadius = 6f;
             //this.ticksBetweenWandersRange = new IntRange(125, 200);
         }
 
@@ -34,7 +35,7 @@ namespace Zombiefied
                 //pawn.mindState.canFleeIndividual = false;
                 return new Job(JobDefOf.Wait)
                 {
-                    expiryInterval = 77
+                    expiryInterval = 33
                 };
             }
 
@@ -127,7 +128,7 @@ namespace Zombiefied
                 if (exactWanderDestAttracted.IsValid)
                 {
                     Job jobAttracted = new Job(ZombiefiedMod.zombieMove, exactWanderDestAttracted);
-                    pawn.Map.pawnDestinationReservationManager.Reserve(pawn, jobAttracted, exactWanderDestAttracted);
+                    //pawn.Map.pawnDestinationReservationManager.Reserve(pawn, jobAttracted, exactWanderDestAttracted);
                     jobAttracted.locomotionUrgency = this.locomotionUrgency;
                     return jobAttracted;
                 }
@@ -161,7 +162,7 @@ namespace Zombiefied
                 return null;
             }
             Job job = new Job(ZombiefiedMod.zombieMove, exactWanderDest);
-            pawn.Map.pawnDestinationReservationManager.Reserve(pawn, job, exactWanderDest);
+            //pawn.Map.pawnDestinationReservationManager.Reserve(pawn, job, exactWanderDest);
             job.locomotionUrgency = this.locomotionUrgency;
             return job;
         }
@@ -184,7 +185,7 @@ namespace Zombiefied
         // Token: 0x0600377B RID: 14203 RVA: 0x00198374 File Offset: 0x00196774
         protected override IntVec3 GetWanderRoot(Pawn pawn)
         {
-            Pawn pawn2 = BestPawnToWander(pawn);
+            Pawn pawn2 = BestPawnToWander(pawn as Pawn_Zombiefied);
             if (pawn2 != null)
             {
                 return pawn2.Position;
@@ -192,98 +193,61 @@ namespace Zombiefied
             return pawn.Position;
         }
 
-        private Pawn BestPawnToWander(Pawn predator)
+        private Pawn BestPawnToWander(Pawn_Zombiefied pawn)
         {
-            if (predator.Map == null)
+            if (pawn.Map == null)
             {
                 return null;
             }
 
-            List<Pawn> allPawnsSpawned = predator.Map.mapPawns.AllPawnsSpawned;
-            Pawn pawn = null;
+            List<Pawn> allPawnsSpawned = pawn.Map.mapPawns.AllPawnsSpawned;
+            //List<Thing> allThingsRegion = pawn.GetRegion().ListerThings.AllThings;
 
+            Pawn pawnToReturn = null;
             float num = 0f;
-            bool hunting = false;
+
+            pawn.distanceToEdge = pawn.Position.DistanceToEdge(pawn.Map);
+            bool closeToEdge = pawn.distanceToEdge < Rand.RangeSeeded(17, 57, Find.TickManager.TicksAbs + pawn.thingIDNumber);
 
             for (int i = 0; i < allPawnsSpawned.Count; i++)
+            //for (int i = 0; i < allThingsRegion.Count; i++)
             {
-                Pawn pawn2 = allPawnsSpawned[i];
-                if (pawn2 != null)
+                Pawn_Zombiefied pawn2 = allPawnsSpawned[i] as Pawn_Zombiefied;
+                if (pawn2 != null && pawn != pawn2)
                 {
-                    if (predator != pawn2)
+                    float score = GetPreyScoreFor(pawn, pawn2);
+                    if (score > -37f)
                     {
-                        Pawn_Zombiefied pawnZ2 = pawn2 as Pawn_Zombiefied;
-                        if (pawnZ2 != null)
+                        if (pawn2.CurJob != null && pawn2.CurJob.def.Equals(ZombiefiedMod.zombieHunt))
                         {
-                            if (IsAcceptableWanderFor(predator, pawn2, 10f))
-                            {
-
-                                float score = 0f;
-                                if (pawn2.CurJob != null && pawn2.CurJob.def.Equals(ZombiefiedMod.zombieHunt))
-                                {                                   
-                                    score += 17f;
-                                    hunting = true;
-                                }
-                                if (pawnZ2.hunting)
-                                {
-                                    score += 13f;
-                                }
-                                if (Rand.RangeSeeded(0f, 1f, Find.TickManager.TicksAbs) > 0.5f)
-                                {
-                                    score += 7f;
-                                }
-                                float lengthHorizontal = (predator.Position - pawn2.Position).LengthHorizontal;
-                                score -= lengthHorizontal;
-
-                                if (pawn == null || score > num)
-                                {
-                                    pawn = pawn2;
-                                    num = score;
-                                }
-                            }
+                            score += 27f;
+                            pawn.hunting = true;
                         }
-                    }
-                }
-                if (allPawnsSpawned.Count > 77)
-                {
-                    i++;
-                    //skip every other pawn if theres a lot
-                    if (allPawnsSpawned.Count > 133)
-                    {
-                        i++;
-                        //skip 2 pawns if theres a lot
-                        if (allPawnsSpawned.Count > 233)
+                        if (pawn2.hunting)
                         {
-                            i++;
-                            //skip 3 pawns if theres a lot
+                            score += 23f;
+                        }
+                        if (closeToEdge && pawn.distanceToEdge < pawn2.distanceToEdge)
+                        {
+                            score += 3f;
+                        }
+                        if (Rand.RangeSeeded(0f, 1f, Find.TickManager.TicksAbs + pawn2.thingIDNumber) > 0.5f)
+                        {
+                            score += 7f;
+                        }
+                        float lengthHorizontal = (pawn.Position - pawn2.Position).LengthHorizontal;
+                        score -= lengthHorizontal;
+
+                        if (pawnToReturn == null || score > num)
+                        {
+                            pawnToReturn = pawn2;
+                            num = score;
                         }
                     }
                 }
             }
-            Pawn_Zombiefied pawnZ = pawn as Pawn_Zombiefied;
-            if (pawnZ != null)
-            {
-                pawnZ.hunting = hunting;
-            }
-            return pawn;
-        }
 
-        public bool IsAcceptableWanderFor(Pawn predator, Pawn prey, float radius)
-        {
-            //if (prey as Pawn_Zombiefied == null)
-            //{
-            //    return false;
-            //}
-            if (!predator.CanReach(prey, PathEndMode.OnCell, Danger.Deadly, false, TraverseMode.ByPawn))
-            {
-                return false;
-            }
-            float lengthHorizontal = (predator.Position - prey.Position).LengthHorizontal;
-            if (lengthHorizontal > radius)
-            {
-                return false;
-            }
-            return true;
+            return pawnToReturn;
         }
 
         public float GetPreyScoreFor(Pawn predator, Pawn prey)

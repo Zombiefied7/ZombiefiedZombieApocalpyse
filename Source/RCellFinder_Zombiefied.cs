@@ -207,7 +207,7 @@ namespace Zombiefied
                     " and will break."
                 }), false);
             }
-            bool flag = UnityData.isDebugBuild && DebugViewSettings.drawDestSearch;
+            bool flag = false;// UnityData.isDebugBuild && DebugViewSettings.drawDestSearch;
             if (root.GetRegion(pawn.Map, RegionType.Set_Passable) != null)
             {
                 int maxRegions = Mathf.Max((int)radius / 3, 13);
@@ -271,7 +271,7 @@ namespace Zombiefied
 
         private static bool CanWanderToCell(IntVec3 c, Pawn pawn, IntVec3 root, Func<Pawn, IntVec3, IntVec3, bool> validator, int tryIndex, Danger maxDanger)
         {
-            bool flag = UnityData.isDebugBuild && DebugViewSettings.drawDestSearch;
+            bool flag = false;// UnityData.isDebugBuild && DebugViewSettings.drawDestSearch;
             if (!c.Walkable(pawn.Map))
             {
                 if (flag)
@@ -1023,6 +1023,7 @@ namespace Zombiefied
             return false;
         }
 
+        /*
         public static bool TryFindPartySpot(Pawn organizer, out IntVec3 result)
         {
             bool enjoyableOutside = JoyUtility.EnjoyableOutsideNow(organizer, null);
@@ -1084,6 +1085,7 @@ namespace Zombiefied
             result = IntVec3.Invalid;
             return false;
         }
+        */
 
         public static IntVec3 FindSiegePositionFrom(IntVec3 entrySpot, Map map)
         {

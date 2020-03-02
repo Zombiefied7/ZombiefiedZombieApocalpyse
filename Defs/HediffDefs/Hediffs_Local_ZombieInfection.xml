@@ -5,6 +5,8 @@
     <defName>ZombieWoundInfection</defName>
     <label>zombie infection</label>
     <labelNoun>a zombie infection</labelNoun>
+	<description>Zombie infection in a wound. The infection will multiply, killing local tissue, and eventually causing death.
+\nThrough aeons of human warfare, infections have often taken more lives than the wounds themselves.</description>
     <taleOnVisible>IllnessRevealed</taleOnVisible>
     <makesSickThought>true</makesSickThought>
     <lethalSeverity>1</lethalSeverity>

@@ -7,6 +7,8 @@
     <defName>Zombiefied</defName>
     <label>zombiefied</label>
     <labelNoun>zombiefied</labelNoun>
+	<description>Bacterial infection in a wound. Without treatment, the bacteria will multiply, killing local tissue, and eventually causing blood poisoning and death.
+\nThrough aeons of human warfare, infections have often taken more lives than the wounds themselves.</description>
     <stages>
       <li>
 		<becomeVisible>false</becomeVisible>

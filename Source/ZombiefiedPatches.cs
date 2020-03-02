@@ -1,4 +1,5 @@
-﻿using Harmony;
+﻿using HarmonyLib;
+using HarmonyMod;
 using RimWorld;
 using System;
 using System.Collections.Generic;
@@ -19,8 +20,8 @@ namespace Zombiefied
     {
         static ZombiefiedPatches()
         {
-            var harmony = HarmonyInstance.Create("com.github.harmony.rimworld.mod.zombiefied");
-            harmony.PatchAll(Assembly.GetExecutingAssembly());
+            var harmony = new Harmony("com.github.harmony.rimworld.mod.zombiefied");
+            harmony.PatchAll();
         }
     }
 
@@ -86,19 +87,4 @@ namespace Zombiefied
             return true;
         }
     }
-
-    /*
-    [HarmonyPatch(typeof(Fire), "DoFireDamage")]
-    class FirePatch
-    {
-        static bool Prefix(Fire __instance, ref Thing targ)
-        {
-            if (targ is Pawn_Zombiefied)
-            {
-                return Rand.ChanceSeeded(0.5f, (Find.TickManager.TicksAbs + targ.thingIDNumber));
-            }
-            return true;
-        }
-    }
-    */
 }

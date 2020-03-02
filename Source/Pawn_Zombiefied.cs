@@ -13,6 +13,7 @@ namespace Zombiefied
         public bool hunting = false;
         public bool attracted = false;
         public bool fired = false;
+        public int distanceToEdge = 0;
 
         public float armorRating_Sharp = 0f;
         public float armorRating_Blunt = 0f;
@@ -66,7 +67,7 @@ namespace Zombiefied
                 }
 
                 PawnKindDef kDef = kindDefs[(int)(Rand.RangeSeeded(0f, 1f, Find.TickManager.TicksAbs) * kindDefs.Count)];
-                PawnGenerationRequest req = new PawnGenerationRequest(kDef, Faction.OfAncients, PawnGenerationContext.NonPlayer, -1, true, false, false, true, false, false, 1f, false, true, true, false, false, false, false, null, null, null, null, null, null, null);
+                PawnGenerationRequest req = new PawnGenerationRequest(kDef, Faction.OfAncients, PawnGenerationContext.NonPlayer, -1, true, false, false, true, false, false, 1f, false, true, true, false, false, false, false, false, 0f, null, 0f, null, null, null);
                 Pawn human = PawnGenerator.GeneratePawn(req);
 
                 //Thing t = GenSpawn.Spawn(human, this.Position, this.Map);

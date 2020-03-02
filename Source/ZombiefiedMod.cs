@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections;
 using System.Linq;
 using HugsLib;
 using HugsLib.Settings;
@@ -81,6 +82,7 @@ namespace Zombiefied
                 }
             }
 
+            /*
             foreach (RimWorld.Planet.Site site in Find.World.worldObjects.Sites)
             {
                 bool broken = false;
@@ -103,8 +105,9 @@ namespace Zombiefied
                 {
                     base.Logger.Message("found a broken site.");
                     //handle broken site here
-                }
+                }              
             }
+            */
 
             debugRemoveZombies.Value = false;
             base.Logger.Message("found " + zCount + " Zombies. " + zWrongFactionCount + " of them were repaired.", new object[0]);

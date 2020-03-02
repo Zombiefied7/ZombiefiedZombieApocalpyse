@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
+using UnityEngine;
 using Verse;
 using Verse.AI;
 using Verse.AI.Group;
@@ -69,6 +69,10 @@ namespace Zombiefied
             for (int i = 0; i < num; i++)
             {
                 TryFindAnimalKind(parms.points, map.Tile, out pawnKindDef);
+                if(pawnKindDef.RaceProps.baseBodySize > 4f && Rand.ChanceSeeded(0.5f, Find.TickManager.TicksAbs + i))
+                {
+                    TryFindAnimalKind(parms.points, map.Tile, out pawnKindDef);
+                }
 
                 Pawn pawn = PawnGenerator.GeneratePawn(pawnKindDef, zFaction);
                 IntVec3 loc = CellFinder.RandomClosewalkCellNear(intVec, map, 10, null);

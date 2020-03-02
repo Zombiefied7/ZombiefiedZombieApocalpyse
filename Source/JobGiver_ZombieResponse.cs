@@ -34,56 +34,46 @@ namespace Zombiefied
 
         public Pawn BestPawnToHuntForPredator(Pawn predator, float range = 7f)
         {
-            /*
-            if (predator.meleeVerbs.GetUpdatedAvailableVerbsList. == null)
-            {
-                return null;
-            }
-            */
+            //List<Pawn> allPawnsSpawned = predator.Map.mapPawns.AllPawnsSpawned;
+            List<Thing> allThingsRegion = predator.GetRegion().ListerThings.AllThings;
 
-            //TODO swap allpawns for region.listerthings
-            List<Pawn> allPawnsSpawned = predator.Map.mapPawns.AllPawnsSpawned;
-
-            Pawn pawn = null;
+            Pawn pawnToReturn = null;
             float num = 0f;
-            bool tutorialMode = TutorSystem.TutorialMode;
 
-            for (int i = 0; i < allPawnsSpawned.Count; i++)
-            {
-                Pawn pawn2 = allPawnsSpawned[i];
-
-                if (predator != pawn2)
+            //for (int i = 0; i < allPawnsSpawned.Count; i++)
+            for (int i = 0; i < allThingsRegion.Count; i++)
                 {
-                    //if (predator.GetRoom(RegionType.Set_Passable) == pawn2.GetRoom(RegionType.Set_Passable))
-                    {                 
-                        if (IsAcceptablePreyFor(predator, pawn2, range))
+                Pawn pawn2 = allThingsRegion[i] as Pawn;
+                if (pawn2 != null && predator != pawn2)
+                {
+                    if (IsAcceptablePreyFor(predator, pawn2, range))
+                    {
+                        if (predator.CanReach(pawn2, PathEndMode.ClosestTouch, Danger.Deadly, false, TraverseMode.ByPawn))
                         {
-                            if (predator.CanReach(pawn2, PathEndMode.ClosestTouch, Danger.Deadly, false, TraverseMode.ByPawn))
+                            if (!pawn2.IsForbidden(predator))
                             {
-                                if (!pawn2.IsForbidden(predator))
+                                float preyScoreFor = GetPreyScoreFor(predator, pawn2);
+                                if (preyScoreFor > num || pawnToReturn == null)
                                 {
-                                    if (!tutorialMode || pawn2.Faction != Faction.OfPlayer)
-                                    {
-                                        float preyScoreFor = GetPreyScoreFor(predator, pawn2);
-                                        if (preyScoreFor > num || pawn == null)
-                                        {
-                                            num = preyScoreFor;
-                                            pawn = pawn2;
-                                        }
-                                    }
+                                    num = preyScoreFor;
+                                    pawnToReturn = pawn2;
                                 }
                             }
                         }
                     }
                 }
             }
-            return pawn;
+            return pawnToReturn;
         }
 
         public bool IsAcceptablePreyFor(Pawn predator, Pawn prey, float distance)
         {
-            float lengthHorizontal = -GetPreyScoreFor(predator, prey);
-            if (lengthHorizontal > distance)
+            Pawn_Zombiefied preyZ = prey as Pawn_Zombiefied;
+            if (preyZ != null)
+            {
+                return false;
+            }         
+            if(ZombiefiedMod.disableZombiesAttackingAnimals && !prey.RaceProps.Humanlike)
             {
                 return false;
             }
@@ -91,15 +81,12 @@ namespace Zombiefied
             {
                 return false;
             }
-            if(ZombiefiedMod.disableZombiesAttackingAnimals && !prey.RaceProps.Humanlike)
+            float lengthHorizontal = -GetPreyScoreFor(predator, prey);
+            if (lengthHorizontal > distance)
             {
                 return false;
             }
-            Pawn_Zombiefied preyZ = prey as Pawn_Zombiefied;
-            if (preyZ != null)
-            {
-                return false;
-            }     
+            
             return true;
         }
 
@@ -108,8 +95,5 @@ namespace Zombiefied
             float lengthHorizontal = (predator.Position - prey.Position).LengthHorizontal;
             return -lengthHorizontal;
         }
-
-        // Token: 0x04000266 RID: 614
-        private static List<Thing> tmpThreats = new List<Thing>();
     }
 }
