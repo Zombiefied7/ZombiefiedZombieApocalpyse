@@ -1,0 +1,18 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<Defs>
+
+
+<HediffDef>
+	<defaultLabelColor>(0.5, 0.7, 0.5)</defaultLabelColor>
+    <defName>Zombiefied</defName>
+    <label>zombiefied</label>
+    <labelNoun>zombiefied</labelNoun>
+    <stages>
+      <li>
+		<becomeVisible>false</becomeVisible>
+        <painFactor>0</painFactor>
+      </li>
+    </stages>
+  </HediffDef>
+
+</Defs>

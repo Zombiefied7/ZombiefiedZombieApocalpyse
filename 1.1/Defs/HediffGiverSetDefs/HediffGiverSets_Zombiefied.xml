@@ -1,0 +1,18 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<Defs>
+
+  <HediffGiverSetDef>
+    <defName>Zombiefied</defName>
+    <hediffGivers>
+      
+      <li Class="Zombiefied.HediffGiver_Zombiefied">
+        <hediff>TraumaSavant</hediff>
+        <partsToAffect>
+          <li>Brain</li>
+        </partsToAffect>
+      </li>
+      
+    </hediffGivers>
+  </HediffGiverSetDef>
+  
+</Defs>
