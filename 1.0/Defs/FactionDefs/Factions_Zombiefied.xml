@@ -1,0 +1,40 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<Defs>
+
+  <FactionDef>
+    <defName>Zombie</defName>
+    <label>zombies</label>
+    <description>Usually aggressive and intrusive zombies.</description>
+    <pawnsPlural>zombies</pawnsPlural>
+    <requiredCountAtGameStart>1</requiredCountAtGameStart>
+    <fixedName>zombies</fixedName>
+		<raidCommonalityFromPointsCurve>
+			<points>
+				<li>(0, 0)</li>
+			</points>
+		</raidCommonalityFromPointsCurve>
+    <humanlikeFaction>false</humanlikeFaction>
+    <hidden>true</hidden>
+    <autoFlee>false</autoFlee>
+    <canUseAvoidGrid>false</canUseAvoidGrid>
+    <techLevel>Animal</techLevel>
+    <startingGoodwill>
+      <min>-100</min>
+      <max>-100</max>
+    </startingGoodwill>
+    <mustStartOneEnemy>true</mustStartOneEnemy>
+    <naturalColonyGoodwill>
+      <min>-100</min>
+      <max>-100</max>
+    </naturalColonyGoodwill>
+	<colorSpectrum>
+      <li>(0.5, 0.7, 0.5)</li>
+    </colorSpectrum>
+    <homeIconPath>World/WorldObjects/DefaultFactionBase</homeIconPath>
+    <allowedArrivalTemperatureRange>
+      <min>0</min>
+      <max>45</max>
+    </allowedArrivalTemperatureRange>
+  </FactionDef>
+  
+</Defs>

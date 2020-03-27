@@ -1,0 +1,34 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<Defs>
+
+  <ThoughtDef>
+    <defName>AteZombieMeatDirect</defName>
+		<showBubble>true</showBubble>
+		<icon>Things/Mote/ThoughtSymbol/Food</icon>
+		<durationDays>7</durationDays>
+    <stackLimit>7</stackLimit>
+    <stages>
+      <li>
+        <label>ate zombie meat</label>
+        <description>I ate some green, rotten zombie meat. It was, possibly, the most disgusting thing I've ever tasted.</description>
+        <baseMoodEffect>-37</baseMoodEffect>
+      </li>
+    </stages>
+  </ThoughtDef>
+
+	<ThoughtDef>
+		<defName>AteZombieMeatAsIngredient</defName>
+		<showBubble>true</showBubble>
+		<icon>Things/Mote/ThoughtSymbol/Food</icon>
+		<durationDays>7</durationDays>
+		<stackLimit>7</stackLimit>
+		<stages>
+			<li>
+				<label>ate cooked zombie meat</label>
+				<description>I ate a meal cooked from green, rotten zombie meat. The seasoning partly covered the rotten taste.</description>
+				<baseMoodEffect>-27</baseMoodEffect>
+			</li>
+		</stages>
+	</ThoughtDef>
+  
+</Defs>

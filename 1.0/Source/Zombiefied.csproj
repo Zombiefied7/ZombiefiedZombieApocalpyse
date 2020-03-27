@@ -1,0 +1,94 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{B4D33AD1-A318-4E6B-8C1C-F62DC490CAC8}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>Zombiefied</RootNamespace>
+    <AssemblyName>Zombiefied</AssemblyName>
+    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>false</DebugSymbols>
+    <DebugType>none</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>..\Assemblies\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="0Harmony">
+      <HintPath>..\..\..\..\..\workshop\content\294100\818773962\Assemblies\0Harmony.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="Assembly-CSharp">
+      <HintPath>..\..\..\RimWorldWin64_Data\Managed\Assembly-CSharp.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="HugsLib">
+      <HintPath>..\..\..\..\..\workshop\content\294100\818773962\Assemblies\HugsLib.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+    <Reference Include="UnityEngine">
+      <HintPath>..\..\..\RimWorldWin64_Data\Managed\UnityEngine.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="ReflectionClass.cs" />
+    <Compile Include="ZombiefiedPatches.cs" />
+    <Compile Include="IncidentWorker_ZombieHorde.cs" />
+    <Compile Include="IncidentWorker_ZombiePack.cs" />
+    <Compile Include="JobDriver_ZombieMove.cs" />
+    <Compile Include="JobGiver_ZombieResponse.cs" />
+    <Compile Include="GenStep_Outpost_Zombies.cs" />
+    <Compile Include="IncidentWorker_QuestZombieCamp.cs" />
+    <Compile Include="Corpse_Zombiefied.cs" />
+    <Compile Include="JobDriver_ZombieHunt.cs" />
+    <Compile Include="GraphicDatabaseHeadRecords_Zombiefied.cs" />
+    <Compile Include="RCellFinder_Zombiefied.cs" />
+    <Compile Include="ThinkNode_ConditionalExitMap_Zombiefied.cs" />
+    <Compile Include="ThinkNode_ConditionalCanDoConstantThinkTreeJobNow_Zombiefied.cs" />
+    <Compile Include="PawnRenderer_Zombiefied.cs" />
+    <Compile Include="Pawn_DrawTracker_Zombiefied.cs" />
+    <Compile Include="ZombieData.cs" />
+    <Compile Include="ZombieGraphicSet.cs" />
+    <Compile Include="Graphics_DrawMeshImpl_Patch.cs" />
+    <Compile Include="HediffGiver_Zombiefied.cs" />
+    <Compile Include="ZombiefiedMod.cs" />
+    <Compile Include="DamageWorker_ZombieBite.cs" />
+    <Compile Include="JobGiver_WanderZombieHerd.cs" />
+    <Compile Include="Pawn_Zombiefied.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <WCFMetadata Include="Connected Services\" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>
