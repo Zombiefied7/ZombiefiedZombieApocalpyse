@@ -35,7 +35,7 @@ namespace Zombiefied
                 //pawn.mindState.canFleeIndividual = false;
                 return new Job(JobDefOf.Wait)
                 {
-                    expiryInterval = 33
+                    expiryInterval = 77
                 };
             }
 
@@ -229,7 +229,7 @@ namespace Zombiefied
                         }
                         if (closeToEdge && pawn.distanceToEdge < pawn2.distanceToEdge)
                         {
-                            score += 3f;
+                            score += 17f;
                         }
                         if (Rand.RangeSeeded(0f, 1f, Find.TickManager.TicksAbs + pawn2.thingIDNumber) > 0.5f)
                         {

@@ -2,11 +2,30 @@
 <ModMetaData>
 	<name>Zombiefied (Zombie Apocalypse)</name>
 	<author>Zombiefied</author>
-	<supportedVersions><li>1.1</li></supportedVersions>
+	<packageId>zombiefied.zombiefied</packageId>
+	<supportedVersions>
+        <li>1.1</li>
+        <li>1.2</li>
+	</supportedVersions>
+	<loadAfter>
+		<li>UnlimitedHugs.HugsLib</li>
+	</loadAfter>
+	<modDependencies>
+		<li>
+			<packageId>brrainz.harmony</packageId>
+			<displayName>Harmony</displayName>
+			<steamWorkshopUrl>steam://url/CommunityFilePage/2009463077</steamWorkshopUrl>
+		</li>
+		<li> 
+			<packageId>UnlimitedHugs.HugsLib</packageId>
+			<displayName>HugsLib</displayName>
+			<steamWorkshopUrl>steam://url/CommunityFilePage/818773962</steamWorkshopUrl>
+		</li>
+	</modDependencies>
 	<description>&lt;size=22&gt;Zombie Apocalypse&lt;/size&gt;
 &lt;size=17&gt;A previously unknown desease, that causes the host to show unseen aggression and survivability, is spreading across the rim. Can you survive facing this new threat?&lt;/size&gt;
 
-Your average Zombiemod.
+This mod tries to be vanilla-ish. So (hopefully) no unintuitive new behaviour, no fancy zombie mutations. All the zombies behave just like other pawns in the game and are clickable etc.
 
 &lt;size=22&gt;Zombies&lt;/size&gt;
 -Human Zombies
@@ -14,7 +33,7 @@ Your average Zombiemod.
 -Humanoid Alien Zombies
 -Modded Animal Zombies
 
-This mod generates a unique ZombiePawn for every living Pawn in your modded game. When a Pawn(lifeform) dies due to Zombies, it will reanimate as a Zombie that matches it's original appearance and stats.
+For every living thing in your modded game a unique ZombiePawn is generated. When a living thing dies due to Zombies, it will reanimate as a Zombie that matches it's original appearance and stats.
 
 &lt;size=22&gt;Features&lt;/size&gt;
 -Zombie generation for any given Pawn
@@ -27,24 +46,15 @@ This mod generates a unique ZombiePawn for every living Pawn in your modded game
 -Compatible with "Multiplayer"
 
 &lt;size=22&gt;Latest Patch Notes&lt;/size&gt;
-2019.09.02:
+2021.06.17:
 Features:
--Added Zombie raid size multiplier		(find the multiplier in the mod options)
--Added Zombie raid frequency multiplier		(find the multiplier in the mod options)
--Added Multiplayer mod support
--Improved performance
-	
+-Support 1.2
+-Amount of noise on the map influences amount of zombieraids
+-Mechs dont attack zombies so they will be dangerous for the player regardless of zombie population
+
 Bugfixes:
--Neolithic weapons (i.e bows) don't attract Zombies anymore
--Zombies are now hashed correctly		(no more Idle Zombies)
--Zombies don't flee anymore
--Zombies don't trigger raid music anymore
--Normal events are less drowned by Zombiefied events
--Zombiefied is now initialized at a better time	(less mod incompatibilities)
--Zombies now get attracted by sound correctly
--Mechanoids don't get infected by Zombies anymore
--Less random errors on normal usage
--Less random errors on reload
+-Problem where sometimes no pawns would spawn on gamestart is fixed
+-Melee attacks with guns no longer attract zombies
 
 </description>
 </ModMetaData>

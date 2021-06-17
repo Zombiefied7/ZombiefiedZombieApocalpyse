@@ -31,21 +31,24 @@ namespace Zombiefied
         public override void WorldLoaded()
         {
             base.Logger.Message("loaded", new object[0]);
-            this._ticksUntilNextZombieRaid = GenerateTicksUntilNextRaid();
-            if(_ticksUntilNextZombieRaid > 17777)
-            {
-                _ticksUntilNextZombieRaid = 17777;
-            }
 
             noisyLocationsPerMap = new List<Queue<IntVec3>>();
             noisyLocationTicksPerMap = new List<Queue<int>>();
             zombieAmountsPerMap = new List<int>();
+            this._ticksUntilNextZombieRaid = new List<int>();
 
-            for(int i = 0; i < 77; i++)
+            for (int i = 0; i < 77; i++)
             {
                 noisyLocationsPerMap.Add(new Queue<IntVec3>());
                 noisyLocationTicksPerMap.Add(new Queue<int>());
                 zombieAmountsPerMap.Add(0);
+
+                int temp = GenerateTicksUntilNextRaid();
+                if (temp > 17777)
+                {
+                    temp = 17777;
+                }
+                this._ticksUntilNextZombieRaid.Add(temp);
             }
 
             Faction zFaction = Faction.OfInsects;
@@ -56,6 +59,13 @@ namespace Zombiefied
                     zFaction = faction;
                 }
             }
+            //Faction.OfMechanoids.TrySetNotHostileTo(zFaction);
+            zFaction.RelationWith(Faction.OfMechanoids).kind = FactionRelationKind.Ally;
+            zFaction.RelationWith(Faction.OfMechanoids).goodwill = 100;
+            Faction.OfMechanoids.RelationWith(zFaction).kind = FactionRelationKind.Ally;
+            Faction.OfMechanoids.RelationWith(zFaction).goodwill = 100;
+            //zFaction.TrySetNotHostileTo(Faction.OfMechanoids);
+            //zFaction.TryMakeInitialRelationsWith(Faction.OfMechanoids);
 
             int zKilled = 0;
             int zCount = 0;
@@ -68,7 +78,7 @@ namespace Zombiefied
                     {
                         zKilled++;
                         thing.Destroy(DestroyMode.Vanish);
-                    }    
+                    }
                     if (!debugRemoveZombies && thing is Pawn_Zombiefied)
                     {
                         zCount++;
@@ -113,11 +123,6 @@ namespace Zombiefied
             base.Logger.Message("found " + zCount + " Zombies. " + zWrongFactionCount + " of them were repaired.", new object[0]);
         }
 
-        private bool yes()
-        {
-            return true;
-        }
-
         public override void DefsLoaded()
         {
             Predicate<Rect> predicate = delegate (Rect input)
@@ -131,8 +136,8 @@ namespace Zombiefied
 
             disableAnimalZombies = base.Settings.GetHandle<bool>("disableAnimalZombies", "       Disable animal zombies", "Animals will not resurrect and no animal zombies will wander in.", false, null, null);
             disableZombiesAttackingAnimals = base.Settings.GetHandle<bool>("disableZombiesAttackingAnimals", "       Disable zombies attacking animals", "Zombies will ignore animals.", false, null, null);
-            zombieSpeedMultiplier = base.Settings.GetHandle<float>("ZombieSpeedMultiplier", "       Zombie speed multiplier [RESTART]", "Zombie speed (in comparison to healthy) will be multiplied by this value.\n(0.03 -> Slowest, 3 -> Fastest)\n(Requires restart to work)", 0.23f, null, null);
-            if(zombieSpeedMultiplier < 0.03f)
+            zombieSpeedMultiplier = base.Settings.GetHandle<float>("ZombieSpeedMultiplier", "       Zombie speed multiplier [RESTART]", "Zombie speed (in comparison to healthy) will be multiplied by this value.\n(0.03 -> Slowest, 3 -> Fastest)\n(Requires restart to work)", 0.57f, null, null);
+            if (zombieSpeedMultiplier < 0.03f)
             {
                 zombieSpeedMultiplier.Value = 0.03f;
             }
@@ -193,7 +198,7 @@ namespace Zombiefied
         {
             get
             {
-                if(zombieRaidFrequencyMultiplier < 0.1f)
+                if (zombieRaidFrequencyMultiplier < 0.1f)
                 {
                     return 0.1f;
                 }
@@ -247,7 +252,7 @@ namespace Zombiefied
             }
             //if (easyMode)
             //{
-                num /= ZombieRaidFrequencyMultiplier;
+            num /= ZombieRaidFrequencyMultiplier;
             //}
             if ((double)num < 0.17f)
             {
@@ -264,7 +269,7 @@ namespace Zombiefied
         {
             float challengeModifier = this.GetChallengeModifier();
             //int num = UnityEngine.Random.Range((int)((float)ZombiesDefOf.ZombiesSettings.MinRaidTicksBase * challengeModifier), (int)((float)ZombiesDefOf.ZombiesSettings.MaxRaidTicksBase * challengeModifier));
-            int num = Rand.RangeSeeded((int)((float)7000 * challengeModifier), (int)((float)280000 * challengeModifier), Find.TickManager.TicksAbs + Find.World.ConstantRandSeed);
+            int num = Rand.RangeSeeded((int)((float)7777 * challengeModifier), (int)((float)280000 * challengeModifier), Find.TickManager.TicksAbs + Find.World.ConstantRandSeed);
             //if (first && num < ZombiesDefOf.ZombiesSettings.MinTicksBeforeFirstRaid)
             base.Logger.Message("next zombieraid in " + num + " ticks.", new object[0]);
             return num;
@@ -272,36 +277,37 @@ namespace Zombiefied
 
         private void HandleZombieRaid()
         {
-            this._ticksUntilNextZombieRaid--;
-            if (this._ticksUntilNextZombieRaid <= 0)
+            for (int currentMapIndex = 0; currentMapIndex < Find.Maps.Count; currentMapIndex++)
             {
-                this._ticksUntilNextZombieRaid = this.GenerateTicksUntilNextRaid();
-
-                int currentMapIndex = Rand.RangeSeeded(0, Find.Maps.Count, Find.TickManager.TicksAbs);
-
-                base.Logger.Message("setting up zombieraid for map " + currentMapIndex + ".", new object[0]);
-
-                if (currentMapIndex < zombieAmountsPerMap.Count && zombieAmountsPerMap[currentMapIndex] < zombieAmountSoftCap)
+                this._ticksUntilNextZombieRaid[currentMapIndex] -= 1 + noisyLocationsPerMap[currentMapIndex].Count;
+                if (this._ticksUntilNextZombieRaid[currentMapIndex] <= 0)
                 {
-                    IncidentParms incidentParms = new IncidentParms
-                    {
-                        target = Find.Maps[currentMapIndex]        
-                    };
+                    this._ticksUntilNextZombieRaid[currentMapIndex] = this.GenerateTicksUntilNextRaid();
 
-                    int ran = Rand.RangeSeeded(0, 7, Find.TickManager.TicksAbs);
-                    if (ran < 5 || disableAnimalZombies)
+                    base.Logger.Message("setting up zombieraid for map " + currentMapIndex + ".", new object[0]);
+
+                    if (currentMapIndex < zombieAmountsPerMap.Count && zombieAmountsPerMap[currentMapIndex] < zombieAmountSoftCap)
                     {
-                        IncidentDef.Named("ZombieHorde").Worker.TryExecute(incidentParms);
+                        IncidentParms incidentParms = new IncidentParms
+                        {
+                            target = Find.Maps[currentMapIndex]
+                        };
+
+                        int ran = Rand.RangeSeeded(0, 7, Find.TickManager.TicksAbs);
+                        if (ran < 5 || disableAnimalZombies)
+                        {
+                            IncidentDef.Named("ZombieHorde").Worker.TryExecute(incidentParms);
+                        }
+                        else
+                        {
+                            IncidentDef.Named("ZombiePack").Worker.TryExecute(incidentParms);
+                        }
+                        base.Logger.Message("Zombieraid started on map " + currentMapIndex + ".", new object[0]);
                     }
                     else
                     {
-                        IncidentDef.Named("ZombiePack").Worker.TryExecute(incidentParms);
+                        base.Logger.Message("Zombieraid failed on map " + currentMapIndex + " because map invalid or more zombies are already on the map than cap allows.", new object[0]);
                     }
-                    base.Logger.Message("Zombieraid started on map " + currentMapIndex + ".", new object[0]);
-                }
-                else
-                {
-                    base.Logger.Message("Zombieraid failed on map " + currentMapIndex + " because map invalid or more zombies are already on the map than cap allows.", new object[0]);
                 }
             }
         }
@@ -309,6 +315,7 @@ namespace Zombiefied
         public static List<Queue<IntVec3>> noisyLocationsPerMap = new List<Queue<IntVec3>>(0);
         public static List<Queue<int>> noisyLocationTicksPerMap = new List<Queue<int>>(0);
         public static List<int> zombieAmountsPerMap = new List<int>(0);
+        public static Dictionary<string, int> shotsFiredPerPawn = new Dictionary<string, int>();
 
         private void HandleSounds()
         {
@@ -318,9 +325,9 @@ namespace Zombiefied
             {
                 String log = "";
 
-                for(int m = 0; m < noisyLocationsPerMap.Count; m++)
+                for (int m = 0; m < noisyLocationsPerMap.Count; m++)
                 {
-                    if(noisyLocationsPerMap[m].Count > 0)
+                    if (noisyLocationsPerMap[m].Count > 0)
                     {
                         if (Find.TickManager.TicksGame - noisyLocationTicksPerMap[m].Peek() > zombieSoundReactionTimeInHours * 2500) //7777)
                         {
@@ -328,7 +335,7 @@ namespace Zombiefied
                             noisyLocationTicksPerMap[m].Dequeue();
                         }
                     }
-                } 
+                }
 
                 for (int m = 0; m < Find.Maps.Count; m++)
                 {
@@ -371,7 +378,12 @@ namespace Zombiefied
                                                 weapon = temp;
                                             }
                                         }
-                                        if (weapon && (pawn2.LastAttackedTarget != null && (Find.TickManager.TicksGame - pawn2.LastAttackTargetTick < tickAmount)))
+                                        string key = pawn2.GetHashCode() + "";
+
+                                        if (weapon && shotsFiredPerPawn.ContainsKey(key) &&
+                                            pawn2.records.GetAsInt(RecordDefOf.ShotsFired) > shotsFiredPerPawn[key] &&
+                                            (pawn2.LastAttackedTarget != null &&
+                                            (Find.TickManager.TicksGame - pawn2.LastAttackTargetTick < tickAmount)))
                                         {
                                             int tempScore = 7;
                                             if (pawn2.Faction != null && pawn2.Faction.IsPlayer)
@@ -388,6 +400,7 @@ namespace Zombiefied
                                             //noisyLocationsPerMap[m].Enqueue(pawn2.Position);
                                             //noisyLocationTicksPerMap[m].Enqueue(pawn2.LastAttackTargetTick);
                                         }
+                                        shotsFiredPerPawn[key] = pawn2.records.GetAsInt(RecordDefOf.ShotsFired);
                                     }
                                 }
                             }
@@ -426,7 +439,7 @@ namespace Zombiefied
                         }
                     }
 
-                    if(bestLocationScore > 0)
+                    if (bestLocationScore > 0)
                     {
                         noisyLocationsPerMap[m].Enqueue(bestLocation);
                         noisyLocationTicksPerMap[m].Enqueue(bestLocationTicks);
@@ -437,7 +450,7 @@ namespace Zombiefied
                     log += "map " + m + " has " + noisyLocationsPerMap[m].Count + " noisy locations and " + zombieAmountsPerMap[m] + " zombies.   ";
                 }
                 base.Logger.Message(log, new object[0]);
-            }        
+            }
         }
 
         public static IntVec3 BestNoisyLocation(Pawn predator)
@@ -461,7 +474,7 @@ namespace Zombiefied
                 locations = noisyLocationsPerMap[currentMapIndex].ToList();
             }
 
-            
+
             if (locations != null && locations.Count > 0)
             {
                 location = locations[locations.Count - 1];
@@ -475,7 +488,7 @@ namespace Zombiefied
                     }
                 }
                 */
-            }         
+            }
 
             return location;
         }
@@ -523,7 +536,7 @@ namespace Zombiefied
             }
         }
 
-        private int _ticksUntilNextZombieRaid = 7;
+        private List<int> _ticksUntilNextZombieRaid = new List<int>(0);
 
         public Pawn ReanimateDeath(Corpse corpse)
         {
@@ -1028,13 +1041,13 @@ namespace Zombiefied
 
                                 newThingDef.race.ResolveReferencesSpecial();
 
+                                newThingDef.race.wildBiomes = new List<AnimalBiomeRecord>();
+
                                 newThingDef.tradeTags = zombieThingDef.tradeTags;
 
                                 newThingDef.recipes = zombieThingDef.recipes;
 
                                 newThingDef.ResolveReferences();
-
-                                DefDatabase<ThingDef>.Add(newThingDef);
                             }
 
                             //not reached
@@ -1055,6 +1068,8 @@ namespace Zombiefied
                             //ushort z = (ushort)(s + 7);
                             //newKindDef.shortHash = z;
                             InjectedDefHasher.GiveShortHashToDef(newKindDef, typeof(PawnKindDef));
+
+                            //base.Logger.Message((newKindDef.RaceProps != null) + "");
 
                             //newKindDef.lifeStages = PawnKindDef.Named("Zombie").lifeStages;
 
@@ -1096,7 +1111,12 @@ namespace Zombiefied
 
                                 //newKindDef.lifeStages.Add(n);
                             }
-                            DefDatabase<PawnKindDef>.Add(newKindDef);
+                            //base.Logger.Message((newKindDef.RaceProps != null) + "");
+                            if (newKindDef != null && newThingDef != null && newKindDef.RaceProps != null)
+                            {
+                                DefDatabase<PawnKindDef>.Add(newKindDef);
+                                DefDatabase<ThingDef>.Add(newThingDef);
+                            }
                         }
                     }
                     catch

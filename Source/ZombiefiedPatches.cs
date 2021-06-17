@@ -1,5 +1,4 @@
 ﻿using HarmonyLib;
-using HarmonyMod;
 using RimWorld;
 using System;
 using System.Collections.Generic;
@@ -11,6 +10,7 @@ using System.Text;
 using UnityEngine;
 using Verse;
 using Verse.AI;
+using Verse.AI.Group;
 using Verse.Sound;
 
 namespace Zombiefied
@@ -48,6 +48,38 @@ namespace Zombiefied
             return true;
         }
     }
+
+
+    [HarmonyPatch(typeof(Verb), "CausesTimeSlowdown")]
+    class SlowTimePatch1
+    {
+        static bool Prefix(Verb __instance, ref LocalTargetInfo castTarg, ref bool __result)
+        {
+            Thing thing = castTarg.Thing;
+            if (thing != null && thing is Pawn_Zombiefied)
+            {
+                __result = false;
+                return false;
+            }  
+            return true;
+        }
+    }
+
+    /*
+    [HarmonyPatch(typeof(FactionUtility), nameof(FactionUtility.HostileTo))]
+    class MechIgnoreZombs
+    {
+        static bool Prefix(ref Faction fac, ref Faction other, ref bool __result)
+        {
+            if ((fac != null && fac.def.defName.Equals("zombies")) || (other != null && other.def.defName.Equals("zombies")))
+            {
+                __result = false;
+                return false;
+            }
+            return true;
+        }
+    }
+    */
 
     [HarmonyPatch(typeof(StatExtension), nameof(StatExtension.GetStatValue))]
     class StatPatch
