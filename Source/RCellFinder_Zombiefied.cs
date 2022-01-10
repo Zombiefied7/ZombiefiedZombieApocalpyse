@@ -19,7 +19,7 @@ namespace Zombiefied
             Map map = searcher.Map;
             Predicate<IntVec3> predicate = delegate (IntVec3 c)
             {
-                if (!map.pawnDestinationReservationManager.CanReserve(c, searcher, true) || !c.Standable(map) || !searcher.CanReach(c, PathEndMode.OnCell, Danger.Deadly, false, TraverseMode.ByPawn))
+                if (!map.pawnDestinationReservationManager.CanReserve(c, searcher, true) || !c.Standable(map) || !searcher.CanReach(c, PathEndMode.OnCell, Danger.Deadly, false, false, TraverseMode.ByPawn))
                 {
                     return false;
                 }
@@ -82,7 +82,7 @@ namespace Zombiefied
                     PathEndMode peMode = PathEndMode.OnCell;
                     Danger maxDanger = Danger.Deadly;
                     TraverseMode mode2 = mode;
-                    return pawn2.CanReach(dest, peMode, maxDanger, false, mode2);
+                    return pawn2.CanReach(dest, peMode, maxDanger, false, false, mode2);
                 });
             }
             int num = 0;
@@ -116,7 +116,7 @@ namespace Zombiefied
                     {
                         intVec2 = new IntVec3(intVec.x, 0, 0);
                     }
-                    if (intVec2.Standable(pawn.Map) && pawn.CanReach(intVec2, PathEndMode.OnCell, Danger.Deadly, true, mode))
+                    if (intVec2.Standable(pawn.Map) && pawn.CanReach(intVec2, PathEndMode.OnCell, Danger.Deadly, true, true, mode))
                     {
                         goto Block_9;
                     }
@@ -168,7 +168,7 @@ namespace Zombiefied
                     LocalTargetInfo dest = intVec;
                     PathEndMode peMode = PathEndMode.OnCell;
                     Danger maxDanger = danger;
-                    if (pawn.CanReach(dest, peMode, maxDanger, false, mode))
+                    if (pawn.CanReach(dest, peMode, maxDanger, false, false, mode))
                     {
                         goto IL_E5;
                     }
@@ -183,14 +183,14 @@ namespace Zombiefied
 
         public static bool TryFindExitSpotNear(Pawn pawn, IntVec3 near, float radius, out IntVec3 spot, TraverseMode mode = TraverseMode.ByPawn)
         {
-            return (mode == TraverseMode.PassAllDestroyableThings && CellFinder.TryFindRandomEdgeCellNearWith(near, radius, pawn.Map, (IntVec3 x) => pawn.CanReach(x, PathEndMode.OnCell, Danger.Deadly, false, TraverseMode.ByPawn), out spot)) || CellFinder.TryFindRandomEdgeCellNearWith(near, radius, pawn.Map, delegate (IntVec3 x)
+            return (mode == TraverseMode.PassAllDestroyableThings && CellFinder.TryFindRandomEdgeCellNearWith(near, radius, pawn.Map, (IntVec3 x) => pawn.CanReach(x, PathEndMode.OnCell, Danger.Deadly, false, false, TraverseMode.ByPawn), out spot)) || CellFinder.TryFindRandomEdgeCellNearWith(near, radius, pawn.Map, delegate (IntVec3 x)
             {
                 Pawn pawn2 = pawn;
                 LocalTargetInfo dest = x;
                 PathEndMode peMode = PathEndMode.OnCell;
                 Danger maxDanger = Danger.Deadly;
                 TraverseMode mode2 = mode;
-                return pawn2.CanReach(dest, peMode, maxDanger, false, mode2);
+                return pawn2.CanReach(dest, peMode, maxDanger, false, false, mode2);
             }, out spot);
         }
 
@@ -258,7 +258,7 @@ namespace Zombiefied
                 RCellFinder_Zombiefied.regions.Clear();
             }
             IntVec3 position;
-            if (!CellFinder.TryFindRandomCellNear(root, pawn.Map, Mathf.FloorToInt(radius), (IntVec3 c) => c.InBounds(pawn.Map) && pawn.CanReach(c, PathEndMode.OnCell, Danger.None, false, TraverseMode.ByPawn) && !c.IsForbidden(pawn) && (validator == null || validator(pawn, c, root)), out position, -1) && !CellFinder.TryFindRandomCellNear(root, pawn.Map, Mathf.FloorToInt(radius), (IntVec3 c) => c.InBounds(pawn.Map) && pawn.CanReach(c, PathEndMode.OnCell, Danger.None, false, TraverseMode.ByPawn) && !c.IsForbidden(pawn), out position, -1) && !CellFinder.TryFindRandomCellNear(root, pawn.Map, Mathf.FloorToInt(radius), (IntVec3 c) => c.InBounds(pawn.Map) && pawn.CanReach(c, PathEndMode.OnCell, Danger.Deadly, false, TraverseMode.ByPawn), out position, -1) && !CellFinder.TryFindRandomCellNear(root, pawn.Map, 20, (IntVec3 c) => c.InBounds(pawn.Map) && pawn.CanReach(c, PathEndMode.OnCell, Danger.None, false, TraverseMode.ByPawn) && !c.IsForbidden(pawn), out position, -1) && !CellFinder.TryFindRandomCellNear(root, pawn.Map, 30, (IntVec3 c) => c.InBounds(pawn.Map) && pawn.CanReach(c, PathEndMode.OnCell, Danger.Deadly, false, TraverseMode.ByPawn), out position, -1) && !CellFinder.TryFindRandomCellNear(pawn.Position, pawn.Map, 5, (IntVec3 c) => c.InBounds(pawn.Map) && pawn.CanReach(c, PathEndMode.OnCell, Danger.Deadly, false, TraverseMode.ByPawn), out position, -1))
+            if (!CellFinder.TryFindRandomCellNear(root, pawn.Map, Mathf.FloorToInt(radius), (IntVec3 c) => c.InBounds(pawn.Map) && pawn.CanReach(c, PathEndMode.OnCell, Danger.None, false, false, TraverseMode.ByPawn) && !c.IsForbidden(pawn) && (validator == null || validator(pawn, c, root)), out position, -1) && !CellFinder.TryFindRandomCellNear(root, pawn.Map, Mathf.FloorToInt(radius), (IntVec3 c) => c.InBounds(pawn.Map) && pawn.CanReach(c, PathEndMode.OnCell, Danger.None, false, false, TraverseMode.ByPawn) && !c.IsForbidden(pawn), out position, -1) && !CellFinder.TryFindRandomCellNear(root, pawn.Map, Mathf.FloorToInt(radius), (IntVec3 c) => c.InBounds(pawn.Map) && pawn.CanReach(c, PathEndMode.OnCell, Danger.Deadly, false, false, TraverseMode.ByPawn), out position, -1) && !CellFinder.TryFindRandomCellNear(root, pawn.Map, 20, (IntVec3 c) => c.InBounds(pawn.Map) && pawn.CanReach(c, PathEndMode.OnCell, Danger.None, false, false, TraverseMode.ByPawn) && !c.IsForbidden(pawn), out position, -1) && !CellFinder.TryFindRandomCellNear(root, pawn.Map, 30, (IntVec3 c) => c.InBounds(pawn.Map) && pawn.CanReach(c, PathEndMode.OnCell, Danger.Deadly, false, false, TraverseMode.ByPawn), out position, -1) && !CellFinder.TryFindRandomCellNear(pawn.Position, pawn.Map, 5, (IntVec3 c) => c.InBounds(pawn.Map) && pawn.CanReach(c, PathEndMode.OnCell, Danger.Deadly, false, false, TraverseMode.ByPawn), out position, -1))
             {
                 position = pawn.Position;
             }
@@ -429,7 +429,7 @@ namespace Zombiefied
 
         public static bool TryFindRandomPawnEntryCell(out IntVec3 result, Map map, float roadChance, bool allowFogged = false, Predicate<IntVec3> extraValidator = null)
         {
-            return CellFinder.TryFindRandomEdgeCellWith((IntVec3 c) => c.Standable(map) && !map.roofGrid.Roofed(c) && map.reachability.CanReachColony(c) && c.GetRoom(map, RegionType.Set_Passable).TouchesMapEdge && (allowFogged || !c.Fogged(map)) && (extraValidator == null || extraValidator(c)), map, roadChance, out result);
+            return CellFinder.TryFindRandomEdgeCellWith((IntVec3 c) => c.Standable(map) && !map.roofGrid.Roofed(c) && map.reachability.CanReachColony(c) && c.GetRoom(map).TouchesMapEdge && (allowFogged || !c.Fogged(map)) && (extraValidator == null || extraValidator(c)), map, roadChance, out result);
         }
 
         public static bool TryFindPrisonerReleaseCell(Pawn prisoner, Pawn warden, out IntVec3 result)
@@ -457,7 +457,7 @@ namespace Zombiefied
                         return false;
                     }
                 }
-                else if (r.Room.isPrisonCell)
+                else if (r.Room.IsPrisonCell)
                 {
                     return false;
                 }
@@ -490,7 +490,7 @@ namespace Zombiefied
                 {
                     return false;
                 }
-                Room room = c.GetRoom(map, RegionType.Set_Passable);
+                Room room = c.GetRoom(map);
                 if (room == null)
                 {
                     numRoom++;
@@ -594,7 +594,7 @@ namespace Zombiefied
                 {
                     return false;
                 }
-                Room room = c.GetRoom(map, RegionType.Set_Passable);
+                Room room = c.GetRoom(map);
                 if (!room.PsychologicallyOutdoors || !room.TouchesMapEdge)
                 {
                     return false;
@@ -623,7 +623,7 @@ namespace Zombiefied
                 CellRect.CellRectIterator iterator = CellRect.CenteredOn(c, walkRadius).GetIterator();
                 while (!iterator.Done())
                 {
-                    Room room2 = iterator.Current.GetRoom(map, RegionType.Set_Passable);
+                    Room room2 = iterator.Current.GetRoom(map);
                     if (room2 != room)
                     {
                         num++;
@@ -887,7 +887,7 @@ namespace Zombiefied
                 {
                     return false;
                 }
-                if (pawn.HostFaction != null && c.GetRoom(pawn.Map, RegionType.Set_Passable) != rootRoom)
+                if (pawn.HostFaction != null && c.GetRoom(pawn.Map) != rootRoom)
                 {
                     return false;
                 }
@@ -972,7 +972,7 @@ namespace Zombiefied
 
         public static bool TryFindMarriageSite(Pawn firstFiance, Pawn secondFiance, out IntVec3 result)
         {
-            if (!firstFiance.CanReach(secondFiance, PathEndMode.ClosestTouch, Danger.Deadly, false, TraverseMode.ByPawn))
+            if (!firstFiance.CanReach(secondFiance, PathEndMode.ClosestTouch, Danger.Deadly, false, false, TraverseMode.ByPawn))
             {
                 result = IntVec3.Invalid;
                 return false;
@@ -999,7 +999,7 @@ namespace Zombiefied
                 {
                     return false;
                 }
-                Room room = cell.GetRoom(map, RegionType.Set_Passable);
+                Room room = cell.GetRoom(map);
                 return room == null || room.IsHuge || room.PsychologicallyOutdoors || room.CellCount >= 10;
             };
             foreach (CompGatherSpot current in map.gatherSpotLister.activeSpots.InRandomOrder(null))

@@ -222,7 +222,7 @@ namespace Zombiefied
                     {
                         Vector3 drawLoc = rootLoc;
                         drawLoc.y += 0.01953125f;
-                        this.woundOverlays.RenderOverBody(drawLoc, mesh, quat, portrait);
+                        this.woundOverlays.RenderOverBody(drawLoc, mesh, quat, portrait, BodyTypeDef.WoundLayer.Body, bodyFacing);
                     }
                 }
             }

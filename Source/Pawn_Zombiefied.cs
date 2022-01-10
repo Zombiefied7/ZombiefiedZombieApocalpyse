@@ -67,7 +67,35 @@ namespace Zombiefied
                 }
 
                 PawnKindDef kDef = kindDefs[(int)(Rand.RangeSeeded(0f, 1f, Find.TickManager.TicksAbs) * kindDefs.Count)];
-                PawnGenerationRequest req = new PawnGenerationRequest(kDef, Faction.OfAncients, PawnGenerationContext.NonPlayer, -1, true, false, false, true, false, false, 1f, false, true, true, false, false, false, false, false, 0f, null, 0f, null, null, null);
+ // Predicate<Pawn> validatorPreGear = null, Predicate<Pawn> validatorPostGear = null, IEnumerable<TraitDef> forcedTraits = null, IEnumerable<TraitDef> prohibitedTraits = null, float? minChanceToRedressWorldPawn = null, float? fixedBiologicalAge = null, float? fixedChronologicalAge = null, Gender? fixedGender = null, float? fixedMelanin = null, string fixedLastName = null, string fixedBirthName = null, RoyalTitleDef fixedTitle = null, Ideo fixedIdeo = null, bool forceNoIdeo = false, bool forceNoBackstory = false, bool forbidAnyTitle = false)
+                PawnGenerationRequest req = new PawnGenerationRequest(
+                    kDef, // Kind
+                    Faction.OfAncients, // Faction (default: null)
+                    PawnGenerationContext.NonPlayer, // context (default)
+                    -1, // tile (default)
+                    true, // force (false)
+                    false, // newborn (default)
+                    false, // allowDead (default)
+                    true, // allowDowned (false)
+                    false, // cangeneratepawnrelations (true)
+                    false, // mustBeCapableOfViolence (default)
+                    1f, // colonistRelationChanceFactor (default)
+                    false, // forceAddFreeWarmLayerIfNeeded (default)
+                    true, // allowGay (default)
+                    true, // allowFood (default)
+                    false, // allowAddictions (true)
+                    false, // inhabitant (default)
+                    false, // certainlyBeenInCryptosleep (default)
+                    false, // forceRedressWorldPawnIfFormerColonist (default)
+                    false, //worldPawnFactionDoesntMatter (default)
+                    0f, // biocodeWeaponChance (default)
+                    0f, // biocodeApparelChance (default)
+                    null, // extraPawnForExtraRelationChane (default)
+                    0f, // relationWithExtraPawnChanceFactor (1f)
+                    null, // Predicate validatorPreGear (default)
+                    null, // validatorPostGear(default)
+                    null // forcedTraits (default)
+                );
                 Pawn human = PawnGenerator.GeneratePawn(req);
 
                 //Thing t = GenSpawn.Spawn(human, this.Position, this.Map);

@@ -101,7 +101,7 @@ namespace Zombiefied
         {
             for (int i = 0; i < 10; i++)
             {
-                MoteMaker.ThrowAirPuffUp(this.pawn.DrawPos, this.pawn.Map);
+                MoteMaker.ThrowText(this.pawn.DrawPos, this.pawn.Map, "zombiefied");
             }
             this.jitterer.AddOffset(0.05f, (float)Rand.RangeSeeded(0, 360, Find.TickManager.TicksAbs));
         }
