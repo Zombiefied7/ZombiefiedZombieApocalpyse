@@ -48,7 +48,7 @@ namespace Zombiefied
                 {
                     if (IsAcceptablePreyFor(predator, pawn2, range))
                     {
-                        if (predator.CanReach(pawn2, PathEndMode.ClosestTouch, Danger.Deadly, false, TraverseMode.ByPawn))
+                        if (predator.CanReach(pawn2, PathEndMode.ClosestTouch, Danger.Deadly, false, false, TraverseMode.ByPawn))
                         {
                             if (!pawn2.IsForbidden(predator))
                             {

@@ -7,17 +7,6 @@
     <ateDirect>AteZombieMeatDirect</ateDirect>
     <ateAsIngredient>AteZombieMeatAsIngredient</ateAsIngredient>
     <corpseCategory>CorpsesZombie</corpseCategory>
-    <wounds>
-      <li>
-        <texture>Things/Pawn/Wounds/WoundFleshA</texture>
-      </li>
-      <li>
-        <texture>Things/Pawn/Wounds/WoundFleshB</texture>
-      </li>
-      <li>
-        <texture>Things/Pawn/Wounds/WoundFleshC</texture>
-      </li>
-    </wounds>
   </FleshTypeDef>
 
 </Defs>

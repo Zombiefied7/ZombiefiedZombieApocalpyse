@@ -1,4 +1,0 @@
-C:\Spiele\steamapps\common\RimWorld\Mods\Zombiefied\Source\bin\Release\Zombiefied.dll
-C:\Spiele\steamapps\common\RimWorld\Mods\Zombiefied\Source\bin\Release\Zombiefied.pdb
-C:\Spiele\steamapps\common\RimWorld\Mods\Zombiefied\Source\obj\Release\Zombiefied.dll
-C:\Spiele\steamapps\common\RimWorld\Mods\Zombiefied\Source\obj\Release\Zombiefied.pdb

@@ -61,9 +61,10 @@ namespace Zombiefied
             }
             //Faction.OfMechanoids.TrySetNotHostileTo(zFaction);
             zFaction.RelationWith(Faction.OfMechanoids).kind = FactionRelationKind.Ally;
-            zFaction.RelationWith(Faction.OfMechanoids).goodwill = 100;
+            //zFaction.RelationWith(Faction.OfMechanoids).goodwill = 100;
+            zFaction.RelationWith(Faction.OfMechanoids).baseGoodwill = 100;
             Faction.OfMechanoids.RelationWith(zFaction).kind = FactionRelationKind.Ally;
-            Faction.OfMechanoids.RelationWith(zFaction).goodwill = 100;
+            Faction.OfMechanoids.RelationWith(zFaction).baseGoodwill = 100;
             //zFaction.TrySetNotHostileTo(Faction.OfMechanoids);
             //zFaction.TryMakeInitialRelationsWith(Faction.OfMechanoids);
 
@@ -115,7 +116,7 @@ namespace Zombiefied
                 {
                     base.Logger.Message("found a broken site.");
                     //handle broken site here
-                }              
+                }
             }
             */
 
@@ -129,7 +130,6 @@ namespace Zombiefied
             {
                 return false;
             };
-
             headlineZombieOptions = base.Settings.GetHandle<bool>("headlineZombies", "\nZombie settings:", "Zombie settings", false, null, null);
             headlineZombieOptions.CustomDrawer = new SettingHandle.DrawCustomControl(predicate);
             //headlineZombieOptions.CustomDrawerHeight = 37f;
@@ -612,7 +612,7 @@ namespace Zombiefied
             //pawn.needs.SetInitialLevels();
 
             if (sourcePawn.Faction != null && sourcePawn.Faction.IsPlayer)
-            {                
+            {
                 NameSingle nameSingle = sourcePawn.Name as NameSingle;
                 if(nameSingle != null)
                 {
@@ -628,8 +628,8 @@ namespace Zombiefied
             pawn.ageTracker.AgeBiologicalTicks = sourcePawn.ageTracker.AgeBiologicalTicks;
             pawn.ageTracker.BirthAbsTicks = sourcePawn.ageTracker.BirthAbsTicks;
             pawn.ageTracker.AgeChronologicalTicks = sourcePawn.ageTracker.AgeChronologicalTicks;
-            
-            
+
+
 
             return z;
         }
@@ -1009,7 +1009,6 @@ namespace Zombiefied
                                 newThingDef.race.nameCategory = zombieThingDef.race.nameCategory;
                                 newThingDef.race.manhunterOnDamageChance = zombieThingDef.race.manhunterOnDamageChance;
                                 newThingDef.race.manhunterOnTameFailChance = zombieThingDef.race.manhunterOnTameFailChance;
-                                newThingDef.race.nameOnNuzzleChance = zombieThingDef.race.nameOnNuzzleChance;
                                 newThingDef.race.hediffGiverSets = zombieThingDef.race.hediffGiverSets;
 
                                 newThingDef.race.body = sourcePawnKindDef.race.race.body;
@@ -1129,4 +1128,3 @@ namespace Zombiefied
         }
     }
 }
-

@@ -126,13 +126,13 @@ namespace Zombiefied
             Shader shader = ShaderDatabase.LoadShader(this.data.shaderCutoutPath);
             this.ClearCache();
             this.nakedGraphic = GraphicDatabase.Get<Graphic_Multi>(this.data.bodyType.bodyNakedGraphicPath, ShaderDatabase.CutoutSkin, Vector2.one, this.data.color);
-            this.rottingGraphic = GraphicDatabase.Get<Graphic_Multi>(this.data.bodyType.bodyNakedGraphicPath, ShaderDatabase.CutoutSkin, Vector2.one, PawnGraphicSet.RottingColor);
+            this.rottingGraphic = GraphicDatabase.Get<Graphic_Multi>(this.data.bodyType.bodyNakedGraphicPath, ShaderDatabase.CutoutSkin, Vector2.one, PawnGraphicSet.RottingColorDefault);
             this.dessicatedGraphic = GraphicDatabase.Get<Graphic_Multi>(this.data.bodyType.bodyDessicatedGraphicPath, shader);
             this.headGraphic = GraphicDatabaseHeadRecords_Zombiefied.GetHeadNamed(this.data.headGraphicPath, this.data.color);
-            this.desiccatedHeadGraphic = GraphicDatabaseHeadRecords_Zombiefied.GetHeadNamed(this.data.headGraphicPath, PawnGraphicSet.RottingColor);
+            this.desiccatedHeadGraphic = GraphicDatabaseHeadRecords_Zombiefied.GetHeadNamed(this.data.headGraphicPath, PawnGraphicSet.RottingColorDefault);
             this.skullGraphic = GraphicDatabaseHeadRecords.GetSkull();
             this.headStumpGraphic = GraphicDatabaseHeadRecords.GetStump(this.data.color);
-            this.desiccatedHeadStumpGraphic = GraphicDatabaseHeadRecords.GetStump(PawnGraphicSet.RottingColor);
+            this.desiccatedHeadStumpGraphic = GraphicDatabaseHeadRecords.GetStump(PawnGraphicSet.RottingColorDefault);
             this.hairGraphic = GraphicDatabase.Get<Graphic_Multi>(this.data.hairGraphicPath, shader, Vector2.one, this.data.hairColor);
             this.ResolveApparelGraphics();
         }

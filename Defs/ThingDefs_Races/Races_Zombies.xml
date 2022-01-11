@@ -2,8 +2,8 @@
 <Defs>
 
   <ThingDef ParentName="BasePawn" Name="ZombieThingBase" Abstract="True">
-  
-	<thingClass>Zombiefied.Pawn_Zombiefied</thingClass>	
+
+	<thingClass>Zombiefied.Pawn_Zombiefied</thingClass>
     <statBases>
 	  <Flammability>0.4</Flammability>
       <LeatherAmount>50</LeatherAmount>
@@ -14,7 +14,7 @@
       <ComfyTemperatureMin>-8</ComfyTemperatureMin>
       <MarketValue>1000</MarketValue>
     </statBases>
-    <tools>	
+    <tools>
         <li>
 		<label>left hand</label>
         <capacities>
@@ -87,36 +87,36 @@
 	  <thinkTreeConstant>ZombieConstant</thinkTreeConstant>
 	  <leatherDef>Leather_Zombie</leatherDef>
 	  <trainability>Advanced</trainability>
-	  
-	  <needsRest>false</needsRest>  
+
+	  <needsRest>false</needsRest>
       <baseBodySize>1</baseBodySize>
       <baseHungerRate>0</baseHungerRate>
       <baseHealthScale>1</baseHealthScale>
       <foodType>None</foodType>
-	  
+
 	  <makesFootprints>true</makesFootprints>
-	  
+
 	  <predator>false</predator>
-	  
+
       <wildness>1</wildness>
       <manhunterOnTameFailChance>0</manhunterOnTameFailChance>
       <manhunterOnDamageChance>0</manhunterOnDamageChance>
       <gestationPeriodDays>22.5</gestationPeriodDays>
       <lifeExpectancy>80</lifeExpectancy>
-	  
+
 	  <hasGenders>true</hasGenders>
       <nameGenerator>NamerAnimalGenericMale</nameGenerator>
       <nameGeneratorFemale>NamerAnimalGenericFemale</nameGeneratorFemale>
-	  
+
 	  <hediffGiverSets>
         <li>Zombiefied</li>
       </hediffGiverSets>
-	  
+
 	  <specialShadowData>
         <volume>(0.3, 0.8, 0.4)</volume>
         <offset>(0,0,-0.3)</offset>
       </specialShadowData>
-	  
+
       <lifeStageAges>
         <li>
           <def>AnimalBaby</def>
