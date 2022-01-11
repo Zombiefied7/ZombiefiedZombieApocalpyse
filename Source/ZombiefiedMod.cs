@@ -121,7 +121,7 @@ namespace Zombiefied
             */
 
             debugRemoveZombies.Value = false;
-            base.Logger.Message("found " + zCount + " Zombies. " + zWrongFactionCount + " of them were repaired.", new object[0]);
+            //base.Logger.Message("found " + zCount + " Zombies. " + zWrongFactionCount + " of them were repaired.", new object[0]);
         }
 
         public override void DefsLoaded()
@@ -271,7 +271,7 @@ namespace Zombiefied
             //int num = UnityEngine.Random.Range((int)((float)ZombiesDefOf.ZombiesSettings.MinRaidTicksBase * challengeModifier), (int)((float)ZombiesDefOf.ZombiesSettings.MaxRaidTicksBase * challengeModifier));
             int num = Rand.RangeSeeded((int)((float)7777 * challengeModifier), (int)((float)280000 * challengeModifier), Find.TickManager.TicksAbs + Find.World.ConstantRandSeed);
             //if (first && num < ZombiesDefOf.ZombiesSettings.MinTicksBeforeFirstRaid)
-            base.Logger.Message("next zombieraid in " + num + " ticks.", new object[0]);
+            //base.Logger.Message("next zombieraid in " + num + " ticks.", new object[0]);
             return num;
         }
 
@@ -284,7 +284,7 @@ namespace Zombiefied
                 {
                     this._ticksUntilNextZombieRaid[currentMapIndex] = this.GenerateTicksUntilNextRaid();
 
-                    base.Logger.Message("setting up zombieraid for map " + currentMapIndex + ".", new object[0]);
+                    //base.Logger.Message("setting up zombieraid for map " + currentMapIndex + ".", new object[0]);
 
                     if (currentMapIndex < zombieAmountsPerMap.Count && zombieAmountsPerMap[currentMapIndex] < zombieAmountSoftCap)
                     {
@@ -302,11 +302,11 @@ namespace Zombiefied
                         {
                             IncidentDef.Named("ZombiePack").Worker.TryExecute(incidentParms);
                         }
-                        base.Logger.Message("Zombieraid started on map " + currentMapIndex + ".", new object[0]);
+                        //base.Logger.Message("Zombieraid started on map " + currentMapIndex + ".", new object[0]);
                     }
                     else
                     {
-                        base.Logger.Message("Zombieraid failed on map " + currentMapIndex + " because map invalid or more zombies are already on the map than cap allows.", new object[0]);
+                        //base.Logger.Message("Zombieraid failed on map " + currentMapIndex + " because map invalid or more zombies are already on the map than cap allows.", new object[0]);
                     }
                 }
             }
@@ -449,7 +449,7 @@ namespace Zombiefied
 
                     log += "map " + m + " has " + noisyLocationsPerMap[m].Count + " noisy locations and " + zombieAmountsPerMap[m] + " zombies.   ";
                 }
-                base.Logger.Message(log, new object[0]);
+                //base.Logger.Message(log, new object[0]);
             }
         }
 
