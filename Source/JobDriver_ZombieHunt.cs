@@ -27,7 +27,7 @@ namespace Zombiefied
         protected override IEnumerable<Toil> MakeNewToils()
         {
             Log.Message("Making new Toils");
-            yield return Toils_Interact.DestroyThing(TargetIndex.A);
+            //yield return Toils_Interact.DestroyThing(TargetIndex.A);
             yield return Toils_Combat.FollowAndMeleeAttack(TargetIndex.A, delegate
             {
                 Thing thing = this.job.GetTarget(TargetIndex.A).Thing;
