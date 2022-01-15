@@ -45,18 +45,21 @@ namespace Zombiefied
 
         public override void Notify_PatherFailed()
         {
-            if (this.job.attackDoorIfTargetLost)
+            if (true)
             {
+                Log.Message("Pather failed");
                 Thing thing;
-                using (PawnPath pawnPath = base.Map.pathFinder.FindPath(this.pawn.Position, base.TargetA.Cell, TraverseParms.For(this.pawn, Danger.Deadly, TraverseMode.PassDoors, false), PathEndMode.OnCell))
+                using (PawnPath pawnPath = base.Map.pathFinder.FindPath(this.pawn.Position, base.TargetA.Cell, TraverseParms.For(this.pawn, Danger.Deadly, TraverseMode.PassAllDestroyableThingsNotWater, false), PathEndMode.OnCell))
                 {
                     if (!pawnPath.Found)
                     {
+                        Log.Message("Couldn't get new path");
                         return;
                     }
                     IntVec3 intVec;
                     thing = pawnPath.FirstBlockingBuilding(out intVec, this.pawn);
                 }
+                Log.Message("Thing " + thing.ToString());
                 if (thing != null)
                 {
                     this.job.targetA = thing;

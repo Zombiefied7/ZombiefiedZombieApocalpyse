@@ -5,6 +5,7 @@ using HugsLib;
 using RimWorld;
 using UnityEngine;
 using Verse;
+using Verse.AI;
 
 namespace Zombiefied
 {
@@ -23,7 +24,11 @@ namespace Zombiefied
         {
 
         }
-
+        public bool CanReach(LocalTargetInfo target)
+        {
+            Pawn self = this as Pawn;
+            return self.CanReach(target, PathEndMode.ClosestTouch, Danger.Deadly, false, false, TraverseMode.PassAllDestroyableThings);
+        }
         public override void ExposeData()
         {
             base.ExposeData();

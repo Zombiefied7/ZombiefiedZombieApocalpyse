@@ -13,15 +13,18 @@ namespace Zombiefied
         // Token: 0x060003E6 RID: 998 RVA: 0x0002923C File Offset: 0x0002763C
         protected override Job TryGiveJob(Pawn pawn)
         {
+            Log.Message("TryGive ZombieResponse");
             return this.TryGetAttackNearbyEnemyJob(pawn);
         }
 
         // Token: 0x060003E7 RID: 999 RVA: 0x000292AC File Offset: 0x000276AC
         private Job TryGetAttackNearbyEnemyJob(Pawn pawn)
         {
-            Pawn thing = BestPawnToHuntForPredator(pawn);
+            Pawn_Zombiefied predator = pawn as Pawn_Zombiefied;
+            Pawn thing = BestPawnToHuntForPredator(predator);
             if (thing != null)
             {
+                Log.Message("Creating hunt job to hunt "+thing.ToString());
                 return new Job(ZombiefiedMod.zombieHunt, thing)
                 {
                     killIncappedTarget = true,
@@ -32,68 +35,54 @@ namespace Zombiefied
             return null;
         }
 
-        public Pawn BestPawnToHuntForPredator(Pawn predator, float range = 7f)
+        public Pawn BestPawnToHuntForPredator(Pawn_Zombiefied predator, float range = 20f)
         {
-            //List<Pawn> allPawnsSpawned = predator.Map.mapPawns.AllPawnsSpawned;
-            List<Thing> allThingsRegion = predator.GetRegion().ListerThings.AllThings;
+            List<Thing> allThingsRegion = predator.Map.listerThings.AllThings;
 
             Pawn pawnToReturn = null;
-            float num = 0f;
+            float closest = 0f;
 
-            //for (int i = 0; i < allPawnsSpawned.Count; i++)
-            for (int i = 0; i < allThingsRegion.Count; i++)
+            foreach (Thing item in allThingsRegion)
+            {
+                Pawn prey = item as Pawn;
+
+                // if prey is a pawn or the predator, skip.
+                if (prey == null || predator == prey) continue;
+                // if prey isn't acceptable, skip.
+                if (!IsAcceptablePreyFor(predator, prey)) continue;
+                // if prey is too far, skip.
+                float distance = GetDistance(predator, prey);
+                if (distance > range) continue;
+                // if predator can't reach the prey, skip.
+                if (!predator.CanReach(prey)) continue;
+                if (distance < closest || pawnToReturn == null)
                 {
-                Pawn pawn2 = allThingsRegion[i] as Pawn;
-                if (pawn2 != null && predator != pawn2)
-                {
-                    if (IsAcceptablePreyFor(predator, pawn2, range))
-                    {
-                        if (predator.CanReach(pawn2, PathEndMode.ClosestTouch, Danger.Deadly, false, false, TraverseMode.ByPawn))
-                        {
-                            if (!pawn2.IsForbidden(predator))
-                            {
-                                float preyScoreFor = GetPreyScoreFor(predator, pawn2);
-                                if (preyScoreFor > num || pawnToReturn == null)
-                                {
-                                    num = preyScoreFor;
-                                    pawnToReturn = pawn2;
-                                }
-                            }
-                        }
-                    }
+                    closest = distance;
+                    pawnToReturn = prey;
                 }
             }
+
+            Log.Message("Hunting " + pawnToReturn);
             return pawnToReturn;
         }
 
-        public bool IsAcceptablePreyFor(Pawn predator, Pawn prey, float distance)
+        public bool IsAcceptablePreyFor(Pawn predator, Pawn prey)
         {
-            Pawn_Zombiefied preyZ = prey as Pawn_Zombiefied;
-            if (preyZ != null)
-            {
-                return false;
-            }         
-            if(ZombiefiedMod.disableZombiesAttackingAnimals && !prey.RaceProps.Humanlike)
-            {
-                return false;
-            }
-            if (!prey.RaceProps.IsFlesh)
-            {
-                return false;
-            }
-            float lengthHorizontal = -GetPreyScoreFor(predator, prey);
-            if (lengthHorizontal > distance)
-            {
-                return false;
-            }
-            
+            // If prey is zombie
+            if (prey as Pawn_Zombiefied != null) return false;
+            // If prey isn't human, and zombies can't attack animals
+            if(ZombiefiedMod.disableZombiesAttackingAnimals && !prey.RaceProps.Humanlike) return false;
+            // If prey isn't made of flesh
+            if (!prey.RaceProps.IsFlesh) return false;
+            // if prey is forbidden to predator, skip.
+            if (prey.IsForbidden(predator)) return false;
             return true;
         }
 
-        public float GetPreyScoreFor(Pawn predator, Pawn prey)
+        public float GetDistance(Pawn predator, Pawn prey)
         {
             float lengthHorizontal = (predator.Position - prey.Position).LengthHorizontal;
-            return -lengthHorizontal;
+            return lengthHorizontal;
         }
     }
 }
