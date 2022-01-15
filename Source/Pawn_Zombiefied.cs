@@ -309,7 +309,7 @@ namespace Zombiefied
                         this.verbTracker.VerbsTick();
                         this.natives.NativeVerbsTick();
                     }
-                    if (base.Spawned)
+                    if (base.Spawned) 
                     {
                         this.jobs.JobTrackerTick();
                     }

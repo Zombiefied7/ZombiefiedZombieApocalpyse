@@ -13,22 +13,28 @@ namespace Zombiefied
 
         public override void ExposeData()
         {
+            Log.Message("ExposeData");
             base.ExposeData();
             Scribe_Values.Look<int>(ref this.numMeleeAttacksMade, "numMeleeAttacksMade", 0, false);
         }
 
         public override bool TryMakePreToilReservations(bool errorOnFailed)
         {
+            Log.Message("TryMakePreToilReservations");
             return true;
         }
 
         protected override IEnumerable<Toil> MakeNewToils()
         {
+            Log.Message("Making new Toils");
+            yield return Toils_Interact.DestroyThing(TargetIndex.A);
             yield return Toils_Combat.FollowAndMeleeAttack(TargetIndex.A, delegate
             {
                 Thing thing = this.job.GetTarget(TargetIndex.A).Thing;
+                Log.Message("Attacking " + thing);
                 if (this.pawn.meleeVerbs.TryMeleeAttack(thing, this.job.verbToUse, false))
                 {
+                    Log.Message("Hit?");
                     if (this.pawn.CurJob == null || this.pawn.jobs.curDriver != this)
                     {
                         return;
@@ -39,6 +45,9 @@ namespace Zombiefied
                         this.EndJobWith(JobCondition.Succeeded);
                         return;
                     }
+                } else
+                {
+                    Log.Message("Fail!?");
                 }
             }).FailOnDespawnedOrNull(TargetIndex.A);
         }
@@ -49,7 +58,7 @@ namespace Zombiefied
             {
                 Log.Message("Pather failed");
                 Thing thing;
-                using (PawnPath pawnPath = base.Map.pathFinder.FindPath(this.pawn.Position, base.TargetA.Cell, TraverseParms.For(this.pawn, Danger.Deadly, TraverseMode.PassAllDestroyableThingsNotWater, false), PathEndMode.OnCell))
+                using (PawnPath pawnPath = base.Map.pathFinder.FindPath(this.pawn.Position, base.TargetA.Cell, TraverseParms.For(this.pawn, Danger.Deadly, TraverseMode.PassAllDestroyableThingsNotWater, false), PathEndMode.ClosestTouch))
                 {
                     if (!pawnPath.Found)
                     {
