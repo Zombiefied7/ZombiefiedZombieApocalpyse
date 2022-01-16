@@ -94,7 +94,7 @@ namespace Zombiefied
 
             if (list.Count < 1)
             {
-                Log.Error("Got no pawns spawning raid from parms " + parms, false);
+                Log.Error("Got no pawns spawning raid from parms " + parms);
                 return false;
             }
             else

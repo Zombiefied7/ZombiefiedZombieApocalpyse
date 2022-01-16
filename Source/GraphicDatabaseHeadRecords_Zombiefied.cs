@@ -88,7 +88,7 @@ namespace Zombiefied
                     return headGraphicRecord2.GetGraphic(skinColor, false);
                 }
             }
-            Log.Error("Failed to find head for gender=" + gender + ". Defaulting...", false);
+            Log.Error("Failed to find head for gender=" + gender + ". Defaulting...");
             return GraphicDatabaseHeadRecords_Zombiefied.heads.First<GraphicDatabaseHeadRecords_Zombiefied.HeadGraphicRecord>().GetGraphic(skinColor, false);
         }
 
@@ -131,14 +131,13 @@ namespace Zombiefied
                     this.crownType = (CrownType)ParseHelper.FromString(array[array.Length - 2], typeof(CrownType));
                     this.gender = (Gender)ParseHelper.FromString(array[array.Length - 3], typeof(Gender));
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                     //Log.Error("Parse error with head graphic at " + graphicPath + ": " + ex.Message, false);
                     this.crownType = CrownType.Undefined;
                     this.gender = Gender.None;
                 }
             }
-
             // Token: 0x060051D7 RID: 20951 RVA: 0x0025EFA0 File Offset: 0x0025D3A0
             public Graphic_Multi GetGraphic(Color color, bool dessicated = false)
             {

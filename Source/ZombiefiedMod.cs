@@ -459,7 +459,6 @@ namespace Zombiefied
             int currentMapIndex = -7;
 
             IntVec3 location = IntVec3.Invalid;
-            float num = 0f;
 
             for (int i = 0; i < Find.Maps.Count; i++)
             {
@@ -478,16 +477,6 @@ namespace Zombiefied
             if (locations != null && locations.Count > 0)
             {
                 location = locations[locations.Count - 1];
-                /*
-                for (int i = 0; i < locations.Count; i++)
-                {
-                    if (location == IntVec3.Invalid || num > (predator.Position - locations[i]).LengthHorizontal)
-                    {
-                        location = locations[i];
-                        num = (predator.Position - locations[i]).LengthHorizontal;
-                    }
-                }
-                */
             }
 
             return location;

@@ -129,26 +129,9 @@ namespace Zombiefied
                     {
                         quat = Quaternion.AngleAxis(this.wiggler.downedAngle, Vector3.up);
                     }
-                    else if (true)
-                    {
-                        quat = rot.AsQuat;
-                    }
                     else
                     {
-                        Rot4 rot2 = Rot4.West;
-                        int num = this.pawn.thingIDNumber % 2;
-                        if (num != 0)
-                        {
-                            if (num == 1)
-                            {
-                                rot2 = Rot4.East;
-                            }
-                        }
-                        else
-                        {
-                            rot2 = Rot4.West;
-                        }
-                        quat = rot2.AsQuat;
+                        quat = rot.AsQuat;
                     }
                 }
                 this.RenderPawnInternal(rootLoc, quat, renderBody, rot, rot, bodyDrawType, false, headStump);
@@ -203,14 +186,7 @@ namespace Zombiefied
                 }
                 else
                 {
-                    if (true)
-                    {
-                        mesh = MeshPool.humanlikeBodySet.MeshAt(bodyFacing);
-                    }
-                    else
-                    {
-                        mesh = this.graphics.nakedGraphic.MeshAt(bodyFacing);
-                    }
+                    mesh = MeshPool.humanlikeBodySet.MeshAt(bodyFacing);
                     List<Material> list = this.graphics.MatsBodyBaseAt(bodyFacing, bodyDrawType);
                     for (int i = 0; i < list.Count; i++)
                     {
@@ -435,33 +411,16 @@ namespace Zombiefied
             {
                 return Rot4.South;
             }
-            if (true)
+            switch (this.pawn.thingIDNumber % 4)
             {
-                switch (this.pawn.thingIDNumber % 4)
-                {
-                    case 0:
-                        return Rot4.South;
-                    case 1:
-                        return Rot4.South;
-                    case 2:
-                        return Rot4.East;
-                    case 3:
-                        return Rot4.West;
-                }
-            }
-            else
-            {
-                switch (this.pawn.thingIDNumber % 4)
-                {
-                    case 0:
-                        return Rot4.South;
-                    case 1:
-                        return Rot4.East;
-                    case 2:
-                        return Rot4.West;
-                    case 3:
-                        return Rot4.West;
-                }
+                case 0:
+                    return Rot4.South;
+                case 1:
+                    return Rot4.South;
+                case 2:
+                    return Rot4.East;
+                case 3:
+                    return Rot4.West;
             }
             return Rot4.East;
         }
