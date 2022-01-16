@@ -41,7 +41,6 @@ namespace Zombiefied
             else
             {
                 string reflectedPath = pawn.story.GetFieldValue<string>("headGraphicPath");
-                //Log.Message("++" + reflectedPath + "++");
                 if (reflectedPath != null && reflectedPath.Length > 7)
                 {
                     this.headGraphicPath = reflectedPath;
@@ -74,7 +73,6 @@ namespace Zombiefied
             this.color = color;
             this.hairColor = hairColor;
             this.shaderCutoutPath = shaderCutoutPath;
-            //this.wornApparelDefs = new List<ThingDef>(source.wornApparelDefs);
         }
         public void ExposeData()
         {

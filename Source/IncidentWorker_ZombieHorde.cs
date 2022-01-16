@@ -22,7 +22,6 @@ namespace Zombiefied
 
         protected virtual bool FactionCanBeGroupSource(Faction f, Map map, bool desperate = true)
         {
-            //bool result;
             if (f.IsPlayer)
             {
                 return false;
@@ -31,19 +30,6 @@ namespace Zombiefied
             {
                 return false;
             }
-            /*
-            if (f.defeated)
-            {
-                return false;
-            }
-            if (!desperate)
-            {
-                if (!f.def.allowedArrivalTemperatureRange.Includes(map.mapTemperature.OutdoorTemp) || !f.def.allowedArrivalTemperatureRange.Includes(map.mapTemperature.SeasonalTemp))
-                {
-                    return false;
-                }
-            }
-            */
             return true;
         }
 

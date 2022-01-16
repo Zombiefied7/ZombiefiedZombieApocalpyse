@@ -52,8 +52,6 @@ namespace Zombiefied
             {
                 return false;
             }
-            
-            //List<Pawn> list = ManhunterPackIncidentUtility.GenerateAnimals(pawnKindDef, map.Tile, parms.points);
             Rot4 rot = Rot4.FromAngleFlat((map.Center - intVec).AngleFlat);
 
             Pawn reference = null;
@@ -74,7 +72,6 @@ namespace Zombiefied
                 Pawn pawn = PawnGenerator.GeneratePawn(pawnKindDef, zFaction);
                 IntVec3 loc = CellFinder.RandomClosewalkCellNear(intVec, map, 10, null);
                 pawn.apparel.DestroyAll();
-                //pawn.SetFactionDirect(zFaction);
                 
                 Pawn_Zombiefied zomb = (Pawn_Zombiefied)GenSpawn.Spawn(pawn, loc, map, rot, WipeMode.Vanish, false);
                 if (zomb != null)
