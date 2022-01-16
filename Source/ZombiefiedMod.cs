@@ -11,14 +11,11 @@ using Verse;
 
 namespace Zombiefied
 {
-    // Token: 0x02000008 RID: 8
     public class ZombiefiedMod : ModBase
     {
         public static JobDef zombieHunt;
         public static JobDef zombieMove;
 
-        // Token: 0x17000001 RID: 1
-        // (get) Token: 0x06000018 RID: 24 RVA: 0x00002A68 File Offset: 0x00000C68
         public override string ModIdentifier
         {
             get
@@ -26,8 +23,6 @@ namespace Zombiefied
                 return "Zombiefied";
             }
         }
-
-        // Token: 0x06000019 RID: 25 RVA: 0x00002A82 File Offset: 0x00000C82
         public override void WorldLoaded()
         {
             base.Logger.Message("loaded", new object[0]);
@@ -429,9 +424,6 @@ namespace Zombiefied
                                                 bestLocation = building2.Position;
                                                 bestLocationTicks = building2.LastAttackTargetTick;
                                             }
-
-                                            //noisyLocationsPerMap[m].Enqueue(building2.Position);
-                                            //noisyLocationTicksPerMap[m].Enqueue(building2.LastAttackTargetTick);
                                         }
                                     }
                                 }
@@ -449,7 +441,6 @@ namespace Zombiefied
 
                     log += "map " + m + " has " + noisyLocationsPerMap[m].Count + " noisy locations and " + zombieAmountsPerMap[m] + " zombies.   ";
                 }
-                //base.Logger.Message(log, new object[0]);
             }
         }
 
@@ -481,15 +472,12 @@ namespace Zombiefied
 
             return location;
         }
-
-        // Token: 0x0600001E RID: 30 RVA: 0x00002BBC File Offset: 0x00000DBC
         private void HandleReanimation()
         {
             if (Find.TickManager.TicksAbs % 1777 == 7)
             {
                 foreach (Map map in Find.Maps)
                 {
-                    //List<Thing> list = map.listerThings.ThingsInGroup(ThingRequestGroup.Corpse);
                     List<Thing> list = map.listerThings.AllThings;
                     if (list != null)
                     {

@@ -6,11 +6,8 @@ using Verse;
 
 namespace Zombiefied
 {
-    // Token: 0x02000017 RID: 23
     public class ZombieGraphicSet
     {
-        // Token: 0x17000010 RID: 16
-        // (get) Token: 0x06000071 RID: 113 RVA: 0x000048A1 File Offset: 0x00002AA1
         public bool AllResolved
         {
             get
@@ -19,8 +16,6 @@ namespace Zombiefied
             }
         }
 
-        // Token: 0x17000011 RID: 17
-        // (get) Token: 0x06000072 RID: 114 RVA: 0x000048AC File Offset: 0x00002AAC
         public GraphicMeshSet HairMeshSet
         {
             get
@@ -37,14 +32,10 @@ namespace Zombiefied
                 return MeshPool.humanlikeHairSetAverage;
             }
         }
-
-        // Token: 0x06000073 RID: 115 RVA: 0x00004905 File Offset: 0x00002B05
         public ZombieGraphicSet(ZombieData data)
         {
             this.data = data;
         }
-
-        // Token: 0x06000074 RID: 116 RVA: 0x00004934 File Offset: 0x00002B34
         public List<Material> MatsBodyBaseAt(Rot4 facing, RotDrawMode bodyCondition = RotDrawMode.Fresh)
         {
             int num = facing.AsInt + 1000 * (int)bodyCondition;
@@ -74,8 +65,6 @@ namespace Zombiefied
             }
             return this.cachedMatsBodyBase;
         }
-
-        // Token: 0x06000075 RID: 117 RVA: 0x00004A54 File Offset: 0x00002C54
         public Material HeadMatAt(Rot4 facing, RotDrawMode bodyCondition = RotDrawMode.Fresh, bool stump = false)
         {
             Material result = null;
@@ -107,20 +96,14 @@ namespace Zombiefied
             }
             return result;
         }
-
-        // Token: 0x06000076 RID: 118 RVA: 0x00004AC6 File Offset: 0x00002CC6
         public Material HairMatAt(Rot4 facing)
         {
             return this.hairGraphic.MatAt(facing, null);
         }
-
-        // Token: 0x06000077 RID: 119 RVA: 0x00004AD5 File Offset: 0x00002CD5
         public void ClearCache()
         {
             this.cachedMatsBodyBaseHash = -1;
         }
-
-        // Token: 0x06000078 RID: 120 RVA: 0x00004AE0 File Offset: 0x00002CE0
         public void ResolveAllGraphics(float scale = 1f)
         {
             Shader shader = ShaderDatabase.LoadShader(this.data.shaderCutoutPath);
@@ -136,8 +119,6 @@ namespace Zombiefied
             this.hairGraphic = GraphicDatabase.Get<Graphic_Multi>(this.data.hairGraphicPath, shader, Vector2.one, this.data.hairColor);
             this.ResolveApparelGraphics();
         }
-
-        // Token: 0x06000079 RID: 121 RVA: 0x00004BF8 File Offset: 0x00002DF8
         public void ResolveApparelGraphics()
         {
             /*
@@ -180,8 +161,6 @@ namespace Zombiefied
             }
             */
         }
-
-        // Token: 0x0600007A RID: 122 RVA: 0x00004CA8 File Offset: 0x00002EA8
         private Apparel MakeApparel(int index)
         {
             ThingDef def = this.data.wornApparelDefs[index];
@@ -192,8 +171,6 @@ namespace Zombiefied
             }                      
             return apparel;
         }
-
-        // Token: 0x0600007B RID: 123 RVA: 0x00004CC4 File Offset: 0x00002EC4
         private static bool TryGetGraphicApparel(Apparel apparel, Color color, BodyTypeDef bodyType, Shader shader, out ApparelGraphicRecord rec)
         {
             /*
@@ -229,47 +206,19 @@ namespace Zombiefied
             rec = new ApparelGraphicRecord();
             return false;
         }
-
-        // Token: 0x04000063 RID: 99
         public ZombieData data;
-
-        // Token: 0x04000064 RID: 100
         public Graphic nakedGraphic;
-
-        // Token: 0x04000065 RID: 101
         public Graphic rottingGraphic;
-
-        // Token: 0x04000066 RID: 102
         public Graphic dessicatedGraphic;
-
-        // Token: 0x04000067 RID: 103
         public Graphic headGraphic;
-
-        // Token: 0x04000068 RID: 104
         public Graphic desiccatedHeadGraphic;
-
-        // Token: 0x04000069 RID: 105
         public Graphic skullGraphic;
-
-        // Token: 0x0400006A RID: 106
         public Graphic headStumpGraphic;
-
-        // Token: 0x0400006B RID: 107
         public Graphic desiccatedHeadStumpGraphic;
-
-        // Token: 0x0400006C RID: 108
         public Graphic hairGraphic;
-
-        // Token: 0x0400006D RID: 109
         public List<ApparelGraphicRecord> apparelGraphics = new List<ApparelGraphicRecord>();
-
-        // Token: 0x0400006E RID: 110
         private List<Material> cachedMatsBodyBase = new List<Material>();
-
-        // Token: 0x0400006F RID: 111
         private int cachedMatsBodyBaseHash = -1;
-
-        // Token: 0x04000070 RID: 112
         public static readonly Color RottingColor = new Color(0.34f, 0.32f, 0.3f);
     }
 }

@@ -10,10 +10,8 @@ using Verse;
 
 namespace Zombiefied
 {
-    // Token: 0x02000C41 RID: 3137
     public class DamageWorker_ZombieBite : DamageWorker_AddInjury
     {
-        // Token: 0x06004219 RID: 16921 RVA: 0x001E310A File Offset: 0x001E150A
         protected override BodyPartRecord ChooseHitPart(DamageInfo dinfo, Pawn pawn)
         {
             return GetRandomNotMissingNotTorsoPart(dinfo, pawn, 0);
@@ -29,8 +27,6 @@ namespace Zombiefied
             }
             return GetRandomNotMissingNotTorsoPart(dinfo, pawn, ++i);
         }
-
-        // Token: 0x0600421A RID: 16922 RVA: 0x001E312B File Offset: 0x001E152B
         protected override void ApplySpecialEffectsToPart(Pawn pawn, float totalDamage, DamageInfo dinfo, DamageWorker.DamageResult result)
         {
             bool partSkinnedOrNotSolid = (!dinfo.HitPart.def.IsSolid(dinfo.HitPart, pawn.health.hediffSet.hediffs) || dinfo.HitPart.def.IsSkinCovered(dinfo.HitPart, pawn.health.hediffSet));

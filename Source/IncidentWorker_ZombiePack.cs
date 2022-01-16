@@ -9,7 +9,6 @@ using RimWorld;
 
 namespace Zombiefied
 {
-    // Token: 0x02000313 RID: 787
     public class IncidentWorker_ZombiePack : IncidentWorker
     {
         protected void ResolveRaidPoints(IncidentParms parms)
@@ -28,8 +27,6 @@ namespace Zombiefied
                     where  k.defName != null && k.defName.Contains("Zombie") && k.defName != "Zombie" && (tile == -1 || Find.World.tileTemperatures.SeasonAndOutdoorTemperatureAcceptableFor(tile, k.race))
                     select k).TryRandomElementByWeight((PawnKindDef k) => 7f, out animalKind);
         }
-
-        // Token: 0x06000D17 RID: 3351 RVA: 0x00061114 File Offset: 0x0005F514
         protected override bool TryExecuteWorker(IncidentParms parms)
         {
             Faction zFaction = Faction.OfInsects;

@@ -6,7 +6,6 @@ using RimWorld;
 
 namespace Zombiefied
 {
-    // Token: 0x02000030 RID: 48
     public class JobDriver_ZombieMove : JobDriver
     {
 

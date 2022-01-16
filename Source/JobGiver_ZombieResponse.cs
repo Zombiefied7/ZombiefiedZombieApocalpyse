@@ -7,16 +7,12 @@ using RimWorld;
 
 namespace Zombiefied
 {
-    // Token: 0x020000A4 RID: 164
     public class JobGiver_ZombieResponse : ThinkNode_JobGiver
     {
-        // Token: 0x060003E6 RID: 998 RVA: 0x0002923C File Offset: 0x0002763C
         protected override Job TryGiveJob(Pawn pawn)
         {
             return this.TryGetAttackNearbyEnemyJob(pawn);
         }
-
-        // Token: 0x060003E7 RID: 999 RVA: 0x000292AC File Offset: 0x000276AC
         private Job TryGetAttackNearbyEnemyJob(Pawn pawn)
         {
             Pawn thing = BestPawnToHuntForPredator(pawn);
