@@ -28,7 +28,7 @@ In order for pull requests to be merged the following must be true:
 1. The PR must be merging from an alternative branch to the main branch of this repository.
 2. There must be no code conflicts that aren't already resolved by the PR author.
 3. A **detailed** summary of all modifications must be displayed.
-4. Atleast one contributor of this repository with write access must perform a Code Review and any changes to the initial PR must be made.
+4. Atleast one contributor of this repository with write access must perform a Code Review and any requested changes to the initial PR must be made.
 
 
 ## Logs
