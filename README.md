@@ -31,4 +31,4 @@ treaverb, for religiously testing this mod and finding bugs
 
 ## Want to Contribute?
 Check our contribution guide out!
-[Click Here](CONTRIBUTION.md)
+[Click Here](CONTRIBUTING.md)
