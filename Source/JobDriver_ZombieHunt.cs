@@ -17,8 +17,11 @@ namespace Zombiefied
 
         protected override IEnumerable<Toil> MakeNewToils()
         {
-            yield return this.GotoBlockers();
-            yield return this.HitThings();
+            // If we can't reach the target, change the target to whatever's blocking us.
+            Toil gotoBlockers = GotoBlockers();
+            if (gotoBlockers != null) yield return gotoBlockers;
+            // Hit the target.
+            yield return HitThings();
         }
         public Toil GotoBlockers()
         {
