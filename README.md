@@ -27,3 +27,8 @@ For every living thing in your modded game a unique zombie-version is generated.
 ## Credits
 JustinNeedsCaffeine, for making the original Zombie Apocalypse mod for v.1.5
 treaverb, for religiously testing this mod and finding bugs
+
+
+## Want to Contribute?
+Check our contribution guide out!
+[Click Here](CONTRIBUTION.md)
