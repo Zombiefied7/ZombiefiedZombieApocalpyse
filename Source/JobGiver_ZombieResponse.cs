@@ -13,27 +13,16 @@ namespace Zombiefied
         // Token: 0x060003E6 RID: 998 RVA: 0x0002923C File Offset: 0x0002763C
         protected override Job TryGiveJob(Pawn pawn)
         {
-            Log.Message("TryGive ZombieResponse");
-            return this.TryGetAttackNearbyEnemyJob(pawn);
+            Pawn_Zombiefied predator = pawn as Pawn_Zombiefied;
+            Pawn prey = BestPawnToHuntForPredator(predator);
+            if (prey == null) return null;
+            return new Job(ZombiefiedMod.zombieHunt, prey)
+            {
+                killIncappedTarget = true,
+                expiryInterval = (int)(Rand.RangeSeeded(3f, 4f, Find.TickManager.TicksAbs) * 700),
+            };
         }
 
-        // Token: 0x060003E7 RID: 999 RVA: 0x000292AC File Offset: 0x000276AC
-        private Job TryGetAttackNearbyEnemyJob(Pawn pawn)
-        {
-            Pawn_Zombiefied predator = pawn as Pawn_Zombiefied;
-            Pawn thing = BestPawnToHuntForPredator(predator);
-            if (thing != null)
-            {
-                Log.Message("Creating hunt job to hunt "+thing.ToString());
-                return new Job(ZombiefiedMod.zombieHunt, thing)
-                {
-                    killIncappedTarget = true,
-                    expiryInterval = (int)(Rand.RangeSeeded(1f, 2f, Find.TickManager.TicksAbs) * 700),
-                    attackDoorIfTargetLost = true
-                };
-            }
-            return null;
-        }
 
         public Pawn BestPawnToHuntForPredator(Pawn_Zombiefied predator, float range = 20f)
         {
@@ -54,15 +43,15 @@ namespace Zombiefied
                 float distance = GetDistance(predator, prey);
                 if (distance > range) continue;
                 // if predator can't reach the prey, skip.
-                if (!predator.CanReach(prey)) continue;
+                if (!predator.CanReach(prey, true)) continue;
+                // if predator can reach prey, but it has to go through walls, add to distance, to ensure un-blocked pawns are considered closer, and thus easier to get to
+                if (!predator.CanReach(prey, false)) distance *= 5;
                 if (distance < closest || pawnToReturn == null)
                 {
                     closest = distance;
                     pawnToReturn = prey;
                 }
             }
-
-            Log.Message("Hunting " + pawnToReturn);
             return pawnToReturn;
         }
 

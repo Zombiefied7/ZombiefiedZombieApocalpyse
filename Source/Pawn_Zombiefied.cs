@@ -22,12 +22,11 @@ namespace Zombiefied
 
         public Pawn_Zombiefied() : base()
         {
-
         }
-        public bool CanReach(LocalTargetInfo target)
+        public bool CanReach(LocalTargetInfo target, bool throughWalls)
         {
             Pawn self = this as Pawn;
-            return self.CanReach(target, PathEndMode.ClosestTouch, Danger.Deadly, false, false, TraverseMode.PassAllDestroyableThings);
+            return self.CanReach(target, PathEndMode.ClosestTouch, Danger.Deadly, false, false, (throughWalls)?TraverseMode.PassAllDestroyableThings:TraverseMode.NoPassClosedDoors);
         }
         public override void ExposeData()
         {
