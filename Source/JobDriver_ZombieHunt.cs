@@ -18,8 +18,11 @@ namespace Zombiefied
         protected override IEnumerable<Toil> MakeNewToils()
         {
             // If we can't reach the target, change the target to whatever's blocking us.
-            Toil gotoBlockers = GotoBlockers();
-            if (gotoBlockers != null) yield return gotoBlockers;
+            if(ZombiefiedMod.allowBreaching)
+            {
+                Toil gotoBlockers = GotoBlockers();
+                if (gotoBlockers != null) yield return gotoBlockers;
+            }
             // Hit the target.
             yield return HitThings();
         }
@@ -39,11 +42,14 @@ namespace Zombiefied
             {
                 this.job.targetA = thing;
                 return Toils_Goto.GotoThing(TargetIndex.A, PathEndMode.Touch);
+
             }
             return null;
         }
         public Toil HitThings()
         {
+            this.job.killIncappedTarget = true;
+            this.job.maxNumMeleeAttacks = 5;
             return Toils_Combat.FollowAndMeleeAttack(TargetIndex.A, delegate
             {
                 Thing thing = this.job.GetTarget(TargetIndex.A).Thing;

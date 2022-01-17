@@ -16,11 +16,7 @@ namespace Zombiefied
             Pawn_Zombiefied predator = pawn as Pawn_Zombiefied;
             Pawn prey = BestPawnToHuntForPredator(predator);
             if (prey == null) return null;
-            return new Job(ZombiefiedMod.zombieHunt, prey)
-            {
-                killIncappedTarget = true,
-                expiryInterval = (int)(Rand.RangeSeeded(3f, 4f, Find.TickManager.TicksAbs) * 700),
-            };
+            return new Job(ZombiefiedMod.zombieHunt, prey);
         }
 
 
@@ -43,9 +39,9 @@ namespace Zombiefied
                 float distance = GetDistance(predator, prey);
                 if (distance > range) continue;
                 // if predator can't reach the prey, skip.
-                if (!predator.CanReach(prey, true)) continue;
+                if (!predator.CanReach(prey, ZombiefiedMod.allowBreaching)) continue;
                 // if predator can reach prey, but it has to go through walls, add to distance, to ensure un-blocked pawns are considered closer, and thus easier to get to
-                if (!predator.CanReach(prey, false)) distance *= 5;
+                if (ZombiefiedMod.allowBreaching && !predator.CanReach(prey, false)) distance *= 5;
                 if (distance < closest || pawnToReturn == null)
                 {
                     closest = distance;
