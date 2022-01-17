@@ -20,7 +20,7 @@ namespace Zombiefied
         }
 
 
-        public Pawn BestPawnToHuntForPredator(Pawn_Zombiefied predator, float range = 20f)
+        public Pawn BestPawnToHuntForPredator(Pawn_Zombiefied predator, float range = 7f)
         {
             List<Thing> allThingsRegion = predator.Map.listerThings.AllThings;
 
