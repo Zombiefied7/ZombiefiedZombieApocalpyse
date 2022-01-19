@@ -35,7 +35,7 @@ namespace Zombiefied
             {
                 Pawn prey = item as Pawn;
 
-                // if prey is a pawn or the predator, skip.
+                // if prey is a not pawn or is the predator, skip.
                 if (prey == null || predator == prey) continue;
                 // if prey isn't acceptable, skip.
                 if (!IsAcceptablePreyFor(predator, prey)) continue;
