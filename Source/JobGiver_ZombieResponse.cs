@@ -16,7 +16,11 @@ namespace Zombiefied
             Pawn_Zombiefied predator = pawn as Pawn_Zombiefied;
             Pawn prey = BestPawnToHuntForPredator(predator);
             if (prey == null) return null;
-            return new Job(ZombiefiedMod.zombieHunt, prey);
+            return new Job(ZombiefiedMod.zombieHunt, prey)
+            {
+                killIncappedTarget = true,
+                expiryInterval = (int)(Rand.RangeSeeded(1f, 2f, Find.TickManager.TicksAbs) * 700),
+            };
         }
 
 

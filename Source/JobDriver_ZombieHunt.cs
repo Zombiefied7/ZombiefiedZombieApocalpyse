@@ -48,8 +48,6 @@ namespace Zombiefied
         }
         public Toil HitThings()
         {
-            this.job.killIncappedTarget = true;
-            this.job.maxNumMeleeAttacks = 5;
             return Toils_Combat.FollowAndMeleeAttack(TargetIndex.A, delegate
             {
                 Thing thing = this.job.GetTarget(TargetIndex.A).Thing;
