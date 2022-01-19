@@ -10,6 +10,11 @@ namespace Zombiefied
     public class JobDriver_ZombieHunt : JobDriver
     {
         private int numMeleeAttacksMade;
+        public override void ExposeData()
+        {
+            base.ExposeData();
+            Scribe_Values.Look<int>(ref this.numMeleeAttacksMade, "numMeleeAttacksMade", 0, false);
+        }
         public override bool TryMakePreToilReservations(bool errorOnFailed)
         {
             return true;
@@ -53,6 +58,7 @@ namespace Zombiefied
                 Thing thing = this.job.GetTarget(TargetIndex.A).Thing;
                 if (this.pawn.meleeVerbs.TryMeleeAttack(thing, this.job.verbToUse, false))
                 {
+                    if (this.pawn.CurJob == null || this.pawn.jobs.curDriver != this) return;
                     this.numMeleeAttacksMade++;
                     if (this.numMeleeAttacksMade >= this.job.maxNumMeleeAttacks)
                     {
