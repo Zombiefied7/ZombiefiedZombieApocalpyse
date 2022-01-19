@@ -424,6 +424,8 @@ namespace Zombiefied
                                                 bestLocation = building2.Position;
                                                 bestLocationTicks = building2.LastAttackTargetTick;
                                             }
+                                            //noisyLocationsPerMap[m].Enqueue(building2.Position);
+                                            //noisyLocationTicksPerMap[m].Enqueue(building2.LastAttackTargetTick);
                                         }
                                     }
                                 }
@@ -441,6 +443,7 @@ namespace Zombiefied
 
                     log += "map " + m + " has " + noisyLocationsPerMap[m].Count + " noisy locations and " + zombieAmountsPerMap[m] + " zombies.   ";
                 }
+                //base.Logger.Message(log, new object[0]);
             }
         }
 
@@ -468,6 +471,16 @@ namespace Zombiefied
             if (locations != null && locations.Count > 0)
             {
                 location = locations[locations.Count - 1];
+                /*
+                for (int i = 0; i < locations.Count; i++)
+                {
+                    if (location == IntVec3.Invalid || num > (predator.Position - locations[i]).LengthHorizontal)
+                    {
+                        location = locations[i];
+                        num = (predator.Position - locations[i]).LengthHorizontal;
+                    }
+                }
+                */
             }
 
             return location;
@@ -478,6 +491,7 @@ namespace Zombiefied
             {
                 foreach (Map map in Find.Maps)
                 {
+                    //List<Thing> list = map.listerThings.ThingsInGroup(ThingRequestGroup.Corpse);
                     List<Thing> list = map.listerThings.AllThings;
                     if (list != null)
                     {
