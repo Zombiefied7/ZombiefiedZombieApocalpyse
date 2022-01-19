@@ -8,7 +8,6 @@ using Verse.AI.Group;
 using RimWorld;
 namespace Zombiefied
 {
-    // Token: 0x02000313 RID: 787
     public class IncidentWorker_ZombieHorde : IncidentWorker
     {
         protected void ResolveRaidPoints(IncidentParms parms)
@@ -67,9 +66,6 @@ namespace Zombiefied
             }
             return result;
         }
-
-
-        // Token: 0x06000D17 RID: 3351 RVA: 0x00061114 File Offset: 0x0005F514
         protected override bool TryExecuteWorker(IncidentParms parms)
         {
             Map map = (Map)parms.target;
@@ -94,7 +90,7 @@ namespace Zombiefied
 
             if (list.Count < 1)
             {
-                Log.Error("Got no pawns spawning raid from parms " + parms, false);
+                Log.Error("Got no pawns spawning raid from parms " + parms);
                 return false;
             }
             else
@@ -141,8 +137,6 @@ namespace Zombiefied
             LessonAutoActivator.TeachOpportunity(ConceptDefOf.AllowedAreas, OpportunityType.Important);
             return true;
         }
-
-        // Token: 0x04000880 RID: 2176
         private const float PointsFactor = 3f;
     }
 }

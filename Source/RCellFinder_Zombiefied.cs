@@ -198,14 +198,7 @@ namespace Zombiefied
         {
             if (radius > 12f)
             {
-                Log.Warning(string.Concat(new object[]
-                {
-                    "wanderRadius of ",
-                    radius,
-                    " is greater than Region.GridSize of ",
-                    12,
-                    " and will break."
-                }), false);
+                Log.Warning("wanderRadius of " + radius + " is greater than Region.GridSize of 12 and will break");
             }
             bool flag = false;// UnityData.isDebugBuild && DebugViewSettings.drawDestSearch;
             if (root.GetRegion(pawn.Map, RegionType.Set_Passable) != null)
@@ -507,19 +500,7 @@ namespace Zombiefied
             if (!CellFinderLoose.TryGetRandomCellWith(validator, map, 1000, out intVec))
             {
                 intVec = CellFinder.RandomCell(map);
-                Log.Warning(string.Concat(new object[]
-                {
-                    "RandomAnimalSpawnCell_MapGen failed: numStand=",
-                    numStand,
-                    ", numRoom=",
-                    numRoom,
-                    ", numTouch=",
-                    numTouch,
-                    ". PlayerStartSpot=",
-                    MapGenerator.PlayerStartSpot,
-                    ". Returning ",
-                    intVec
-                }), false);
+                Log.Warning("Random RandomAnimalSpawnCell_MapGen failed: numStand="+numStand+", numRoom="+numRoom+", numTouch="+numTouch+" PlayerStartSpot="+MapGenerator.PlayerStartSpot+". Returning "+intVec);
             }
             return intVec;
         }
@@ -620,10 +601,9 @@ namespace Zombiefied
                     return false;
                 }
                 int num = 0;
-                CellRect.CellRectIterator iterator = CellRect.CenteredOn(c, walkRadius).GetIterator();
-                while (!iterator.Done())
+                foreach (IntVec3 cell in CellRect.CenteredOn(c, walkRadius))
                 {
-                    Room room2 = iterator.Current.GetRoom(map);
+                    Room room2 = cell.GetRoom(map);
                     if (room2 != room)
                     {
                         num++;
@@ -636,7 +616,6 @@ namespace Zombiefied
                     {
                         return false;
                     }
-                    iterator.MoveNext();
                 }
                 if (minColonyBuildingsLOS > 0)
                 {
@@ -1096,7 +1075,7 @@ namespace Zombiefied
                 {
                     intVec = CellFinder.RandomCell(map);
                 }
-                Log.Error("Tried to find a siege position from an invalid cell. Using " + intVec, false);
+                Log.Error("Tried to find a siege position from an invalid cell. Using " + intVec);
                 return intVec;
             }
             IntVec3 result;
@@ -1111,13 +1090,7 @@ namespace Zombiefied
             {
                 return result;
             }
-            Log.Error(string.Concat(new object[]
-            {
-                "Could not find siege spot from ",
-                entrySpot,
-                ", using ",
-                entrySpot
-            }), false);
+            Log.Error("Could not find siege spot from " + entrySpot);
             return entrySpot;
         }
 
@@ -1168,14 +1141,13 @@ namespace Zombiefied
                                     if (!randomCell.Roofed(map))
                                     {
                                         int num3 = 0;
-                                        CellRect.CellRectIterator iterator = CellRect.CenteredOn(randomCell, 10).ClipInsideMap(map).GetIterator();
-                                        while (!iterator.Done())
+                                        foreach (IntVec3 cell in CellRect.CenteredOn(randomCell, 10).ClipInsideMap(map))
                                         {
+                                            // Should this use the iterated variable, "cell", rather than "randomCell"?
                                             if (randomCell.SupportsStructureType(map, TerrainAffordanceDefOf.Heavy) && randomCell.SupportsStructureType(map, TerrainAffordanceDefOf.Light))
                                             {
-                                                num3++;
+                                               num3++;
                                             }
-                                            iterator.MoveNext();
                                         }
                                         if (num3 >= 35)
                                         {

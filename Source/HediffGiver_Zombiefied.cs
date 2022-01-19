@@ -4,10 +4,8 @@ using Verse;
 
 namespace Zombiefied
 {
-    // Token: 0x02000C7F RID: 3199
     public class HediffGiver_Zombiefied : HediffGiver
     {
-        // Token: 0x06004378 RID: 17272 RVA: 0x001E8A2C File Offset: 0x001E6E2C
         public override bool OnHediffAdded(Pawn pawn, Hediff hediff)
         {
             if (hediff is Hediff_Injury && !pawn.health.hediffSet.PartIsMissing(hediff.Part.parent) && !pawn.health.hediffSet.PartIsMissing(hediff.Part))

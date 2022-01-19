@@ -7,13 +7,11 @@ using Verse.AI;
 
 namespace Zombiefied
 {
-    // Token: 0x02000A34 RID: 2612
     public class JobGiver_WanderZombieHerd : JobGiver_Wander
     {
         //bool attracted = false;
         //bool fired = false;
 
-        // Token: 0x0600377A RID: 14202 RVA: 0x0019834C File Offset: 0x0019674C
         public JobGiver_WanderZombieHerd()
         {
             this.maxDanger = Danger.Deadly;
@@ -181,8 +179,6 @@ namespace Zombiefied
         {
             return vec0.ContainsStaticFire(pawn.Map) && !pawn.IsBurning();
         }
-
-        // Token: 0x0600377B RID: 14203 RVA: 0x00198374 File Offset: 0x00196774
         protected override IntVec3 GetWanderRoot(Pawn pawn)
         {
             Pawn pawn2 = BestPawnToWander(pawn as Pawn_Zombiefied);
