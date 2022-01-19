@@ -30,11 +30,13 @@ namespace Zombiefied
 
         public Pawn BestPawnToHuntForPredator(Pawn predator, float range = 7f)
         {
+            //List<Pawn> allPawnsSpawned = predator.Map.mapPawns.AllPawnsSpawned;
             List<Thing> allThingsRegion = predator.GetRegion().ListerThings.AllThings;
 
             Pawn pawnToReturn = null;
             float num = 0f;
 
+            //for (int i = 0; i < allPawnsSpawned.Count; i++)
             for (int i = 0; i < allThingsRegion.Count; i++)
                 {
                 Pawn pawn2 = allThingsRegion[i] as Pawn;

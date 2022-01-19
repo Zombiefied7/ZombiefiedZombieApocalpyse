@@ -10,11 +10,14 @@ namespace Zombiefied
     {
         public PawnRenderer_Zombiefied(Pawn pawn, ZombieData data)
         {
+            //this.oldPawn = oldPawn;
             this.pawn = pawn;
             this.wiggler = new PawnDownedWiggler(pawn);
             this.statusOverlays = new PawnHeadOverlays(pawn);
             this.woundOverlays = new PawnWoundDrawer(pawn);
             this.graphics = new ZombieGraphicSet(data);
+            //this.graphics = gra;
+            //this.effecters = new PawnStatusEffecters(pawn);
         }
         private RotDrawMode CurRotDrawMode
         {
@@ -172,6 +175,7 @@ namespace Zombiefied
                     List<Material> list = this.graphics.MatsBodyBaseAt(bodyFacing, bodyDrawType);
                     for (int i = 0; i < list.Count; i++)
                     {
+                        //Material damagedMat = this.graphics.flasher.GetDamagedMat(list[i]);
                         GenDraw.DrawMeshNowOrLater(mesh, loc, quat, list[i], portrait);
                         loc.y += 0.00390625f;
                     }
@@ -198,6 +202,7 @@ namespace Zombiefied
             if (this.graphics.headGraphic != null)
             {
                 Vector3 b = quat * this.BaseHeadOffsetAt(headFacing);
+                //b = new Vector3(b.x, 0f, b.y);
                 Material material = this.graphics.HeadMatAt(headFacing, bodyDrawType, headStump);
                 if (material != null)
                 {
@@ -219,11 +224,13 @@ namespace Zombiefied
                             {
                                 flag = true;
                                 Material material2 = apparelGraphics[j].graphic.MatAt(bodyFacing, null);
+                                //material2 = this.graphics.flasher.GetDamagedMat(material2);
                                 GenDraw.DrawMeshNowOrLater(mesh3, loc2, quat, material2, portrait);
                             }
                             else
                             {
                                 Material material3 = apparelGraphics[j].graphic.MatAt(bodyFacing, null);
+                                //material3 = this.graphics.flasher.GetDamagedMat(material3);
                                 Vector3 loc3 = rootLoc + b;
                                 loc3.y += ((!(bodyFacing == Rot4.North)) ? 0.03515625f : 0.00390625f);
                                 GenDraw.DrawMeshNowOrLater(mesh3, loc3, quat, material3, portrait);
@@ -246,13 +253,30 @@ namespace Zombiefied
                     if (apparelGraphicRecord.sourceApparel.def.apparel.LastLayer == ApparelLayerDefOf.Shell)
                     {
                         Material material4 = apparelGraphicRecord.graphic.MatAt(bodyFacing, null);
+                        //material4 = this.graphics.flasher.GetDamagedMat(material4);
                         GenDraw.DrawMeshNowOrLater(mesh, vector, quat, material4, portrait);
                     }
                 }
             }
+            /*
+            if (!portrait && this.oldPawn.RaceProps.Animal && this.oldPawn.inventory != null && this.oldPawn.inventory.innerContainer.Count > 0) && this.graphics.packGraphic != null)
+            {
+                Graphics.DrawMesh(mesh, vector, quat, this.graphics.packGraphic.MatAt(bodyFacing, null), 0);
+            }
+            */
             if (!portrait)
             {
                 this.DrawEquipment(rootLoc);
+                /*
+                if (this.oldPawn.apparel != null)
+                {
+                    List<Apparel> wornApparel = this.oldPawn.apparel.WornApparel;
+                    for (int l = 0; l < wornApparel.Count; l++)
+                    {
+                        wornApparel[l].DrawWornExtras();
+                    }
+                }
+                */
                 Vector3 bodyLoc = rootLoc;
                 bodyLoc.y += 0.04296875f;
                 this.statusOverlays.RenderStatusOverlays(bodyLoc, quat, MeshPool.humanlikeHeadSet.MeshAt(headFacing));
@@ -304,6 +328,7 @@ namespace Zombiefied
                 else if (this.pawn.Rotation == Rot4.North)
                 {
                     Vector3 drawLoc3 = rootLoc + new Vector3(0f, 0f, -0.11f);
+                    //drawLoc3.y = drawLoc3.y;
                     this.DrawEquipmentAiming(this.pawn.equipment.Primary, drawLoc3, 143f);
                 }
                 else if (this.pawn.Rotation == Rot4.East)
@@ -406,8 +431,6 @@ namespace Zombiefied
         {
             if (DebugViewSettings.drawDuties && Find.Selector.IsSelected(this.pawn) && this.pawn.mindState != null && this.pawn.mindState.duty != null)
             {
-                // Well, we should probably do some kind of DrawDebug at some point, right?
-                // TODO: Figure out this
                 //this.pawn.mindState.duty.DrawDebug(this.pawn);
             }
         }

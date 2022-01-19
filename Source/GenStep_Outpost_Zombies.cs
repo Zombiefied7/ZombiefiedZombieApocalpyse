@@ -20,8 +20,10 @@ namespace Zombiefied
             }
            foreach(Pawn pawn in list)
             {
+                //pawn.Kill(new DamageInfo(DamageDefOf.Bite, 7000));
                 Thing zombie = GenSpawn.Spawn(ZombiefiedMod.GenerateZombieFromSource(pawn), pawn.Position, map, pawn.Rotation);
                 pawn.Destroy();
+                //ZombiefiedMod.ReanimateDeath(pawn.Corpse);
             }
         }
     }

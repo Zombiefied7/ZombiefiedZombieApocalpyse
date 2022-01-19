@@ -200,7 +200,7 @@ namespace Zombiefied
             {
                 Log.Warning("wanderRadius of " + radius + " is greater than Region.GridSize of 12 and will break");
             }
-            bool flag = false;
+            bool flag = false;// UnityData.isDebugBuild && DebugViewSettings.drawDestSearch;
             if (root.GetRegion(pawn.Map, RegionType.Set_Passable) != null)
             {
                 int maxRegions = Mathf.Max((int)radius / 3, 13);
@@ -264,7 +264,7 @@ namespace Zombiefied
 
         private static bool CanWanderToCell(IntVec3 c, Pawn pawn, IntVec3 root, Func<Pawn, IntVec3, IntVec3, bool> validator, int tryIndex, Danger maxDanger)
         {
-            bool flag = false;
+            bool flag = false;// UnityData.isDebugBuild && DebugViewSettings.drawDestSearch;
             if (!c.Walkable(pawn.Map))
             {
                 if (flag)
@@ -273,6 +273,99 @@ namespace Zombiefied
                 }
                 return false;
             }
+            /*
+            if (c.IsForbidden(pawn))
+            {
+                if (flag)
+                {
+                    pawn.Map.debugDrawer.FlashCell(c, 0.25f, "forbid", 50);
+                }
+                return false;
+            }
+            */
+            /*
+            if (tryIndex < 10 && !c.Standable(pawn.Map))
+            {
+                if (flag)
+                {
+                    pawn.Map.debugDrawer.FlashCell(c, 0.25f, "stand", 50);
+                }
+                return false;
+            }
+            if (!pawn.CanReach(c, PathEndMode.OnCell, maxDanger, false, TraverseMode.ByPawn))
+            {
+                if (flag)
+                {
+                    pawn.Map.debugDrawer.FlashCell(c, 0.6f, "reach", 50);
+                }
+                return false;
+            }
+            if (c.ContainsStaticFire(pawn.Map))
+            {
+                if (flag)
+                {
+                    pawn.Map.debugDrawer.FlashCell(c, 0.9f, "fire", 50);
+                }
+                return true;
+            }
+            */
+            /*
+            if (PawnUtility.KnownDangerAt(c, pawn.Map, pawn))
+            {
+                if (flag)
+                {
+                    pawn.Map.debugDrawer.FlashCell(c, 0.1f, "trap", 50);
+                }
+                return false;
+            }
+            */
+            /*
+            if (tryIndex < 10)
+            {
+                if (c.GetTerrain(pawn.Map).avoidWander)
+                {
+                    if (flag)
+                    {
+                        pawn.Map.debugDrawer.FlashCell(c, 0.39f, "terr", 50);
+                    }
+                    return false;
+                }
+                if (pawn.Map.pathGrid.PerceivedPathCostAt(c) > 20)
+                {
+                    if (flag)
+                    {
+                        pawn.Map.debugDrawer.FlashCell(c, 0.4f, "pcost", 50);
+                    }
+                    return false;
+                }
+                if (c.GetDangerFor(pawn, pawn.Map) > Danger.None)
+                {
+                    if (flag)
+                    {
+                        pawn.Map.debugDrawer.FlashCell(c, 0.4f, "danger", 50);
+                    }
+                    return false;
+                }
+            }
+            */
+            /*
+            else if (tryIndex < 15 && c.GetDangerFor(pawn, pawn.Map) == Danger.Deadly)
+            {
+                if (flag)
+                {
+                    pawn.Map.debugDrawer.FlashCell(c, 0.4f, "deadly", 50);
+                }
+                return false;
+            }
+            if (!pawn.Map.pawnDestinationReservationManager.CanReserve(c, pawn, false))
+            {
+                if (flag)
+                {
+                    pawn.Map.debugDrawer.FlashCell(c, 0.75f, "resvd", 50);
+                }
+                return false;
+            }
+            */
             if (validator != null && !validator(pawn, c, root))
             {
                 if (flag)
@@ -281,6 +374,25 @@ namespace Zombiefied
                 }
                 return false;
             }
+            /*
+            if (c.GetDoor(pawn.Map) != null)
+            {
+                if (flag)
+                {
+                    pawn.Map.debugDrawer.FlashCell(c, 0.32f, "door", 50);
+                }
+                return false;
+            }
+            
+            if (c.ContainsStaticFire(pawn.Map))
+            {
+                if (flag)
+                {
+                    pawn.Map.debugDrawer.FlashCell(c, 0.9f, "fire", 50);
+                }
+                return false;
+            }
+            */
             return true;
         }
 

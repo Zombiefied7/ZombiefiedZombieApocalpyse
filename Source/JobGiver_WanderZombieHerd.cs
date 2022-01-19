@@ -9,12 +9,15 @@ namespace Zombiefied
 {
     public class JobGiver_WanderZombieHerd : JobGiver_Wander
     {
+        //bool attracted = false;
+        //bool fired = false;
 
         public JobGiver_WanderZombieHerd()
         {
             this.maxDanger = Danger.Deadly;
             this.priority = 77777777777777f;
             this.wanderRadius = 6f;
+            //this.ticksBetweenWandersRange = new IntRange(125, 200);
         }
 
         protected override Job TryGiveJob(Pawn pawn)
@@ -27,6 +30,7 @@ namespace Zombiefied
             pawn.mindState.nextMoveOrderIsWait = !pawn.mindState.nextMoveOrderIsWait;
             if (nextMoveOrderIsWait)
             {
+                //pawn.mindState.canFleeIndividual = false;
                 return new Job(JobDefOf.Wait)
                 {
                     expiryInterval = 77
@@ -67,8 +71,11 @@ namespace Zombiefied
                             {
                                 randomCell = pawnPath.NodesReversed[pawnPath.NodesReversed.Count - wanderLength];
 
-
-                                return new Job(ZombiefiedMod.zombieMove, randomCell) { };
+                                
+                                return new Job(ZombiefiedMod.zombieMove, randomCell)
+                                {
+                                    //expiryInterval = 777
+                                };
                             }
                         }
                     }
@@ -101,7 +108,10 @@ namespace Zombiefied
                                     randomCell = pawnPath.NodesReversed[pawnPath.NodesReversed.Count - wanderLength];
 
                                     ((Pawn_Zombiefied)pawn).attracted = true;
-                                    return new Job(ZombiefiedMod.zombieMove, randomCell) { };
+                                    return new Job(ZombiefiedMod.zombieMove, randomCell)
+                                    {
+                                        //expiryInterval = 777
+                                    };
                                 }
                             }
                         }
@@ -116,6 +126,7 @@ namespace Zombiefied
                 if (exactWanderDestAttracted.IsValid)
                 {
                     Job jobAttracted = new Job(ZombiefiedMod.zombieMove, exactWanderDestAttracted);
+                    //pawn.Map.pawnDestinationReservationManager.Reserve(pawn, jobAttracted, exactWanderDestAttracted);
                     jobAttracted.locomotionUrgency = this.locomotionUrgency;
                     return jobAttracted;
                 }
@@ -127,6 +138,7 @@ namespace Zombiefied
                 {
                     foreach (Thing thing in pawn.Position.GetRegion(pawn.Map, RegionType.Set_Passable).ListerThings.AllThings)
                     {
+                        //if (vec.ContainsStaticFire(pawn.Map))
                         if (thing is Fire && ((Fire)thing).fireSize > 1.37f && (pawn.Position - thing.Position).LengthHorizontal < 3.1f)
                         {
                             ((Pawn_Zombiefied)pawn).fired = true;
@@ -148,6 +160,7 @@ namespace Zombiefied
                 return null;
             }
             Job job = new Job(ZombiefiedMod.zombieMove, exactWanderDest);
+            //pawn.Map.pawnDestinationReservationManager.Reserve(pawn, job, exactWanderDest);
             job.locomotionUrgency = this.locomotionUrgency;
             return job;
         }
@@ -155,7 +168,11 @@ namespace Zombiefied
         protected override IntVec3 GetExactWanderDest(Pawn pawn)
         {
             IntVec3 wanderRoot = this.GetWanderRoot(pawn);
+            //pawn.Map.
+            //wanderDestValidator = Validator;
             return RCellFinder.RandomWanderDestFor(pawn, wanderRoot, this.wanderRadius, this.wanderDestValidator, Danger.Deadly);
+            //return RCellFinder.RandomWanderDestFor(pawn, wanderRoot, this.wanderRadius, Validator, Danger.Deadly);
+            //return CellFinder.RandomClosewalkCellNear(wanderRoot, pawn.Map, (int)this.wanderRadius);
         }
 
         private bool Validator(Pawn pawn, IntVec3 vec0, IntVec3 vec1)
@@ -180,6 +197,7 @@ namespace Zombiefied
             }
 
             List<Pawn> allPawnsSpawned = pawn.Map.mapPawns.AllPawnsSpawned;
+            //List<Thing> allThingsRegion = pawn.GetRegion().ListerThings.AllThings;
 
             Pawn pawnToReturn = null;
             float num = 0f;
@@ -188,6 +206,7 @@ namespace Zombiefied
             bool closeToEdge = pawn.distanceToEdge < Rand.RangeSeeded(17, 57, Find.TickManager.TicksAbs + pawn.thingIDNumber);
 
             for (int i = 0; i < allPawnsSpawned.Count; i++)
+            //for (int i = 0; i < allThingsRegion.Count; i++)
             {
                 Pawn_Zombiefied pawn2 = allPawnsSpawned[i] as Pawn_Zombiefied;
                 if (pawn2 != null && pawn != pawn2)

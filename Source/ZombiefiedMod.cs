@@ -54,10 +54,14 @@ namespace Zombiefied
                     zFaction = faction;
                 }
             }
+            //Faction.OfMechanoids.TrySetNotHostileTo(zFaction);
             zFaction.RelationWith(Faction.OfMechanoids).kind = FactionRelationKind.Ally;
+            //zFaction.RelationWith(Faction.OfMechanoids).goodwill = 100;
             zFaction.RelationWith(Faction.OfMechanoids).baseGoodwill = 100;
             Faction.OfMechanoids.RelationWith(zFaction).kind = FactionRelationKind.Ally;
             Faction.OfMechanoids.RelationWith(zFaction).baseGoodwill = 100;
+            //zFaction.TrySetNotHostileTo(Faction.OfMechanoids);
+            //zFaction.TryMakeInitialRelationsWith(Faction.OfMechanoids);
 
             int zKilled = 0;
             int zCount = 0;
@@ -84,7 +88,35 @@ namespace Zombiefied
                 }
             }
 
+            /*
+            foreach (RimWorld.Planet.Site site in Find.World.worldObjects.Sites)
+            {
+                bool broken = false;
+                if (site != null)
+                {
+                    if (site.core == null || site.core.def == null || site.core.def.Worker == null || site.core.def.workerClass == null)
+                    {
+                        broken = true;
+                    }
+
+                    foreach (RimWorld.Planet.SitePart part in site.parts)
+                    {
+                        if(part.def == null || part.def.Worker == null || part.def.workerClass == null)
+                        {
+                            broken = true;
+                        }
+                    }
+                }
+                if(broken)
+                {
+                    base.Logger.Message("found a broken site.");
+                    //handle broken site here
+                }
+            }
+            */
+
             debugRemoveZombies.Value = false;
+            //base.Logger.Message("found " + zCount + " Zombies. " + zWrongFactionCount + " of them were repaired.", new object[0]);
         }
 
         public override void DefsLoaded()
@@ -95,6 +127,8 @@ namespace Zombiefied
             };
             headlineZombieOptions = base.Settings.GetHandle<bool>("headlineZombies", "\nZombie settings:", "Zombie settings", false, null, null);
             headlineZombieOptions.CustomDrawer = new SettingHandle.DrawCustomControl(predicate);
+            //headlineZombieOptions.CustomDrawerHeight = 37f;
+
             disableAnimalZombies = base.Settings.GetHandle<bool>("disableAnimalZombies", "       Disable animal zombies", "Animals will not resurrect and no animal zombies will wander in.", false, null, null);
             disableZombiesAttackingAnimals = base.Settings.GetHandle<bool>("disableZombiesAttackingAnimals", "       Disable zombies attacking animals", "Zombies will ignore animals.", false, null, null);
             zombieSpeedMultiplier = base.Settings.GetHandle<float>("ZombieSpeedMultiplier", "       Zombie speed multiplier [RESTART]", "Zombie speed (in comparison to healthy) will be multiplied by this value.\n(0.03 -> Slowest, 3 -> Fastest)\n(Requires restart to work)", 0.57f, null, null);
@@ -111,6 +145,9 @@ namespace Zombiefied
 
             headlineZombieAmount = base.Settings.GetHandle<bool>("headlineAmounts", "\nAmount settings:", "Amount settings", false, null, null);
             headlineZombieAmount.CustomDrawer = new SettingHandle.DrawCustomControl(predicate);
+            //headlineZombieAmount.CustomDrawerHeight = 37f;
+
+            //easyMode = base.Settings.GetHandle<bool>("EasyMode", "Easy mode", "Keep in mind that you are not meant to kill all zombies at all times and losing is part of the game.", false, null, null);
             zombieAmountSoftCap = base.Settings.GetHandle<int>("ZombieAmountSoftCap", "       Zombie amount soft cap", "The expected amount of zombies per map.", 133, null, null);
 
             zombieRaidAmountMultiplier = base.Settings.GetHandle<float>("ZombieRaidAmountMultiplier", "       Zombie raid size multiplier", "Zombie raid size will be multiplied by this value.\n(0.1 -> Easiest, 7 -> Hardest)", 1f, null, null);
@@ -118,24 +155,39 @@ namespace Zombiefied
 
             headlineNotifications = base.Settings.GetHandle<bool>("headlineNotifications", "\nNotification settings:", "Notification settings", false, null, null);
             headlineNotifications.CustomDrawer = new SettingHandle.DrawCustomControl(predicate);
+            //headlineNotifications.CustomDrawerHeight = 37f;
 
             zombieRaidNotifications = base.Settings.GetHandle<bool>("ZombieRaidNotifications", "       Zombie raid notifications", "Get a notification when zombies wander in.", true, null, null);
             zombieResurrectNotifications = base.Settings.GetHandle<bool>("ZombieResurrectNotifications", "       Zombie resurrect notifications", "Get a notification when a zombie resurrects.", false, null, null);
 
             headlineDebug = base.Settings.GetHandle<bool>("headlineDebug", "\nDebug settings:", "Debug settings", false, null, null);
             headlineDebug.CustomDrawer = new SettingHandle.DrawCustomControl(predicate);
+            //headlineDebug.CustomDrawerHeight = 37f;
 
             debugRemoveZombies = base.Settings.GetHandle<bool>("DebugRemoveZombies", "       Debug remove zombies [RELOAD]", "Enable this and reload to remove all zombies on next load.", false, null, null);
+
+            /*
+            zombieSoundReactionTimeInHours.CustomDrawerHeight = 77;
+            zombieAmountSoftCap.CustomDrawerHeight = 77;
+            zombieRaidAmountMultiplier.CustomDrawerHeight = 77;
+            zombieRaidFrequencyMultiplier.CustomDrawerHeight = 77;
+            zombieRaidNotifications.CustomDrawerHeight = 77;
+            zombieResurrectNotifications.CustomDrawerHeight = 77;
+            debugRemoveZombies.CustomDrawerHeight = 77;
+            */
 
             InitializeCustom();
         }
 
         internal static SettingHandle<bool> headlineZombieOptions;
+        //
         internal static SettingHandle<bool> disableAnimalZombies;
         internal static SettingHandle<bool> disableZombiesAttackingAnimals;
         internal static SettingHandle<float> zombieSpeedMultiplier;
         internal static SettingHandle<int> zombieSoundReactionTimeInHours;
+
         internal static SettingHandle<bool> headlineZombieAmount;
+        //
         internal static SettingHandle<float> zombieRaidFrequencyMultiplier;
         public static float ZombieRaidFrequencyMultiplier
         {
@@ -169,10 +221,14 @@ namespace Zombiefied
             }
         }
         internal static SettingHandle<int> zombieAmountSoftCap;
+
         internal static SettingHandle<bool> headlineNotifications;
+        //
         internal static SettingHandle<bool> zombieRaidNotifications;
         internal static SettingHandle<bool> zombieResurrectNotifications;
+
         internal static SettingHandle<bool> headlineDebug;
+        //
         internal static SettingHandle<bool> debugRemoveZombies;
 
         public override void Tick(int currentTick)
@@ -189,7 +245,10 @@ namespace Zombiefied
             {
                 num = 0.7f;
             }
+            //if (easyMode)
+            //{
             num /= ZombieRaidFrequencyMultiplier;
+            //}
             if ((double)num < 0.17f)
             {
                 num = 0.17f;
@@ -204,7 +263,10 @@ namespace Zombiefied
         private int GenerateTicksUntilNextRaid()
         {
             float challengeModifier = this.GetChallengeModifier();
+            //int num = UnityEngine.Random.Range((int)((float)ZombiesDefOf.ZombiesSettings.MinRaidTicksBase * challengeModifier), (int)((float)ZombiesDefOf.ZombiesSettings.MaxRaidTicksBase * challengeModifier));
             int num = Rand.RangeSeeded((int)((float)7777 * challengeModifier), (int)((float)280000 * challengeModifier), Find.TickManager.TicksAbs + Find.World.ConstantRandSeed);
+            //if (first && num < ZombiesDefOf.ZombiesSettings.MinTicksBeforeFirstRaid)
+            //base.Logger.Message("next zombieraid in " + num + " ticks.", new object[0]);
             return num;
         }
 
@@ -216,6 +278,9 @@ namespace Zombiefied
                 if (this._ticksUntilNextZombieRaid[currentMapIndex] <= 0)
                 {
                     this._ticksUntilNextZombieRaid[currentMapIndex] = this.GenerateTicksUntilNextRaid();
+
+                    //base.Logger.Message("setting up zombieraid for map " + currentMapIndex + ".", new object[0]);
+
                     if (currentMapIndex < zombieAmountsPerMap.Count && zombieAmountsPerMap[currentMapIndex] < zombieAmountSoftCap)
                     {
                         IncidentParms incidentParms = new IncidentParms
@@ -232,6 +297,11 @@ namespace Zombiefied
                         {
                             IncidentDef.Named("ZombiePack").Worker.TryExecute(incidentParms);
                         }
+                        //base.Logger.Message("Zombieraid started on map " + currentMapIndex + ".", new object[0]);
+                    }
+                    else
+                    {
+                        //base.Logger.Message("Zombieraid failed on map " + currentMapIndex + " because map invalid or more zombies are already on the map than cap allows.", new object[0]);
                     }
                 }
             }
@@ -254,7 +324,7 @@ namespace Zombiefied
                 {
                     if (noisyLocationsPerMap[m].Count > 0)
                     {
-                        if (Find.TickManager.TicksGame - noisyLocationTicksPerMap[m].Peek() > zombieSoundReactionTimeInHours * 2500)
+                        if (Find.TickManager.TicksGame - noisyLocationTicksPerMap[m].Peek() > zombieSoundReactionTimeInHours * 2500) //7777)
                         {
                             noisyLocationsPerMap[m].Dequeue();
                             noisyLocationTicksPerMap[m].Dequeue();
@@ -321,6 +391,9 @@ namespace Zombiefied
                                                 bestLocation = pawn2.Position;
                                                 bestLocationTicks = pawn2.LastAttackTargetTick;
                                             }
+
+                                            //noisyLocationsPerMap[m].Enqueue(pawn2.Position);
+                                            //noisyLocationTicksPerMap[m].Enqueue(pawn2.LastAttackTargetTick);
                                         }
                                         shotsFiredPerPawn[key] = pawn2.records.GetAsInt(RecordDefOf.ShotsFired);
                                     }
@@ -444,7 +517,9 @@ namespace Zombiefied
 
         public Pawn ReanimateDeath(Corpse corpse)
         {
+            //base.Logger.Message(corpse.InnerPawn.story.HeadGraphicPath, new object[0]);
             Pawn_Zombiefied zombiePawn = ZombiefiedMod.GenerateZombieFromSource(corpse.InnerPawn);
+            //Pawn zombiePawn = PawnGenerator.GeneratePawn(PawnKindDefOf.Alphabeaver, Faction.OfPlayer);
             IntVec3 position = corpse.Position;
             Building building = StoreUtility.StoringThing(corpse) as Building;
             Building_Storage building_Storage = (Building_Storage)building;
@@ -456,6 +531,12 @@ namespace Zombiefied
 
             Thing t = GenSpawn.Spawn(zombiePawn, position, corpse.Map);
             corpse.TakeDamage(new DamageInfo(DamageDefOf.Deterioration, 77777f));
+
+            //for(int i = 0; i < Find.BattleLog.Battles.Count; i++)
+            //{
+            //InteractionCardUtility_Zombiefied.DrawInteractionsLog(corpse.InnerPawn, t, Find.BattleLog.Battles[i].Entries, 50);
+            //}
+            //InteractionCardUtility_Zombiefied.DrawInteractionsLog(corpse.InnerPawn, t, Find.BattleLog.RawEntries, 50);
 
             if (zombieResurrectNotifications && t != null)
             {
@@ -505,6 +586,7 @@ namespace Zombiefied
 
             pawn.records = sourcePawn.records;
             pawn.gender = sourcePawn.gender;
+            //pawn.needs.SetInitialLevels();
 
             if (sourcePawn.Faction != null && sourcePawn.Faction.IsPlayer)
             {
@@ -599,6 +681,8 @@ namespace Zombiefied
                 }
             }
             ThingRequestGroupUtility.StoreInRegion(ThingRequestGroup.Corpse);
+            //Pawn pawntest;
+            //pawntest.Map.listerThings.Add
 
             bool first = true;
             List<PawnKindDef> listPawnKindDef = DefDatabase<PawnKindDef>.AllDefsListForReading;
@@ -614,16 +698,17 @@ namespace Zombiefied
                         if(sourcePawnKindDef.weaponTags[t].Contains("Melee") && sourcePawnKindDef.weaponTags[t].Contains("Neolithic"))
                         {
                             sourcePawnKindDef.weaponTags[t] = "NeolithicRangedChief";
+                            //sourcePawnKindDef.
                         }
                         log += sourcePawnKindDef.weaponTags[t] + " ";
                     }
+                    //base.Logger.Message(log);
                 }
 
 
                 if (sourcePawnKindDef.defName == null || (sourcePawnKindDef.defName.Length >= 6 && sourcePawnKindDef.defName.Substring(0, 6) == "Zombie") || DefDatabase<PawnKindDef>.GetNamed("Zombie" + sourcePawnKindDef.defName, false) != null)
                 {
-                    // Nothing
-                    // TODO: Refactor this to just use the ! operator or something
+                    //Nothing
                 }
                 else
                 {
@@ -658,7 +743,12 @@ namespace Zombiefied
 
                                 newThingDef.drawGUIOverlay = true;
 
+                                //int e = (int)(sourcePawnKindDef.race.shortHash);
+                                //ushort f = (ushort)(e + 7);
+                                //newThingDef.shortHash = f;
                                 InjectedDefHasher.GiveShortHashToDef(newThingDef, typeof(ThingDef));
+
+                                //reached
 
                                 Predicate<StatModifier> findMoveSpeed = delegate (StatModifier statMod)
                                 {
@@ -731,6 +821,9 @@ namespace Zombiefied
                                     }
                                     return false;
                                 };
+
+                                //reached
+
                                 newThingDef.statBases = new List<StatModifier>();
 
                                 StatModifier newStat = new StatModifier();
@@ -766,6 +859,18 @@ namespace Zombiefied
                                     newThingDef.statBases.Add(newStat);
                                 }
 
+                                /*
+                                StatModifier statHeat = sourcePawnKindDef.race.statBases.Find(findArmorRating_Heat);
+                                if (statHeat != null)
+                                {
+                                    newStat = new StatModifier();
+                                    newStat.stat = StatDefOf.ArmorRating_Heat;
+                                    newStat.value = statHeat.value;
+                                    newThingDef.statBases.Add(newStat);
+                                }
+                                */
+
+
                                 newStat = new StatModifier();
                                 newStat.stat = StatDefOf.PsychicSensitivity;
                                 newStat.value = 0f;
@@ -781,17 +886,19 @@ namespace Zombiefied
                                 newStat.value = sourcePawnKindDef.race.statBases.Find(findMoveSpeed).value * zombieSpeedMultiplier;
                                 newThingDef.statBases.Add(newStat);
 
-                                // Setup standard zombie
+                                //setup standard zombie
                                 if(first)
                                 {
                                     zombieThingDef.statBases.Find(findMoveSpeed).value = 4.6f * zombieSpeedMultiplier;
                                 }
+                                //setup standard zombie
 
                                 //CE SUPPORT
                                 StatModifier statCEDodge;
                                 statCEDodge = sourcePawnKindDef.race.statBases.Find(findMeleeDodgeChance);
                                 if(statCEDodge != null)
                                 {
+                                    //Log.Message("found CE for " + sourcePawnKindDef.defName);
                                     newThingDef.statBases.Add(statCEDodge);
                                     if (first)
                                     {
@@ -818,10 +925,12 @@ namespace Zombiefied
                                         zombieThingDef.statBases.Add(statCEParry);
                                     }
                                 }
-                                // CE SUPPORT
+                                //CE SUPPORT
                                 first = false;
 
                                 newThingDef.BaseMarketValue = sourcePawnKindDef.race.BaseMarketValue;
+
+                                //reached
 
                                 newThingDef.tools = new List<Tool>();
                                 int iTool = -1;
@@ -863,6 +972,8 @@ namespace Zombiefied
                                 newThingDef.race.meatColor = color;
 
                                 newThingDef.race.leatherDef = zombieThingDef.race.leatherDef;
+                                //newThingDef.race.leatherColor = color;
+                                //newThingDef.race.leatherLabel = "zombie" + sourcePawnKindDef.race.race.leatherLabel;
                                 newThingDef.race.useLeatherFrom = zombieThingDef;
                                 newThingDef.race.useMeatFrom = zombieThingDef;
 
@@ -885,6 +996,7 @@ namespace Zombiefied
                                 newThingDef.race.foodType = zombieThingDef.race.foodType;
                                 newThingDef.race.predator = zombieThingDef.race.predator;
                                 newThingDef.race.makesFootprints = sourcePawnKindDef.race.race.makesFootprints;
+                                //newThingDef.race.leatherInsulation = sourcePawnKindDef.race.race.leatherInsulation;
 
                                 newThingDef.race.lifeStageAges = new List<LifeStageAge>();
                                 for (int l = 0; l < sourcePawnKindDef.race.race.lifeStageAges.Count; l++)
@@ -914,20 +1026,32 @@ namespace Zombiefied
                                 newThingDef.ResolveReferences();
                             }
 
+                            //not reached
 
                             PawnKindDef newKindDef = new PawnKindDef();
+                            //newKindDef = PawnKindDef.Named("Zombie");
 
                             newKindDef.defName = "Zombie" + sourcePawnKindDef.defName;
                             newKindDef.label = "zombie " + sourcePawnKindDef.label;
                             newKindDef.race = newThingDef;
+                            //newKindDef.race = ThingDef.Named("Zombie");
 
                             newKindDef.defaultFactionType = PawnKindDef.Named("Zombie").defaultFactionType;
-                            newKindDef.combatPower = 0;
+                            newKindDef.combatPower = 0;// sourcePawnKindDef.combatPower / 2;
                             newKindDef.canArriveManhunter = false;
+
+                            //int s = (int)(sourcePawnKindDef.shortHash);
+                            //ushort z = (ushort)(s + 7);
+                            //newKindDef.shortHash = z;
                             InjectedDefHasher.GiveShortHashToDef(newKindDef, typeof(PawnKindDef));
+
+                            //base.Logger.Message((newKindDef.RaceProps != null) + "");
+
+                            //newKindDef.lifeStages = PawnKindDef.Named("Zombie").lifeStages;
 
                             newKindDef.lifeStages = new List<PawnKindLifeStage>();
 
+                            //newKindDef.lifeStages = sourcePawnKindDef.lifeStages;
                             for (int j = 0; j < sourcePawnKindDef.lifeStages.Count; j++)
                             {
                                 newKindDef.lifeStages.Add(new PawnKindLifeStage());
@@ -958,7 +1082,12 @@ namespace Zombiefied
                                     newKindDef.lifeStages[j].dessicatedBodyGraphicData = new GraphicData();
                                     newKindDef.lifeStages[j].dessicatedBodyGraphicData.CopyFrom(sourcePawnKindDef.lifeStages[j].dessicatedBodyGraphicData);
                                 }
+
+                                //newKindDef.lifeStages[j].ResolveReferences();
+
+                                //newKindDef.lifeStages.Add(n);
                             }
+                            //base.Logger.Message((newKindDef.RaceProps != null) + "");
                             if (newKindDef != null && newThingDef != null && newKindDef.RaceProps != null)
                             {
                                 DefDatabase<PawnKindDef>.Add(newKindDef);
