@@ -10,7 +10,6 @@ namespace Zombiefied
     public class JobDriver_ZombieHunt : JobDriver
     {
         private int numMeleeAttacksMade;
-        private bool breaching;
         public override void ExposeData()
         {
             base.ExposeData();
@@ -24,8 +23,8 @@ namespace Zombiefied
         protected override IEnumerable<Toil> MakeNewToils()
         {
             // If we can't reach the target, change the target to whatever's blocking us.
-            Toil gotoBlockers = GotoBlockers();
-            if (gotoBlockers != null) yield return gotoBlockers;
+            //Toil gotoBlockers = GotoBlockers();
+            //if (gotoBlockers != null) yield return gotoBlockers;
             // Hit the target.
             yield return HitThings();
         }
@@ -65,6 +64,17 @@ namespace Zombiefied
                     }
                 }
             }).FailOnDespawnedOrNull(TargetIndex.A);
+        }
+        public override void Notify_PatherFailed()
+        {
+            Toil blockerToil = GotoBlockers();
+            if(blockerToil != null)
+            {
+                this.JumpToToil(blockerToil);
+                return;
+            }
+            this.EndJobWith(JobCondition.ErroredPather);
+            return;
         }
 
         public override bool IsContinuation(Job j)
