@@ -19,14 +19,15 @@ namespace Zombiefied
             return new Job(ZombiefiedMod.zombieHunt, prey)
             {
                 killIncappedTarget = true,
-                expiryInterval = (int)(Rand.RangeSeeded(1f, 2f, Find.TickManager.TicksAbs) * 700),
+                expiryInterval = Rand.RangeSeeded(1, 2, Find.TickManager.TicksAbs) * 700,
+                maxNumMeleeAttacks = Rand.Range(2, 7)
             };
         }
 
 
         public Pawn BestPawnToHuntForPredator(Pawn_Zombiefied predator, float range = 7f)
         {
-            List<Thing> allThingsRegion = predator.Map.listerThings.AllThings;
+            List<Thing> allThingsRegion = predator.Map.listerThings.ThingsMatching(ThingRequest.ForGroup(ThingRequestGroup.Pawn));
 
             Pawn pawnToReturn = null;
             float closest = 0f;
@@ -40,12 +41,19 @@ namespace Zombiefied
                 // if prey isn't acceptable, skip.
                 if (!IsAcceptablePreyFor(predator, prey)) continue;
                 // if prey is too far, skip.
-                float distance = GetDistance(predator, prey);
+                float distance = predator.Position.DistanceTo(prey.Position);
                 if (distance > range) continue;
-                // if predator can't reach the prey, skip.
-                if (!predator.CanReach(prey, ZombiefiedMod.allowBreaching)) continue;
-                // if predator can reach prey, but it has to go through walls, add to distance, to ensure un-blocked pawns are considered closer, and thus easier to get to
-                if (ZombiefiedMod.allowBreaching && !predator.CanReach(prey, false)) distance *= 5;
+                if (!predator.CanReach(prey, false))
+                {
+                    if(ZombiefiedMod.allowBreaching)
+                    {
+                        distance *= 5;
+                    }
+                    else
+                    {
+                        continue;
+                    }
+                }
                 if (distance < closest || pawnToReturn == null)
                 {
                     closest = distance;
@@ -66,12 +74,6 @@ namespace Zombiefied
             // if prey is forbidden to predator, skip.
             if (prey.IsForbidden(predator)) return false;
             return true;
-        }
-
-        public float GetDistance(Pawn predator, Pawn prey)
-        {
-            float lengthHorizontal = (predator.Position - prey.Position).LengthHorizontal;
-            return lengthHorizontal;
         }
     }
 }
