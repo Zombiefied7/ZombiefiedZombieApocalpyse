@@ -20,7 +20,7 @@ namespace Zombiefied
             {
                 killIncappedTarget = true,
                 expiryInterval = Rand.RangeSeeded(1, 2, Find.TickManager.TicksAbs) * 700,
-                maxNumMeleeAttacks = Rand.Range(2, 7)
+                maxNumMeleeAttacks = Rand.Range(1, 4)
             };
         }
 
@@ -45,14 +45,11 @@ namespace Zombiefied
                 if (distance > range) continue;
                 if (!predator.CanReach(prey, false))
                 {
-                    if(ZombiefiedMod.allowBreaching)
-                    {
+                    // Chance to breanch, divided by distance
+                    if(Rand.Chance((float)ZombiefiedMod.breachChance / 100f / distance))
                         distance *= 5;
-                    }
                     else
-                    {
                         continue;
-                    }
                 }
                 if (distance < closest || pawnToReturn == null)
                 {
