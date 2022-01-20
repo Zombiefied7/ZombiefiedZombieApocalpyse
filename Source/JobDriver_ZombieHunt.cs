@@ -22,9 +22,6 @@ namespace Zombiefied
 
         protected override IEnumerable<Toil> MakeNewToils()
         {
-            // If we can't reach the target, change the target to whatever's blocking us.
-            //Toil gotoBlockers = GotoBlockers();
-            //if (gotoBlockers != null) yield return gotoBlockers;
             // Hit the target.
             yield return HitThings();
         }
