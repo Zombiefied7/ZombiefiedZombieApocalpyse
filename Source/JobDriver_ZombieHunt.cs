@@ -22,6 +22,13 @@ namespace Zombiefied
 
         protected override IEnumerable<Toil> MakeNewToils()
         {
+            Pawn_Zombiefied pawn = this.pawn as Pawn_Zombiefied;
+            if (pawn.CanReach(this.TargetA, false))
+            {
+                Toil blockerToil = GotoBlockers();
+                if (blockerToil != null)
+                    yield return blockerToil;
+            }
             // Hit the target.
             yield return HitThings();
         }
@@ -64,12 +71,6 @@ namespace Zombiefied
         }
         public override void Notify_PatherFailed()
         {
-            Toil blockerToil = GotoBlockers();
-            if(blockerToil != null)
-            {
-                this.JumpToToil(blockerToil);
-                return;
-            }
             this.EndJobWith(JobCondition.ErroredPather);
             return;
         }

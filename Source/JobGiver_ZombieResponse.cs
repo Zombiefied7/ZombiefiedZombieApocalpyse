@@ -24,14 +24,12 @@ namespace Zombiefied
             };
         }
 
-
         public Pawn BestPawnToHuntForPredator(Pawn_Zombiefied predator, float range = 7f)
         {
             List<Thing> allThingsRegion = predator.Map.listerThings.ThingsMatching(ThingRequest.ForGroup(ThingRequestGroup.Pawn));
 
             Pawn pawnToReturn = null;
             float closest = 0f;
-
             foreach (Thing item in allThingsRegion)
             {
                 Pawn prey = item as Pawn;
