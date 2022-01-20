@@ -135,6 +135,8 @@ namespace Zombiefied
             //headlineZombieOptions.CustomDrawerHeight = 37f;
 
             disableAnimalZombies = base.Settings.GetHandle<bool>("disableAnimalZombies", "       Disable animal zombies", "Animals will not resurrect and no animal zombies will wander in.", false, null, null);
+            breachChance = base.Settings.GetHandle<int>("breachChance", "       Breach Chance %", "Chance that a zombie may path through a wall to get to prey. 0-100", 0, Validators.IntRangeValidator(0, 100));
+            breachChance.SpinnerIncrement = 5;
             disableZombiesAttackingAnimals = base.Settings.GetHandle<bool>("disableZombiesAttackingAnimals", "       Disable zombies attacking animals", "Zombies will ignore animals.", false, null, null);
             zombieSpeedMultiplier = base.Settings.GetHandle<float>("ZombieSpeedMultiplier", "       Zombie speed multiplier [RESTART]", "Zombie speed (in comparison to healthy) will be multiplied by this value.\n(0.03 -> Slowest, 3 -> Fastest)\n(Requires restart to work)", 0.57f, null, null);
             if (zombieSpeedMultiplier < 0.03f)
@@ -187,6 +189,7 @@ namespace Zombiefied
         internal static SettingHandle<bool> headlineZombieOptions;
         //
         internal static SettingHandle<bool> disableAnimalZombies;
+        internal static SettingHandle<int> breachChance;
         internal static SettingHandle<bool> disableZombiesAttackingAnimals;
         internal static SettingHandle<float> zombieSpeedMultiplier;
         internal static SettingHandle<int> zombieSoundReactionTimeInHours;

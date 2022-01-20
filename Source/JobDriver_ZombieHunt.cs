@@ -10,13 +10,11 @@ namespace Zombiefied
     public class JobDriver_ZombieHunt : JobDriver
     {
         private int numMeleeAttacksMade;
-
         public override void ExposeData()
         {
             base.ExposeData();
             Scribe_Values.Look<int>(ref this.numMeleeAttacksMade, "numMeleeAttacksMade", 0, false);
         }
-
         public override bool TryMakePreToilReservations(bool errorOnFailed)
         {
             return true;
@@ -24,15 +22,44 @@ namespace Zombiefied
 
         protected override IEnumerable<Toil> MakeNewToils()
         {
-            yield return Toils_Combat.FollowAndMeleeAttack(TargetIndex.A, delegate
+            Pawn_Zombiefied pawn = this.pawn as Pawn_Zombiefied;
+            if (!pawn.CanReach(this.TargetA, false))
+            {
+                Toil blockerToil = GotoBlockers();
+                if (blockerToil != null)
+                    yield return blockerToil;
+            }
+            // Hit the target.
+            yield return HitThings();
+        }
+        public Toil GotoBlockers()
+        {
+            Thing thing;
+            using (PawnPath pawnPath = base.Map.pathFinder.FindPath(this.pawn.Position, base.TargetA.Cell, TraverseParms.For(this.pawn, Danger.Deadly, TraverseMode.PassAllDestroyableThings, false, false, false), PathEndMode.Touch, null))
+            {
+                if (!pawnPath.Found)
+                {
+                    this.EndJobWith(JobCondition.Incompletable);
+                    return null;
+                }
+                thing = pawnPath.FirstBlockingBuilding(out _, this.pawn);
+            }
+            if (thing != null)
+            {
+                this.job.targetA = thing;
+                return Toils_Goto.GotoThing(TargetIndex.A, PathEndMode.Touch);
+
+            }
+            return null;
+        }
+        public Toil HitThings()
+        {
+            return Toils_Combat.FollowAndMeleeAttack(TargetIndex.A, delegate
             {
                 Thing thing = this.job.GetTarget(TargetIndex.A).Thing;
                 if (this.pawn.meleeVerbs.TryMeleeAttack(thing, this.job.verbToUse, false))
                 {
-                    if (this.pawn.CurJob == null || this.pawn.jobs.curDriver != this)
-                    {
-                        return;
-                    }
+                    if (this.pawn.CurJob == null || this.pawn.jobs.curDriver != this) return;
                     this.numMeleeAttacksMade++;
                     if (this.numMeleeAttacksMade >= this.job.maxNumMeleeAttacks)
                     {
@@ -42,30 +69,10 @@ namespace Zombiefied
                 }
             }).FailOnDespawnedOrNull(TargetIndex.A);
         }
-
         public override void Notify_PatherFailed()
         {
-            if (this.job.attackDoorIfTargetLost)
-            {
-                Thing thing;
-                using (PawnPath pawnPath = base.Map.pathFinder.FindPath(this.pawn.Position, base.TargetA.Cell, TraverseParms.For(this.pawn, Danger.Deadly, TraverseMode.PassDoors, false), PathEndMode.OnCell))
-                {
-                    if (!pawnPath.Found)
-                    {
-                        return;
-                    }
-                    IntVec3 intVec;
-                    thing = pawnPath.FirstBlockingBuilding(out intVec, this.pawn);
-                }
-                if (thing != null)
-                {
-                    this.job.targetA = thing;
-                    this.job.maxNumMeleeAttacks = Rand.RangeSeeded(2, 7, Find.TickManager.TicksAbs + pawn.thingIDNumber);
-                    this.job.expiryInterval = Rand.RangeSeeded(2000, 4000, Find.TickManager.TicksAbs + pawn.thingIDNumber);
-                    return;
-                }
-            }
-            base.Notify_PatherFailed();
+            this.EndJobWith(JobCondition.ErroredPather);
+            return;
         }
 
         public override bool IsContinuation(Job j)

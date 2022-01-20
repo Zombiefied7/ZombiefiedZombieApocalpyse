@@ -5,6 +5,7 @@ using HugsLib;
 using RimWorld;
 using UnityEngine;
 using Verse;
+using Verse.AI;
 
 namespace Zombiefied
 {
@@ -21,9 +22,12 @@ namespace Zombiefied
 
         public Pawn_Zombiefied() : base()
         {
-
         }
-
+        public bool CanReach(LocalTargetInfo target, bool throughWalls)
+        {
+            Pawn self = this as Pawn;
+            return self.CanReach(target, PathEndMode.ClosestTouch, Danger.Deadly, false, false, (throughWalls)?TraverseMode.PassAllDestroyableThings:TraverseMode.NoPassClosedDoors);
+        }
         public override void ExposeData()
         {
             base.ExposeData();
@@ -304,7 +308,7 @@ namespace Zombiefied
                         this.verbTracker.VerbsTick();
                         this.natives.NativeVerbsTick();
                     }
-                    if (base.Spawned)
+                    if (base.Spawned) 
                     {
                         this.jobs.JobTrackerTick();
                     }
