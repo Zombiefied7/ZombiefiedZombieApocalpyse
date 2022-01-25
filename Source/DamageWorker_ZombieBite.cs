@@ -35,15 +35,15 @@ namespace Zombiefied
         }
 
         // Token: 0x0600421A RID: 16922 RVA: 0x001E312B File Offset: 0x001E152B
-        protected override void ApplySpecialEffectsToPart(Pawn pawn, float totalDamage, DamageInfo dinfo, DamageWorker.DamageResult result)
+        protected override void ApplySpecialEffectsToPart(Pawn pawn, float totalDamage, DamageInfo damageInfo, DamageWorker.DamageResult result)
         {
-            base.FinalizeAndAddInjury(pawn, totalDamage, dinfo, result);
+            base.FinalizeAndAddInjury(pawn, totalDamage, damageInfo, result);
             // Only infect on bites! Haven't seen an example of a Zombie scratch...
-            if (dinfo.Def.defName != "ZombieBite") return;
+            if (damageInfo.Def.defName != "ZombieBite") return;
             // Can't infect a robot, or other non-fleshy things
             if (!pawn.def.race.IsFlesh) return;
             // Try infecting the hit part first, then the parent of it.
-            foreach (BodyPartRecord bodyPart in new BodyPartRecord[] { dinfo.HitPart, dinfo.HitPart.parent })
+            foreach (BodyPartRecord bodyPart in new BodyPartRecord[] { damageInfo.HitPart, damageInfo.HitPart.parent })
             {
                 if (IsInfectable(bodyPart, pawn.health.hediffSet))
                 {
