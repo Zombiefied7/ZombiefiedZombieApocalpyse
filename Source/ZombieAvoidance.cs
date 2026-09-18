@@ -16,6 +16,9 @@ namespace Zombiefied
         // and other foreign humanlikes should preserve their original mission and route around hordes
         // instead of treating zombies as convenient combat objectives.
         private const float AvoidRadius = 14f;
+        private const float EmergencyDisengageScanRadius = 9f;
+        private const float EmergencyDisengageDistance = 18f;
+        private const int EmergencyDisengageJobTicks = 240;
         private const int SnapshotIntervalTicks = 15;
         private const ushort MaximumDangerCost = 4800;
 
@@ -93,6 +96,117 @@ namespace Zombiefied
             }
 
             return IsZombie(job.GetTarget(TargetIndex.A).Thing);
+        }
+
+        public static bool IsPassiveWaitJob(Job job)
+        {
+            if (job == null || job.def == null || job.def == JobDefOf.Wait_Downed)
+            {
+                return false;
+            }
+
+            return job.def == JobDefOf.Wait
+                || job.def == JobDefOf.Wait_MaintainPosture
+                || job.def == JobDefOf.Wait_Combat
+                || job.def == JobDefOf.Wait_Wander
+                || job.def.isIdle;
+        }
+
+        public static bool HasZombieWithin(Pawn pawn, float radius)
+        {
+            if (!ShouldAvoidZombies(pawn))
+            {
+                return false;
+            }
+
+            float radiusSquared = radius * radius;
+            IReadOnlyList<Pawn> pawns = pawn.Map.mapPawns.AllPawnsSpawned;
+            for (int i = 0; i < pawns.Count; i++)
+            {
+                Pawn_Zombiefied zombie = pawns[i] as Pawn_Zombiefied;
+                if (zombie == null || zombie.Dead || !zombie.Spawned)
+                {
+                    continue;
+                }
+
+                if (pawn.Position.DistanceToSquared(zombie.Position) <= radiusSquared)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        public static Job TryMakeZombieDisengageJob(Pawn pawn, Thing forcedThreat = null)
+        {
+            if (!ShouldAvoidZombies(pawn) || pawn.Downed || !pawn.Awake())
+            {
+                return null;
+            }
+
+            List<Thing> threats = new List<Thing>();
+            float scanRadiusSquared = EmergencyDisengageScanRadius * EmergencyDisengageScanRadius;
+            IReadOnlyList<Pawn> pawns = pawn.Map.mapPawns.AllPawnsSpawned;
+            for (int i = 0; i < pawns.Count; i++)
+            {
+                Pawn_Zombiefied zombie = pawns[i] as Pawn_Zombiefied;
+                if (zombie == null || zombie.Dead || !zombie.Spawned)
+                {
+                    continue;
+                }
+
+                if (pawn.Position.DistanceToSquared(zombie.Position) <= scanRadiusSquared)
+                {
+                    threats.Add(zombie);
+                }
+            }
+
+            if (IsZombie(forcedThreat) && forcedThreat.Spawned && !threats.Contains(forcedThreat))
+            {
+                threats.Add(forcedThreat);
+            }
+
+            if (threats.Count == 0)
+            {
+                return null;
+            }
+
+            IntVec3 fleeCell = CellFinderLoose.GetFleeDest(pawn, threats, EmergencyDisengageDistance);
+            if (!fleeCell.IsValid || !fleeCell.InBounds(pawn.Map) || fleeCell == pawn.Position)
+            {
+                Thing nearestThreat = null;
+                float nearestDistanceSquared = float.MaxValue;
+                for (int i = 0; i < threats.Count; i++)
+                {
+                    Thing threat = threats[i];
+                    if (threat == null || !threat.Spawned)
+                    {
+                        continue;
+                    }
+
+                    float distanceSquared = pawn.Position.DistanceToSquared(threat.Position);
+                    if (distanceSquared < nearestDistanceSquared)
+                    {
+                        nearestDistanceSquared = distanceSquared;
+                        nearestThreat = threat;
+                    }
+                }
+
+                if (nearestThreat == null
+                    || !RCellFinder.TryFindDirectFleeDestination(nearestThreat.Position, 10f, pawn, out fleeCell)
+                    || !fleeCell.IsValid
+                    || fleeCell == pawn.Position)
+                {
+                    return null;
+                }
+            }
+
+            Job job = JobMaker.MakeJob(JobDefOf.Goto, fleeCell);
+            job.locomotionUrgency = LocomotionUrgency.Sprint;
+            job.expiryInterval = EmergencyDisengageJobTicks;
+            job.checkOverrideOnExpire = true;
+            return job;
         }
 
         public static void ClearZombieEnemyTarget(Pawn pawn)
@@ -569,10 +683,22 @@ namespace Zombiefied
                 return;
             }
 
-            if (ZombieAvoidanceUtility.IsZombie(pawn.mindState.enemyTarget))
+            Thing zombieTarget = ZombieAvoidanceUtility.IsZombie(pawn.mindState.enemyTarget)
+                ? pawn.mindState.enemyTarget
+                : null;
+
+            if (zombieTarget != null)
             {
                 pawn.mindState.enemyTarget = null;
-                __result = null;
+                __result = ZombieAvoidanceUtility.TryMakeZombieDisengageJob(pawn, zombieTarget);
+                return;
+            }
+
+            // If target filtering leaves the fight node with no job while zombies are already on top of the
+            // pawn, give it one short movement job. On arrival it returns to the normal raid/visit think tree.
+            if (__result == null && ZombieAvoidanceUtility.HasZombieWithin(pawn, 4.5f))
+            {
+                __result = ZombieAvoidanceUtility.TryMakeZombieDisengageJob(pawn);
             }
         }
     }
@@ -587,13 +713,14 @@ namespace Zombiefied
                 return;
             }
 
-            if (ZombieAvoidanceUtility.IsZombie(__result.GetTarget(TargetIndex.A).Thing))
+            Thing target = __result.GetTarget(TargetIndex.A).Thing;
+            if (ZombieAvoidanceUtility.IsZombie(target))
             {
                 // This job giver scans AttackTargetsCache directly and historically bypassed the
-                // AttackTargetFinder validator. The cache filter should normally prevent this branch, while
-                // the postfix remains a final guard against another mod replacing or bypassing that scan.
-                __result = null;
+                // AttackTargetFinder validator. If another mod reintroduces a zombie target, convert the
+                // pursuit into a short disengagement instead of leaving the pawn without a job.
                 ZombieAvoidanceUtility.ClearZombieEnemyTarget(pawn);
+                __result = ZombieAvoidanceUtility.TryMakeZombieDisengageJob(pawn, target);
             }
         }
     }
@@ -629,17 +756,40 @@ namespace Zombiefied
     {
         static void Prefix(Pawn ___pawn, ref Job newJob)
         {
-            if (!ZombieAvoidanceUtility.IsProactiveZombieAttackJob(___pawn, newJob))
+            if (!ZombieAvoidanceUtility.ShouldAvoidZombies(___pawn) || newJob == null)
             {
                 return;
             }
 
-            // Some think trees manufacture an attack job directly without calling AttackTargetFinder. Replace
-            // that distraction with a tiny reconsideration window so the pawn resumes its raid/visit/travel job.
-            Job waitJob = JobMaker.MakeJob(JobDefOf.Wait);
-            waitJob.expiryInterval = 30;
-            waitJob.checkOverrideOnExpire = true;
-            newJob = waitJob;
+            Thing zombieTarget = ZombieAvoidanceUtility.IsProactiveZombieAttackJob(___pawn, newJob)
+                ? newJob.GetTarget(TargetIndex.A).Thing
+                : null;
+
+            if (zombieTarget != null)
+            {
+                // Replacing the attack with Wait caused a stable failure loop: the think tree selected the
+                // zombie again after every wait, so a pawn already in melee range could stand still forever.
+                // A short sprint away breaks contact, then normal mission AI takes control again.
+                Job disengageJob = ZombieAvoidanceUtility.TryMakeZombieDisengageJob(___pawn, zombieTarget);
+                if (disengageJob != null)
+                {
+                    newJob = disengageJob;
+                }
+                return;
+            }
+
+            // RimWorld also creates recovery/idle waits after failed paths or an empty think-tree branch. If a
+            // zombie is already within striking distance, turn that passive wait into movement instead of
+            // allowing the pawn to be locked in place by repeated path or target reevaluations.
+            if (ZombieAvoidanceUtility.IsPassiveWaitJob(newJob)
+                && ZombieAvoidanceUtility.HasZombieWithin(___pawn, 3.5f))
+            {
+                Job disengageJob = ZombieAvoidanceUtility.TryMakeZombieDisengageJob(___pawn);
+                if (disengageJob != null)
+                {
+                    newJob = disengageJob;
+                }
+            }
         }
     }
 
