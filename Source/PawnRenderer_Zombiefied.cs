@@ -233,17 +233,27 @@ namespace Zombiefied
                 }
                 if (!flag && bodyDrawType != RotDrawMode.Dessicated && !headStump)
                 {
-                    Mesh mesh4 = this.HairMeshAt(headFacing);
+                    // Beards are face-side graphics. Rendering the north texture on top of a rear-facing
+                    // pawn makes the beard appear detached from the face. RimWorld 1.6 also uses a dedicated
+                    // beard mesh size instead of the hair mesh.
                     Material beardMat = this.graphics.BeardMatAt(headFacing);
-                    if (beardMat != null)
+                    if (beardMat != null && headFacing != Rot4.North)
                     {
-                        GenDraw.DrawMeshNowOrLater(mesh4, loc2, quat, beardMat, portrait);
+                        Vector3 beardLoc = loc2;
+                        BeardDef beardDef = this.graphics.data != null ? this.graphics.data.beardDef : null;
+                        HeadTypeDef headType = this.graphics.data != null ? this.graphics.data.headTypeDef : null;
+                        if (beardDef != null && headType != null)
+                        {
+                            beardLoc += quat * beardDef.GetOffset(headType, headFacing);
+                        }
+
+                        GenDraw.DrawMeshNowOrLater(this.BeardMeshAt(headFacing), beardLoc, quat, beardMat, portrait);
                     }
 
                     Material hairMat = this.graphics.HairMatAt(headFacing);
                     if (hairMat != null)
                     {
-                        GenDraw.DrawMeshNowOrLater(mesh4, loc2, quat, hairMat, portrait);
+                        GenDraw.DrawMeshNowOrLater(this.HairMeshAt(headFacing), loc2, quat, hairMat, portrait);
                     }
                 }
             }
@@ -649,6 +659,15 @@ namespace Zombiefied
         {
             float width = this.graphics.data != null ? this.graphics.data.hairMeshWidth : 1.5f;
             float height = this.graphics.data != null ? this.graphics.data.hairMeshHeight : 1.5f;
+            width = Mathf.Max(0.1f, width);
+            height = Mathf.Max(0.1f, height);
+            return MeshPool.GetMeshSetForSize(width, height).MeshAt(facing);
+        }
+
+        private Mesh BeardMeshAt(Rot4 facing)
+        {
+            float width = this.graphics.data != null ? this.graphics.data.beardMeshWidth : 1.5f;
+            float height = this.graphics.data != null ? this.graphics.data.beardMeshHeight : 1.5f;
             width = Mathf.Max(0.1f, width);
             height = Mathf.Max(0.1f, height);
             return MeshPool.GetMeshSetForSize(width, height).MeshAt(facing);

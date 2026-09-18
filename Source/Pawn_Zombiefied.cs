@@ -216,86 +216,12 @@ namespace Zombiefied
 
             if (copyHealthConditions && this.def.race.body == sourcePawn.def.race.body)
             {
-                for (int i = sourcePawn.health.hediffSet.hediffs.Count - 1; i >= 0; i--)
-                {
-                    Hediff hediff = sourcePawn.health.hediffSet.hediffs[i];
-                    Hediff_Injury injury = hediff as Hediff_Injury;
-                    Hediff_AddedPart added = hediff as Hediff_AddedPart;
-                    Hediff_MissingPart missing = hediff as Hediff_MissingPart;
-
-                    if (injury != null && injury.Part != null)
-                    {
-                        BodyPartRecord part = injury.Part;
-                        bool parentMissing = part.parent != null && health.hediffSet.PartIsMissing(part.parent);
-                        bool partMissing = health.hediffSet.PartIsMissing(part);
-
-                        if (!parentMissing && !partMissing)
-                        {
-                            Hediff_Injury copiedInjury = HediffMaker.MakeHediff(injury.def, this, part) as Hediff_Injury;
-                            if (copiedInjury != null)
-                            {
-                                copiedInjury.Severity = injury.Severity * 0.5f;
-                                copiedInjury.ageTicks = 70000000;
-
-                                if (!health.WouldDieAfterAddingHediff(copiedInjury))
-                                {
-                                    health.AddHediff(copiedInjury, part);
-                                    if (Dead || Destroyed)
-                                    {
-                                        return false;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    else if (missing != null && missing.Part != null
-                        && (missing.Part.parent == null || !health.hediffSet.PartIsMissing(missing.Part.parent))
-                        && !health.hediffSet.PartIsMissing(missing.Part))
-                    {
-                        bool foundMoving = false;
-                        if (missing.Part.def.tags != null)
-                        {
-                            for (int i1 = 0; i1 < missing.Part.def.tags.Count; i1++)
-                            {
-                                if (missing.Part.def.tags[i1].defName.Contains("Moving"))
-                                {
-                                    foundMoving = true;
-                                }
-                            }
-                        }
-
-                        if (!foundMoving || missing.Part.parent == null || !sourcePawn.health.hediffSet.PartIsMissing(missing.Part.parent))
-                        {
-                            Hediff copiedMissing = HediffMaker.MakeHediff(missing.def, this, missing.Part);
-                            if (copiedMissing != null && !health.WouldDieAfterAddingHediff(copiedMissing))
-                            {
-                                health.AddHediff(copiedMissing, missing.Part);
-                                if (Dead || Destroyed)
-                                {
-                                    return false;
-                                }
-                            }
-                        }
-                    }
-                    else if (added != null && added.Part != null
-                        && (added.Part.parent == null || !health.hediffSet.PartIsMissing(added.Part.parent))
-                        && !health.hediffSet.PartIsMissing(added.Part))
-                    {
-                        Hediff copiedAddedPart = HediffMaker.MakeHediff(added.def, this, added.Part);
-                        if (copiedAddedPart != null)
-                        {
-                            copiedAddedPart.Severity = added.Severity;
-                            if (!health.WouldDieAfterAddingHediff(copiedAddedPart))
-                            {
-                                health.AddHediff(copiedAddedPart, added.Part);
-                                if (Dead || Destroyed)
-                                {
-                                    return false;
-                                }
-                            }
-                        }
-                    }
-                }
+                // Added parts are applied first so later injuries and missing parts see the same structural
+                // body state as the corpse. Missing parts that would kill the zombie are converted into a
+                // severe but survivable wound instead of abandoning this pawn and generating a replacement.
+                CopyAddedPartsFrom(sourcePawn);
+                CopyMissingPartsFrom(sourcePawn);
+                CopyInjuriesFrom(sourcePawn);
             }
 
             if (Dead || Destroyed)
@@ -312,6 +238,187 @@ namespace Zombiefied
             armorRating_Sharp = TryDrawOverallArmor(sourcePawn, StatDefOf.ArmorRating_Sharp);
             armorRating_Blunt = TryDrawOverallArmor(sourcePawn, StatDefOf.ArmorRating_Blunt);
             return true;
+        }
+
+        private void CopyAddedPartsFrom(Pawn sourcePawn)
+        {
+            List<Hediff> sourceHediffs = sourcePawn.health.hediffSet.hediffs;
+            for (int i = 0; i < sourceHediffs.Count; i++)
+            {
+                Hediff_AddedPart sourceAddedPart = sourceHediffs[i] as Hediff_AddedPart;
+                if (sourceAddedPart == null || sourceAddedPart.Part == null)
+                {
+                    continue;
+                }
+
+                BodyPartRecord part = sourceAddedPart.Part;
+                if ((part.parent != null && health.hediffSet.PartIsMissing(part.parent)) || health.hediffSet.PartIsMissing(part))
+                {
+                    continue;
+                }
+
+                Hediff copied = HediffMaker.MakeHediff(sourceAddedPart.def, this, part);
+                if (copied == null)
+                {
+                    continue;
+                }
+
+                copied.Severity = sourceAddedPart.Severity;
+                copied.ageTicks = sourceAddedPart.ageTicks;
+                if (!health.WouldDieAfterAddingHediff(copied))
+                {
+                    health.AddHediff(copied, part);
+                }
+            }
+        }
+
+        private void CopyMissingPartsFrom(Pawn sourcePawn)
+        {
+            List<Hediff> sourceHediffs = sourcePawn.health.hediffSet.hediffs;
+            for (int i = 0; i < sourceHediffs.Count; i++)
+            {
+                Hediff_MissingPart sourceMissingPart = sourceHediffs[i] as Hediff_MissingPart;
+                if (sourceMissingPart == null || sourceMissingPart.Part == null)
+                {
+                    continue;
+                }
+
+                BodyPartRecord part = sourceMissingPart.Part;
+
+                // Child missing-part hediffs are implied by their missing parent and must not be copied again.
+                if (part.parent != null && sourcePawn.health.hediffSet.PartIsMissing(part.parent))
+                {
+                    continue;
+                }
+
+                if ((part.parent != null && health.hediffSet.PartIsMissing(part.parent)) || health.hediffSet.PartIsMissing(part))
+                {
+                    continue;
+                }
+
+                bool movementPart = HasMovementTag(part);
+                if (!movementPart && TryAddMissingPartWithoutKilling(sourceMissingPart))
+                {
+                    continue;
+                }
+
+                // The original mod represented destroyed movement parts with a shredded wound so zombies
+                // remained mobile. RimWorld 1.6 removed HediffDefOf.Shredded, so use a capped cut wound.
+                // The same conversion handles vital missing parts that RimWorld would otherwise treat as death.
+                float maxHealth = Mathf.Max(1f, part.def.GetMaxHealth(this));
+                float desiredSeverity = Mathf.Max(1f, maxHealth * 0.65f);
+                TryAddSurvivableInjury(HediffDefOf.Cut, part, desiredSeverity, 70000000);
+            }
+        }
+
+        private void CopyInjuriesFrom(Pawn sourcePawn)
+        {
+            List<Hediff> sourceHediffs = sourcePawn.health.hediffSet.hediffs;
+            for (int i = 0; i < sourceHediffs.Count; i++)
+            {
+                Hediff_Injury sourceInjury = sourceHediffs[i] as Hediff_Injury;
+                if (sourceInjury == null || sourceInjury.Part == null)
+                {
+                    continue;
+                }
+
+                BodyPartRecord part = sourceInjury.Part;
+                if ((part.parent != null && health.hediffSet.PartIsMissing(part.parent)) || health.hediffSet.PartIsMissing(part))
+                {
+                    continue;
+                }
+
+                float desiredSeverity = Mathf.Max(0.01f, sourceInjury.Severity * 0.5f);
+                int ageTicks = Math.Max(sourceInjury.ageTicks, 70000000);
+                TryAddSurvivableInjury(sourceInjury.def, part, desiredSeverity, ageTicks);
+            }
+        }
+
+        private bool TryAddMissingPartWithoutKilling(Hediff_MissingPart sourceMissingPart)
+        {
+            BodyPartRecord part = sourceMissingPart.Part;
+            if (part == null || part == this.def.race.body.corePart)
+            {
+                return false;
+            }
+
+            Hediff copiedMissing = HediffMaker.MakeHediff(sourceMissingPart.def, this, part);
+            if (copiedMissing == null || health.WouldDieAfterAddingHediff(copiedMissing))
+            {
+                return false;
+            }
+
+            health.AddHediff(copiedMissing, part);
+            return !Dead && !Destroyed;
+        }
+
+        private bool TryAddSurvivableInjury(HediffDef injuryDef, BodyPartRecord part, float desiredSeverity, int ageTicks)
+        {
+            if (injuryDef == null || part == null)
+            {
+                return false;
+            }
+
+            if ((part.parent != null && health.hediffSet.PartIsMissing(part.parent)) || health.hediffSet.PartIsMissing(part))
+            {
+                return false;
+            }
+
+            // Never let a copied wound destroy its body part. This is important for brains, hearts, necks,
+            // and small-animal body parts where a seemingly modest copied severity can cross the part HP limit.
+            float currentPartHealth = health.hediffSet.GetPartHealth(part);
+            float severity = Mathf.Min(desiredSeverity, Mathf.Max(0f, currentPartHealth - 1f));
+            if (severity <= 0.001f)
+            {
+                return false;
+            }
+
+            for (int attempt = 0; attempt < 10 && severity > 0.001f; attempt++)
+            {
+                Hediff_Injury copiedInjury = HediffMaker.MakeHediff(injuryDef, this, part) as Hediff_Injury;
+                if (copiedInjury == null)
+                {
+                    // Some modded injury defs may no longer instantiate as Hediff_Injury in 1.6.
+                    if (injuryDef != HediffDefOf.Cut)
+                    {
+                        injuryDef = HediffDefOf.Cut;
+                        continue;
+                    }
+                    return false;
+                }
+
+                copiedInjury.Severity = severity;
+                copiedInjury.ageTicks = ageTicks;
+
+                if (!health.WouldDieAfterAddingHediff(copiedInjury))
+                {
+                    health.AddHediff(copiedInjury, part);
+                    return !Dead && !Destroyed;
+                }
+
+                severity *= 0.5f;
+            }
+
+            return false;
+        }
+
+        private static bool HasMovementTag(BodyPartRecord part)
+        {
+            if (part == null || part.def == null || part.def.tags == null)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < part.def.tags.Count; i++)
+            {
+                BodyPartTagDef tag = part.def.tags[i];
+                if (tag != null && tag.defName != null && tag.defName.IndexOf("Moving", StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private float TryDrawOverallArmor(Pawn sourcePawn, StatDef stat)

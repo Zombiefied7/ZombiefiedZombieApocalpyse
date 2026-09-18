@@ -30,6 +30,8 @@ namespace Zombiefied
             this.headMeshWidth = 1.5f;
             this.hairMeshWidth = 1.5f;
             this.hairMeshHeight = 1.5f;
+            this.beardMeshWidth = 1.5f;
+            this.beardMeshHeight = 1.5f;
             EnsureCollections();
         }
 
@@ -92,6 +94,11 @@ namespace Zombiefied
             this.hairMeshWidth = hairMeshSize.x;
             this.hairMeshHeight = hairMeshSize.y;
 
+            Vector2 beardMeshSize = headType != null ? headType.beardMeshSize : new Vector2(1.5f, 1.5f);
+            beardMeshSize *= headSizeFactor;
+            this.beardMeshWidth = beardMeshSize.x;
+            this.beardMeshHeight = beardMeshSize.y;
+
             if (pawn.apparel != null)
             {
                 foreach (Apparel worn in pawn.apparel.WornApparel)
@@ -151,6 +158,8 @@ namespace Zombiefied
             this.headMeshWidth = source.headMeshWidth;
             this.hairMeshWidth = source.hairMeshWidth;
             this.hairMeshHeight = source.hairMeshHeight;
+            this.beardMeshWidth = source.beardMeshWidth;
+            this.beardMeshHeight = source.beardMeshHeight;
             this.furDef = source.furDef;
 
             this.wornApparelDefs.AddRange(source.wornApparelDefs ?? new List<ThingDef>());
@@ -182,6 +191,8 @@ namespace Zombiefied
             Scribe_Values.Look<float>(ref this.headMeshWidth, "headMeshWidth", 1.5f, false);
             Scribe_Values.Look<float>(ref this.hairMeshWidth, "hairMeshWidth", 1.5f, false);
             Scribe_Values.Look<float>(ref this.hairMeshHeight, "hairMeshHeight", 1.5f, false);
+            Scribe_Values.Look<float>(ref this.beardMeshWidth, "beardMeshWidth", 1.5f, false);
+            Scribe_Values.Look<float>(ref this.beardMeshHeight, "beardMeshHeight", 1.5f, false);
             Scribe_Defs.Look<FurDef>(ref this.furDef, "furDef");
             Scribe_Collections.Look<ThingDef>(ref this.wornApparelDefs, "wornApparelDefs", LookMode.Def, new object[0]);
             Scribe_Collections.Look<ThingDef>(ref this.wornApparelStuffDefs, "wornApparelStuffDefs", LookMode.Def, new object[0]);
@@ -258,6 +269,8 @@ namespace Zombiefied
         public float headMeshWidth = 1.5f;
         public float hairMeshWidth = 1.5f;
         public float hairMeshHeight = 1.5f;
+        public float beardMeshWidth = 1.5f;
+        public float beardMeshHeight = 1.5f;
         public string shaderCutoutPath;
         public FurDef furDef;
         public List<ThingDef> wornApparelDefs;

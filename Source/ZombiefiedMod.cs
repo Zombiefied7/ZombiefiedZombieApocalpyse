@@ -643,13 +643,9 @@ namespace Zombiefied
                 newKindDef = specificKindDef;
             }
 
+            // Generate exactly one zombie. Health transfer sanitizes lethal corpse conditions in-place
+            // rather than discarding the pawn and generating an appearance-only replacement.
             Pawn_Zombiefied zombie = GenerateZombieCandidate(newKindDef, sourcePawn, true);
-            if (zombie == null)
-            {
-                // Corpse health frequently contains lethal combinations. Falling back to appearance and
-                // armor data is expected behavior, not an error condition worth flooding the player log.
-                zombie = GenerateZombieCandidate(newKindDef, sourcePawn, false);
-            }
 
             if (zombie == null || zombie.Dead || zombie.Destroyed)
             {
