@@ -229,10 +229,13 @@ namespace Zombiefied
                 return false;
             }
 
-            FixZombie();
-            if (Dead || Destroyed)
+            // Keep generated zombies free of random generator apparel before they enter the map, but do not
+            // add the Zombiefied hediff yet. Adding a hediff can trigger MakeUndowned/CheckForJobOverride;
+            // JobDriver_Wait immediately reserves pawn.Position on pawn.Map, which is null for an unspawned pawn.
+            // FixZombie() is therefore called only after GenSpawn has completed.
+            if (apparel != null)
             {
-                return false;
+                apparel.DestroyAll();
             }
 
             armorRating_Sharp = TryDrawOverallArmor(sourcePawn, StatDefOf.ArmorRating_Sharp);

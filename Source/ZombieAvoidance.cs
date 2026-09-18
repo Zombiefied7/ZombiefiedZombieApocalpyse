@@ -2,6 +2,8 @@
 using RimWorld;
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
 using Unity.Collections;
 using Verse;
 using Verse.AI;
@@ -10,12 +12,12 @@ namespace Zombiefied
 {
     internal static class ZombieAvoidanceUtility
     {
-        // Zombies acquire prey in their current region out to roughly seven cells. The extra two-cell
-        // margin gives visitors and raiders room to route around the attraction radius instead of
-        // skimming its edge and immediately pulling a horde.
+        // Zombies should behave like an environmental hazard to outsiders. Raiders, visitors, traders,
+        // and other foreign humanlikes should preserve their original mission and route around hordes
+        // instead of treating zombies as convenient combat objectives.
         private const float AvoidRadius = 9f;
         private const int SnapshotIntervalTicks = 15;
-        private const ushort MaximumTraversableCost = 9999;
+        private const ushort MaximumDangerCost = 2200;
 
         private sealed class DangerSnapshot
         {
@@ -48,40 +50,52 @@ namespace Zombiefied
             return true;
         }
 
-        public static bool UsesMeleeAsPrimaryAttack(Pawn pawn)
-        {
-            if (!ShouldAvoidZombies(pawn))
-            {
-                return false;
-            }
-
-            Verb verb = pawn.CurrentEffectiveVerb;
-            if (verb == null)
-            {
-                verb = pawn.TryGetAttackVerb(null, !pawn.IsColonist);
-            }
-
-            return verb != null && verb.verbProps != null && verb.verbProps.IsMeleeAttack;
-        }
-
         public static bool IsZombie(Thing thing)
         {
             return thing is Pawn_Zombiefied;
         }
 
-        public static bool IsProactiveZombieMeleeJob(Pawn pawn, Job job)
+        public static bool ShouldRejectZombieCombat(Pawn pawn, Thing target)
         {
-            if (!ShouldAvoidZombies(pawn) || job == null || job.def != JobDefOf.AttackMelee)
+            // Foreign humanlikes must never promote a zombie from environmental hazard to combat objective.
+            // Allowing close-range or melee-threat exceptions causes vanilla fight AI to cache that zombie as
+            // mindState.enemyTarget, after which ranged pawns can receive Goto jobs that actively pursue it.
+            return ShouldAvoidZombies(pawn) && IsZombie(target);
+        }
+
+        public static bool IsProactiveZombieAttackJob(Pawn pawn, Job job)
+        {
+            if (!ShouldAvoidZombies(pawn) || job == null)
             {
                 return false;
             }
 
-            if (job.playerForced || job.reactingToMeleeThreat)
+            if (job.def != JobDefOf.AttackMelee && job.def != JobDefOf.AttackStatic)
             {
                 return false;
             }
 
             return IsZombie(job.GetTarget(TargetIndex.A).Thing);
+        }
+
+        public static void ClearZombieEnemyTarget(Pawn pawn)
+        {
+            if (!ShouldAvoidZombies(pawn) || pawn.mindState == null)
+            {
+                return;
+            }
+
+            if (IsZombie(pawn.mindState.enemyTarget))
+            {
+                pawn.mindState.enemyTarget = null;
+            }
+
+            // meleeThreat is another persistent route by which vanilla hostility-response nodes can revive
+            // zombie combat after the normal target cache has been filtered. Outsiders ignore that signal.
+            if (IsZombie(pawn.mindState.meleeThreat))
+            {
+                pawn.mindState.meleeThreat = null;
+            }
         }
 
         public static void ForgetMap(Map map)
@@ -92,20 +106,24 @@ namespace Zombiefied
             }
         }
 
-        public static ZombiePathAvoidanceCustomizer CreatePathCustomizer(Pawn pawn)
+        public static ZombiePathAvoidanceCustomizer CreatePathCustomizer(Pawn pawn, LocalTargetInfo destination)
         {
             if (!ShouldAvoidZombies(pawn))
             {
                 return null;
             }
 
+            // Combat-target guards should prevent zombie destinations entirely. If another mod still creates
+            // such a path request, retaining the hazard grid makes pursuing the zombie unattractive instead of
+            // accidentally giving that pursuit an unpenalized path.
             DangerSnapshot snapshot = GetDangerSnapshot(pawn.Map);
             if (snapshot == null || !snapshot.hasDanger)
             {
                 return null;
             }
 
-            return new ZombiePathAvoidanceCustomizer(pawn.Map, snapshot.version, snapshot.grid);
+            IntVec3 destinationCell = destination.IsValid ? destination.Cell : IntVec3.Invalid;
+            return new ZombiePathAvoidanceCustomizer(pawn.Map, snapshot.version, snapshot.grid, destinationCell);
         }
 
         private static DangerSnapshot GetDangerSnapshot(Map map)
@@ -157,7 +175,7 @@ namespace Zombiefied
 
                     int cellIndex = map.cellIndices.CellToIndex(cell);
                     int combinedCost = grid[cellIndex] + addedCost;
-                    grid[cellIndex] = (ushort)Math.Min(MaximumTraversableCost, combinedCost);
+                    grid[cellIndex] = (ushort)Math.Min(MaximumDangerCost, combinedCost);
                 }
             }
 
@@ -171,24 +189,32 @@ namespace Zombiefied
 
         private static ushort CostForDistanceSquared(float distanceSquared)
         {
+            // These are intentionally strong preferences, not walls. RimWorld adds custom-grid cost to the
+            // ordinary cell cost, so keeping the cumulative penalty comfortably below the impassable range
+            // prevents the "resolved path returned no nodes" failures produced by the earlier 9,999 cap.
+            if (distanceSquared <= 1f)
+            {
+                return 900;
+            }
+
             if (distanceSquared <= 4f)
             {
-                return 6000;
+                return 650;
             }
 
             if (distanceSquared <= 16f)
             {
-                return 3000;
+                return 350;
             }
 
             if (distanceSquared <= 49f)
             {
-                return 1400;
+                return 150;
             }
 
             if (distanceSquared <= AvoidRadius * AvoidRadius)
             {
-                return 400;
+                return 60;
             }
 
             return 0;
@@ -256,7 +282,7 @@ namespace Zombiefied
         private NativeArray<ushort> offsetGrid;
         private bool disposed;
 
-        public ZombiePathAvoidanceCustomizer(Map map, int snapshotVersion, ushort[] snapshot)
+        public ZombiePathAvoidanceCustomizer(Map map, int snapshotVersion, ushort[] snapshot, IntVec3 destinationCell)
         {
             this.map = map;
             this.snapshotVersion = snapshotVersion;
@@ -268,6 +294,13 @@ namespace Zombiefied
             for (int i = 0; i < snapshot.Length; i++)
             {
                 offsetGrid[i] = snapshot[i];
+            }
+
+            // Reaching the actual mission destination must always remain possible. The surrounding cells can
+            // still be unattractive, but the goal cell itself should never carry artificial zombie cost.
+            if (destinationCell.IsValid && destinationCell.InBounds(map))
+            {
+                offsetGrid[map.cellIndices.CellToIndex(destinationCell)] = 0;
             }
         }
 
@@ -310,7 +343,7 @@ namespace Zombiefied
     [HarmonyPatch]
     internal static class ZombiePathCreateRequestPatch
     {
-        static System.Reflection.MethodBase TargetMethod()
+        static MethodBase TargetMethod()
         {
             return AccessTools.Method(
                 typeof(PathFinder),
@@ -329,9 +362,10 @@ namespace Zombiefied
         }
 
         static void Prefix(
-            TraverseParms traverseParms,
-            Pawn pawn,
-            ref PathRequest.IPathGridCustomizer customizer)
+            [HarmonyArgument(1)] LocalTargetInfo target,
+            [HarmonyArgument(3)] TraverseParms traverseParms,
+            [HarmonyArgument(6)] Pawn pawn,
+            [HarmonyArgument(7)] ref PathRequest.IPathGridCustomizer customizer)
         {
             if (customizer != null)
             {
@@ -339,14 +373,14 @@ namespace Zombiefied
             }
 
             Pawn pathingPawn = pawn ?? traverseParms.pawn;
-            customizer = ZombieAvoidanceUtility.CreatePathCustomizer(pathingPawn);
+            customizer = ZombieAvoidanceUtility.CreatePathCustomizer(pathingPawn, target);
         }
     }
 
     [HarmonyPatch]
     internal static class ZombiePathFindNowPatch
     {
-        static System.Reflection.MethodBase TargetMethod()
+        static MethodBase TargetMethod()
         {
             return AccessTools.Method(
                 typeof(PathFinder),
@@ -363,8 +397,9 @@ namespace Zombiefied
         }
 
         static void Prefix(
-            TraverseParms traverseParms,
-            ref PathRequest.IPathGridCustomizer customizer,
+            [HarmonyArgument(1)] LocalTargetInfo target,
+            [HarmonyArgument(2)] TraverseParms traverseParms,
+            [HarmonyArgument(5)] ref PathRequest.IPathGridCustomizer customizer,
             out ZombiePathAvoidanceCustomizer __state)
         {
             __state = null;
@@ -373,7 +408,7 @@ namespace Zombiefied
                 return;
             }
 
-            __state = ZombieAvoidanceUtility.CreatePathCustomizer(traverseParms.pawn);
+            __state = ZombieAvoidanceUtility.CreatePathCustomizer(traverseParms.pawn, target);
             if (__state != null)
             {
                 customizer = __state;
@@ -423,9 +458,8 @@ namespace Zombiefied
                 return;
             }
 
-            // A cancelled request can still have a Burst grid/path job reading this NativeArray. The
-            // pathfinder force-completes previous work at the start of its next tick, so defer disposal
-            // until after that synchronization point instead of invalidating memory under a worker job.
+            // A cancelled request can still have a worker reading the NativeArray. PathFinder synchronizes
+            // outstanding work at the start of the following tick, so release the array only after that point.
             ZombiePathCustomizerLifetime.Defer(__instance.map, customizer);
             __instance.customizer = null;
         }
@@ -445,23 +479,111 @@ namespace Zombiefied
     {
         static void Postfix(Map ___map)
         {
-            // PathFinder.Dispose completes all outstanding jobs before returning, so every deferred
-            // custom grid belonging to this map is safe to release here.
             ZombiePathCustomizerLifetime.DisposeAllForMap(___map);
             ZombieAvoidanceUtility.ForgetMap(___map);
         }
     }
 
+    [HarmonyPatch(typeof(AttackTargetsCache), nameof(AttackTargetsCache.GetPotentialTargetsFor))]
+    internal static class ZombieAttackTargetsCachePatch
+    {
+        static void Postfix(IAttackTargetSearcher th, ref List<IAttackTarget> __result)
+        {
+            Pawn pawn = th as Pawn;
+            if (!ZombieAvoidanceUtility.ShouldAvoidZombies(pawn) || __result == null)
+            {
+                return;
+            }
+
+            // AttackTargetsCache returns a shared static scratch list. Never remove entries from it in place,
+            // because another AI query in the same frame can observe the mutation. Only allocate a private copy
+            // when a zombie is actually present.
+            bool containsZombie = false;
+            for (int i = 0; i < __result.Count; i++)
+            {
+                IAttackTarget candidate = __result[i];
+                if (candidate != null && ZombieAvoidanceUtility.IsZombie(candidate.Thing))
+                {
+                    containsZombie = true;
+                    break;
+                }
+            }
+
+            if (!containsZombie)
+            {
+                return;
+            }
+
+            List<IAttackTarget> filtered = new List<IAttackTarget>(__result.Count);
+            for (int i = 0; i < __result.Count; i++)
+            {
+                IAttackTarget candidate = __result[i];
+                if (candidate == null || !ZombieAvoidanceUtility.IsZombie(candidate.Thing))
+                {
+                    filtered.Add(candidate);
+                }
+            }
+
+            __result = filtered;
+        }
+    }
+
+    [HarmonyPatch(typeof(JobGiver_AIFightEnemy), "TryGiveJob")]
+    internal static class ZombieFightEnemyStickyTargetPatch
+    {
+        static void Prefix(Pawn pawn)
+        {
+            // Vanilla JobGiver_AIFightEnemy keeps mindState.enemyTarget between think-tree evaluations. A pawn
+            // that selected a zombie before filtering was applied can otherwise keep generating melee, combat
+            // wait, or shooting-position Goto jobs toward that stale target indefinitely.
+            ZombieAvoidanceUtility.ClearZombieEnemyTarget(pawn);
+        }
+
+        static void Postfix(Pawn pawn, ref Job __result)
+        {
+            if (!ZombieAvoidanceUtility.ShouldAvoidZombies(pawn) || pawn.mindState == null)
+            {
+                return;
+            }
+
+            if (ZombieAvoidanceUtility.IsZombie(pawn.mindState.enemyTarget))
+            {
+                pawn.mindState.enemyTarget = null;
+                __result = null;
+            }
+        }
+    }
+
+    [HarmonyPatch(typeof(JobGiver_AIGotoNearestHostile), "TryGiveJob")]
+    internal static class ZombieGotoNearestHostilePatch
+    {
+        static void Postfix(Pawn pawn, ref Job __result)
+        {
+            if (!ZombieAvoidanceUtility.ShouldAvoidZombies(pawn) || __result == null)
+            {
+                return;
+            }
+
+            if (ZombieAvoidanceUtility.IsZombie(__result.GetTarget(TargetIndex.A).Thing))
+            {
+                // This job giver scans AttackTargetsCache directly and historically bypassed the
+                // AttackTargetFinder validator. The cache filter should normally prevent this branch, while
+                // the postfix remains a final guard against another mod replacing or bypassing that scan.
+                __result = null;
+                ZombieAvoidanceUtility.ClearZombieEnemyTarget(pawn);
+            }
+        }
+    }
+
     [HarmonyPatch(typeof(AttackTargetFinder), nameof(AttackTargetFinder.BestAttackTarget))]
-    internal static class ZombieMeleeTargetSelectionPatch
+    internal static class ZombieMissionTargetSelectionPatch
     {
         static void Prefix(
             IAttackTargetSearcher searcher,
-            ref Predicate<Thing> validator,
-            bool onlyRanged)
+            ref Predicate<Thing> validator)
         {
             Pawn pawn = searcher as Pawn;
-            if (onlyRanged || !ZombieAvoidanceUtility.UsesMeleeAsPrimaryAttack(pawn))
+            if (!ZombieAvoidanceUtility.ShouldAvoidZombies(pawn))
             {
                 return;
             }
@@ -469,7 +591,7 @@ namespace Zombiefied
             Predicate<Thing> originalValidator = validator;
             validator = delegate(Thing target)
             {
-                if (ZombieAvoidanceUtility.IsZombie(target))
+                if (ZombieAvoidanceUtility.ShouldRejectZombieCombat(pawn, target))
                 {
                     return false;
                 }
@@ -480,23 +602,73 @@ namespace Zombiefied
     }
 
     [HarmonyPatch(typeof(Pawn_JobTracker), nameof(Pawn_JobTracker.StartJob))]
-    internal static class ZombieProactiveMeleeJobPatch
+    internal static class ZombieProactiveAttackJobPatch
     {
-        static void Prefix(Pawn ___pawn, Job newJob)
+        static void Prefix(Pawn ___pawn, ref Job newJob)
         {
-            if (!ZombieAvoidanceUtility.IsProactiveZombieMeleeJob(___pawn, newJob))
+            if (!ZombieAvoidanceUtility.IsProactiveZombieAttackJob(___pawn, newJob))
             {
                 return;
             }
 
-            // Path-following AI can manufacture a one-swing AttackMelee job when another pawn blocks
-            // its next cell for long enough. Turning that proactive zombie attack into a short wait
-            // lets the normal thinker and zombie-aware path costs choose a safer route on the next pass.
-            newJob.def = JobDefOf.Wait;
-            newJob.expiryInterval = 45;
-            newJob.checkOverrideOnExpire = true;
-            newJob.maxNumMeleeAttacks = 0;
-            newJob.verbToUse = null;
+            // Some think trees manufacture an attack job directly without calling AttackTargetFinder. Replace
+            // that distraction with a tiny reconsideration window so the pawn resumes its raid/visit/travel job.
+            Job waitJob = JobMaker.MakeJob(JobDefOf.Wait);
+            waitJob.expiryInterval = 30;
+            waitJob.checkOverrideOnExpire = true;
+            newJob = waitJob;
+        }
+    }
+
+    [HarmonyPatch]
+    internal static class ZombieTryStartAttackPatch
+    {
+        static IEnumerable<MethodBase> TargetMethods()
+        {
+            return AccessTools.GetDeclaredMethods(typeof(Pawn))
+                .Where(method => method.Name == "TryStartAttack" && method.ReturnType == typeof(bool));
+        }
+
+        static bool Prefix(Pawn __instance, object[] __args, ref bool __result)
+        {
+            if (__args == null || __args.Length == 0 || !(__args[0] is LocalTargetInfo))
+            {
+                return true;
+            }
+
+            LocalTargetInfo target = (LocalTargetInfo)__args[0];
+            if (!ZombieAvoidanceUtility.ShouldRejectZombieCombat(__instance, target.Thing))
+            {
+                return true;
+            }
+
+            __result = false;
+            return false;
+        }
+    }
+
+    [HarmonyPatch]
+    internal static class ZombieTryMeleeAttackPatch
+    {
+        private static readonly FieldInfo PawnField = AccessTools.Field(typeof(Pawn_MeleeVerbs), "pawn");
+
+        static IEnumerable<MethodBase> TargetMethods()
+        {
+            return AccessTools.GetDeclaredMethods(typeof(Pawn_MeleeVerbs))
+                .Where(method => method.Name == "TryMeleeAttack" && method.ReturnType == typeof(bool));
+        }
+
+        static bool Prefix(Pawn_MeleeVerbs __instance, object[] __args, ref bool __result)
+        {
+            Pawn pawn = PawnField == null ? null : PawnField.GetValue(__instance) as Pawn;
+            Thing target = (__args != null && __args.Length > 0) ? __args[0] as Thing : null;
+            if (!ZombieAvoidanceUtility.ShouldRejectZombieCombat(pawn, target))
+            {
+                return true;
+            }
+
+            __result = false;
+            return false;
         }
     }
 }

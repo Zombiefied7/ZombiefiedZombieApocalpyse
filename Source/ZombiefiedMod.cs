@@ -564,7 +564,6 @@ namespace Zombiefied
             }
 
             zombiePawn.SetFactionDirect(zombieFaction);
-            zombiePawn.FixZombie();
 
             // A pawn that has entered RimWorld's death/destruction pipeline is not reusable. Health.Reset() can
             // clear hediffs, but it does not reconstruct trackers or reverse Thing.Destroy(). Reject such pawns
@@ -582,6 +581,14 @@ namespace Zombiefied
             try
             {
                 spawnedThing = GenSpawn.Spawn(zombiePawn, position, map);
+
+                // Health changes can trigger job-state transitions. Run FixZombie only after SpawnSetup so any
+                // vanilla recovery/wait job has a real map, pather, and reservation manager available.
+                Pawn_Zombiefied spawnedZombie = spawnedThing as Pawn_Zombiefied;
+                if (spawnedZombie != null)
+                {
+                    spawnedZombie.FixZombie();
+                }
             }
             catch (Exception ex)
             {

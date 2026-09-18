@@ -15,16 +15,6 @@ using Verse.Sound;
 
 namespace Zombiefied
 {
-    [StaticConstructorOnStartup]
-    class ZombiefiedPatches
-    {
-        static ZombiefiedPatches()
-        {
-            var harmony = new Harmony("com.github.harmony.rimworld.mod.zombiefied");
-            harmony.PatchAll();
-        }
-    }
-
     [HarmonyPatch(typeof(Pawn_MindState), nameof(Pawn_MindState.Notify_DamageTaken))]
     class ManhunterPatch
     {

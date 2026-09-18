@@ -39,3 +39,7 @@ Foreign melee-focused pawns exclude zombies during normal attack-target searches
 guard also prevents proactive AttackMelee jobs against zombies, including the one-swing job vanilla pathing
 creates when a hostile pawn blocks the next cell. Jobs explicitly marked as reacting to a melee threat remain
 allowed, so a visitor or raider that is already being mauled can still defend itself.
+
+Runtime Harmony pathing fix:
+- PathFinder.CreateRequest and PathFinder.FindPathNow prefixes bind original arguments by index, avoiding brittle parameter-name binding across RimWorld 1.6 builds.
+- Removed the redundant StaticConstructorOnStartup Harmony.PatchAll call because HugsLib.ModBase already applies the assembly's Harmony patches. This prevents duplicate patch application.
