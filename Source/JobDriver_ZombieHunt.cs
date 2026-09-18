@@ -45,26 +45,8 @@ namespace Zombiefied
 
         public override void Notify_PatherFailed()
         {
-            if (this.job.attackDoorIfTargetLost)
-            {
-                Thing thing;
-                using (PawnPath pawnPath = base.Map.pathFinder.FindPath(this.pawn.Position, base.TargetA.Cell, TraverseParms.For(this.pawn, Danger.Deadly, TraverseMode.PassDoors, false), PathEndMode.OnCell))
-                {
-                    if (!pawnPath.Found)
-                    {
-                        return;
-                    }
-                    IntVec3 intVec;
-                    thing = pawnPath.FirstBlockingBuilding(out intVec, this.pawn);
-                }
-                if (thing != null)
-                {
-                    this.job.targetA = thing;
-                    this.job.maxNumMeleeAttacks = Rand.RangeSeeded(2, 7, Find.TickManager.TicksAbs + pawn.thingIDNumber);
-                    this.job.expiryInterval = Rand.RangeSeeded(2000, 4000, Find.TickManager.TicksAbs + pawn.thingIDNumber);
-                    return;
-                }
-            }
+            // RimWorld 1.6 pathfinding is request-driven and no longer exposes synchronous PathFinder.FindPath.
+            // Let JobDriver perform the standard failure handling rather than probing the pathfinder directly.
             base.Notify_PatherFailed();
         }
 

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Collections;
 using System.Linq;
@@ -347,7 +347,7 @@ namespace Zombiefied
 
                     if (Find.Maps[m] != null && Find.Maps[m].mapPawns != null && Find.Maps[m].listerBuildings != null)
                     {
-                        List<Pawn> allPawnsSpawned = Find.Maps[m].mapPawns.AllPawnsSpawned;
+                        var allPawnsSpawned = Find.Maps[m].mapPawns.AllPawnsSpawned;
                         if (allPawnsSpawned != null)
                         {
                             for (int i = 0; i < allPawnsSpawned.Count; i++)
@@ -540,42 +540,69 @@ namespace Zombiefied
 
         public Pawn ReanimateDeath(Corpse corpse)
         {
-            //base.Logger.Message(corpse.InnerPawn.story.HeadGraphicPath, new object[0]);
-            Pawn_Zombiefied zombiePawn = ZombiefiedMod.GenerateZombieFromSource(corpse.InnerPawn);
-            //Pawn zombiePawn = PawnGenerator.GeneratePawn(PawnKindDefOf.Alphabeaver, Faction.OfPlayer);
-            IntVec3 position = corpse.Position;
-            Building building = StoreUtility.StoringThing(corpse) as Building;
-            Building_Storage building_Storage = (Building_Storage)building;
-
-            if (building_Storage != null)
+            if (corpse == null || corpse.Destroyed || !corpse.Spawned || corpse.Map == null || corpse.InnerPawn == null)
             {
-                building_Storage.Notify_LostThing(corpse);
+                return null;
             }
 
-            Thing t = GenSpawn.Spawn(zombiePawn, position, corpse.Map);
-            corpse.TakeDamage(new DamageInfo(DamageDefOf.Deterioration, 77777f));
-
-            //for(int i = 0; i < Find.BattleLog.Battles.Count; i++)
-            //{
-            //InteractionCardUtility_Zombiefied.DrawInteractionsLog(corpse.InnerPawn, t, Find.BattleLog.Battles[i].Entries, 50);
-            //}
-            //InteractionCardUtility_Zombiefied.DrawInteractionsLog(corpse.InnerPawn, t, Find.BattleLog.RawEntries, 50);
-
-            if (zombieResurrectNotifications && t != null)
+            Pawn sourcePawn = corpse.InnerPawn;
+            Pawn_Zombiefied zombiePawn = ZombiefiedMod.GenerateZombieFromSource(sourcePawn);
+            if (zombiePawn == null)
             {
-                Find.LetterStack.ReceiveLetter("Zombie", "A zombie resurrected.", LetterDefOf.NeutralEvent, t, null);
+                Log.Error("Zombiefied could not reanimate " + sourcePawn + " because zombie generation failed.");
+                return null;
             }
 
-            Faction zFaction = Faction.OfInsects;
+            Faction zombieFaction = Faction.OfInsects;
             foreach (Faction faction in Find.FactionManager.AllFactionsListForReading)
             {
                 if (faction.def.defName == "Zombie")
                 {
-                    zFaction = faction;
+                    zombieFaction = faction;
+                    break;
                 }
             }
-            zombiePawn.SetFactionDirect(zFaction);
+
+            // Complete all pawn-side initialization before GenSpawn registers the pawn with DynamicDrawManager.
+            // This prevents a newly raised zombie from being visible to a render frame in a half-initialized state.
+            zombiePawn.SetFactionDirect(zombieFaction);
             zombiePawn.FixZombie();
+
+            IntVec3 position = corpse.Position;
+            Map map = corpse.Map;
+
+            Building_Storage storage = StoreUtility.StoringThing(corpse) as Building_Storage;
+            if (storage != null)
+            {
+                storage.Notify_LostThing(corpse);
+            }
+
+            Thing spawnedThing;
+            try
+            {
+                spawnedThing = GenSpawn.Spawn(zombiePawn, position, map);
+            }
+            catch (Exception ex)
+            {
+                Log.Error("Zombiefied failed to spawn reanimated pawn for " + sourcePawn + ". " + ex);
+                if (!zombiePawn.Destroyed)
+                {
+                    zombiePawn.Destroy(DestroyMode.Vanish);
+                }
+                return null;
+            }
+
+            // The source pawn is safely copied at this point. Destroying the corpse directly avoids another
+            // damage/death pipeline while the replacement pawn is already registered on the map.
+            if (!corpse.Destroyed)
+            {
+                corpse.Destroy(DestroyMode.Vanish);
+            }
+
+            if (zombieResurrectNotifications && spawnedThing != null)
+            {
+                Find.LetterStack.ReceiveLetter("Zombie", "A zombie resurrected.", LetterDefOf.NeutralEvent, spawnedThing, null);
+            }
 
             return zombiePawn;
         }
@@ -607,7 +634,8 @@ namespace Zombiefied
             }
             pawn.SetFactionDirect(zFaction);
 
-            pawn.records = sourcePawn.records;
+            // Pawn_RecordsTracker owns a back-reference to its pawn. Reusing the corpse pawn's tracker makes
+            // the new zombie tick records against a dead pawn, so keep the tracker generated for the zombie.
             pawn.gender = sourcePawn.gender;
             //pawn.needs.SetInitialLevels();
 
@@ -899,10 +927,23 @@ namespace Zombiefied
                                 newStat.value = 0f;
                                 newThingDef.statBases.Add(newStat);
 
-                                newStat = new StatModifier();
-                                newStat.stat = StatDefOf.ToxicSensitivity;
-                                newStat.value = 0f;
-                                newThingDef.statBases.Add(newStat);
+                                StatDef toxicEnvironmentResistance = DefDatabase<StatDef>.GetNamedSilentFail("ToxicEnvironmentResistance");
+                                if (toxicEnvironmentResistance != null)
+                                {
+                                    newStat = new StatModifier();
+                                    newStat.stat = toxicEnvironmentResistance;
+                                    newStat.value = 1f;
+                                    newThingDef.statBases.Add(newStat);
+                                }
+
+                                StatDef wildness = DefDatabase<StatDef>.GetNamedSilentFail("Wildness");
+                                if (wildness != null)
+                                {
+                                    newStat = new StatModifier();
+                                    newStat.stat = wildness;
+                                    newStat.value = 1f;
+                                    newThingDef.statBases.Add(newStat);
+                                }
 
                                 newStat = new StatModifier();
                                 newStat.stat = StatDefOf.MoveSpeed;
@@ -989,7 +1030,6 @@ namespace Zombiefied
                                 newThingDef.race = new RaceProperties();
 
                                 newThingDef.race.corpseDef = zombieThingDef.race.corpseDef;
-                                newThingDef.race.deathActionWorkerClass = zombieThingDef.race.deathActionWorkerClass;
 
                                 Color color = new Color(rbFactor, gFactor, rbFactor);
                                 newThingDef.race.meatColor = color;
@@ -1000,7 +1040,6 @@ namespace Zombiefied
                                 newThingDef.race.useLeatherFrom = zombieThingDef;
                                 newThingDef.race.useMeatFrom = zombieThingDef;
 
-                                newThingDef.race.wildness = 1f;
 
                                 newThingDef.race.intelligence = zombieThingDef.race.intelligence;
                                 newThingDef.race.thinkTreeMain = zombieThingDef.race.thinkTreeMain;
@@ -1012,6 +1051,13 @@ namespace Zombiefied
                                 newThingDef.race.hediffGiverSets = zombieThingDef.race.hediffGiverSets;
 
                                 newThingDef.race.body = sourcePawnKindDef.race.race.body;
+
+                                // RimWorld 1.5+ renders pawns through a PawnRenderTreeDef stored on RaceProperties.
+                                // Dynamically created zombie animal races must inherit the source animal's tree or the
+                                // vanilla renderer reaches PawnRenderTree.Draw without a resolved graph.
+                                newThingDef.race.renderTree = sourcePawnKindDef.race.race.renderTree
+                                    ?? DefDatabase<PawnRenderTreeDef>.GetNamedSilentFail("Animal");
+
                                 newThingDef.race.needsRest = false;
                                 newThingDef.race.baseBodySize = sourcePawnKindDef.race.race.baseBodySize;
                                 newThingDef.race.baseHungerRate = sourcePawnKindDef.race.race.baseHungerRate;
@@ -1059,7 +1105,7 @@ namespace Zombiefied
                             newKindDef.race = newThingDef;
                             //newKindDef.race = ThingDef.Named("Zombie");
 
-                            newKindDef.defaultFactionType = PawnKindDef.Named("Zombie").defaultFactionType;
+                            newKindDef.defaultFactionDef = PawnKindDef.Named("Zombie").defaultFactionDef;
                             newKindDef.combatPower = 0;// sourcePawnKindDef.combatPower / 2;
                             newKindDef.canArriveManhunter = false;
 

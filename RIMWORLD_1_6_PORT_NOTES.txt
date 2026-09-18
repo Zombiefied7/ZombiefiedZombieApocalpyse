@@ -1,0 +1,29 @@
+﻿Zombiefied Zombie Apocalypse - RimWorld 1.6 source port
+
+Target build references:
+- .NET Framework 4.7.2
+- Krafs.Rimworld.Ref 1.6.4871
+- Lib.Harmony 2.4.2
+- UnlimitedHugs.Rimworld.HugsLib 12.0.0
+
+The stale pre-port Assemblies/Zombiefied.dll was intentionally removed.
+Build the solution on Windows with Visual Studio/MSBuild so the resulting DLL is written to Assemblies/.
+
+Suggested command from the project root:
+msbuild Source\Zombiefied.sln /t:Restore,Build /p:Configuration=Debug
+
+Port work includes the RimWorld 1.6 rendering, pawn tracker, pathing, logging,
+collection, fire, pawn-generation, stat, RaceProperties, PawnKindDef, and CellRect API changes
+reported by the supplied build log. The legacy synchronous path probing and custom wound overlay
+call were removed because those internals changed substantially in 1.6.
+
+Runtime render-tree fix:
+- Zombie animal RaceProperties now inherit the source animal PawnRenderTreeDef, with an Animal fallback.
+- The base zombie race now declares the Humanlike render tree so vanilla renderer entry points can initialize safely.
+- Pawn_Zombiefied routes the legacy standard-zombie renderer through DynamicDrawPhaseAt for RimWorld 1.6's three-phase dynamic draw pipeline.
+
+Runtime zombie-horde generation fix:
+- Faction combat pawn-group generation may legally return an empty group at low threat points or for faction-specific group constraints.
+- ZombieHorde now falls back to generic human source pawns when the faction group generator returns no pawns or throws.
+- Source-to-zombie conversion is isolated from the source list, so a failed conversion cannot leave null entries that later reach GenSpawn.
+- The notification targets the first successfully spawned zombie rather than assuming list[0] always spawned.

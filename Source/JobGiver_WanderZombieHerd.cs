@@ -41,83 +41,13 @@ namespace Zombiefied
 
             if (!((Pawn_Zombiefied)pawn).attracted)
             {
-                IntVec3 thing2 = ZombiefiedMod.BestNoisyLocation(pawn);
-                if (thing2 != IntVec3.Invalid)
+                IntVec3 noisyLocation = ZombiefiedMod.BestNoisyLocation(pawn);
+                if (noisyLocation != IntVec3.Invalid)
                 {
                     ((Pawn_Zombiefied)pawn).attracted = true;
-
-                    bool found = false;
-                    using (PawnPath pawnPath = pawn.Map.pathFinder.FindPath(pawn.Position, thing2, TraverseParms.For(pawn, Danger.Deadly, TraverseMode.PassDoors, false), PathEndMode.OnCell))
-                    {
-                        if (pawnPath.Found)
-                        {
-                            found = true;
-                            IntVec3 loc;
-                            IntVec3 randomCell;
-
-                            int iNodesReversed = 0;
-
-                            if (pawnPath.TryFindLastCellBeforeBlockingDoor(pawn, out loc))
-                            {
-                                for (int i = 0; i < pawnPath.NodesReversed.Count; i++)
-                                {
-                                    if (pawnPath.NodesReversed[i].Equals(loc))
-                                    {
-                                        iNodesReversed = i;
-                                    }
-                                }
-                            }
-
-                            int wanderLength = Rand.RangeSeeded(10, 17, Find.TickManager.TicksAbs + pawn.thingIDNumber);
-                            if (pawnPath.NodesReversed.Count - iNodesReversed > wanderLength)
-                            {
-                                randomCell = pawnPath.NodesReversed[pawnPath.NodesReversed.Count - wanderLength];
-
-                                
-                                return new Job(ZombiefiedMod.zombieMove, randomCell)
-                                {
-                                    //expiryInterval = 777
-                                };
-                            }
-                        }
-                    }
-                    if (!found)
-                    {
-                        using (PawnPath pawnPath = pawn.Map.pathFinder.FindPath(pawn.Position, thing2, TraverseParms.For(pawn, Danger.Deadly, TraverseMode.PassAllDestroyableThings, false), PathEndMode.OnCell))
-                        {
-                            if (pawnPath.Found)
-                            {
-                                found = true;
-                                IntVec3 loc;
-                                IntVec3 randomCell;
-
-                                int iNodesReversed = 0;
-
-                                if (pawnPath.TryFindLastCellBeforeBlockingDoor(pawn, out loc))
-                                {
-                                    for (int i = 0; i < pawnPath.NodesReversed.Count; i++)
-                                    {
-                                        if (pawnPath.NodesReversed[i].Equals(loc))
-                                        {
-                                            iNodesReversed = i;
-                                        }
-                                    }
-                                }
-
-                                int wanderLength = Rand.RangeSeeded(10, 17, Find.TickManager.TicksAbs + pawn.thingIDNumber);
-                                if (pawnPath.NodesReversed.Count - iNodesReversed > wanderLength)
-                                {
-                                    randomCell = pawnPath.NodesReversed[pawnPath.NodesReversed.Count - wanderLength];
-
-                                    ((Pawn_Zombiefied)pawn).attracted = true;
-                                    return new Job(ZombiefiedMod.zombieMove, randomCell)
-                                    {
-                                        //expiryInterval = 777
-                                    };
-                                }
-                            }
-                        }
-                    }
+                    Job noiseJob = new Job(ZombiefiedMod.zombieMove, noisyLocation);
+                    noiseJob.locomotionUrgency = this.locomotionUrgency;
+                    return noiseJob;
                 }
             }
             else
@@ -151,7 +81,7 @@ namespace Zombiefied
             }
             else
             {
-                pawn.TryAttachFire(0.37f);
+                pawn.TryAttachFire(0.37f, pawn);
                 ((Pawn_Zombiefied)pawn).fired = false;
             }
 
@@ -200,7 +130,7 @@ namespace Zombiefied
                 return null;
             }
 
-            List<Pawn> allPawnsSpawned = pawn.Map.mapPawns.AllPawnsSpawned;
+            var allPawnsSpawned = pawn.Map.mapPawns.AllPawnsSpawned;
             //List<Thing> allThingsRegion = pawn.GetRegion().ListerThings.AllThings;
 
             Pawn pawnToReturn = null;

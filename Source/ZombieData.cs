@@ -6,6 +6,13 @@ using Verse;
 
 namespace Zombiefied
 {
+    public enum CrownType : byte
+    {
+        Undefined,
+        Average,
+        Narrow
+    }
+
     // Token: 0x02000016 RID: 22
     public class ZombieData : IExposable
     {
@@ -38,37 +45,36 @@ namespace Zombiefied
         // Token: 0x0600006C RID: 108 RVA: 0x00004648 File Offset: 0x00002848
         public ZombieData(Pawn pawn)
         {
-            this.bodyType = pawn.story.bodyType;
+            Pawn_StoryTracker story = pawn.story;
+            this.bodyType = story != null && story.bodyType != null ? story.bodyType : BodyTypeDefOf.Female;
 
-            if(pawn.Corpse == null)
-            {
-                this.headGraphicPath = pawn.story.HeadGraphicPath;
-            }
-            else
-            {
-                string reflectedPath = pawn.story.GetFieldValue<string>("headGraphicPath");
-                //Log.Message("++" + reflectedPath + "++");
-                if (reflectedPath != null && reflectedPath.Length > 7)
-                {
-                    this.headGraphicPath = reflectedPath;
-                }
-                else
-                {
-                    this.headGraphicPath = "Things/Pawn/Humanlike/Heads/None_Average_Skull";
-                }
-            }        
+            HeadTypeDef headType = story != null ? story.headType : null;
+            this.headGraphicPath = headType != null && !headType.graphicPath.NullOrEmpty()
+                ? headType.graphicPath
+                : "Things/Pawn/Humanlike/Heads/None_Average_Skull";
 
-            this.hairGraphicPath = pawn.story.hairDef.texPath;
-            this.crownType = pawn.story.crownType;
+            this.hairGraphicPath = story != null && story.hairDef != null && !story.hairDef.texPath.NullOrEmpty()
+                ? story.hairDef.texPath
+                : "Things/Pawn/Humanlike/Hairs/Bob";
 
-            this.color = new Color(pawn.story.SkinColor.r * 0.5f, pawn.story.SkinColor.g * 0.7f, pawn.story.SkinColor.b * 0.5f);
-            this.hairColor = pawn.story.hairColor;
+            this.crownType = this.headGraphicPath.IndexOf("Narrow", StringComparison.OrdinalIgnoreCase) >= 0
+                ? CrownType.Narrow
+                : CrownType.Average;
+
+            Color skinColor = story != null ? story.SkinColor : Color.green;
+            this.color = new Color(skinColor.r * 0.5f, skinColor.g * 0.7f, skinColor.b * 0.5f);
+            this.hairColor = story != null ? story.HairColor : Color.green;
             this.shaderCutoutPath = "Map/Cutout";
-            this.wornApparelDefs = pawn.apparel.WornApparel.ConvertAll<ThingDef>((Apparel ap) => ap.def);
+
+            this.wornApparelDefs = new List<ThingDef>();
             this.wornApparelColors = new List<Color>();
-            foreach(Apparel worn in pawn.apparel.WornApparel)
+            if (pawn.apparel != null)
             {
-                this.wornApparelColors.Add(worn.DrawColor);
+                foreach (Apparel worn in pawn.apparel.WornApparel)
+                {
+                    this.wornApparelDefs.Add(worn.def);
+                    this.wornApparelColors.Add(worn.DrawColor);
+                }
             }
         }
 

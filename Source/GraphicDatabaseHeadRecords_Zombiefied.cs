@@ -88,7 +88,7 @@ namespace Zombiefied
                     return headGraphicRecord2.GetGraphic(skinColor, false);
                 }
             }
-            Log.Error("Failed to find head for gender=" + gender + ". Defaulting...", false);
+            Log.Error("Failed to find head for gender=" + gender + ". Defaulting...");
             return GraphicDatabaseHeadRecords_Zombiefied.heads.First<GraphicDatabaseHeadRecords_Zombiefied.HeadGraphicRecord>().GetGraphic(skinColor, false);
         }
 
@@ -133,7 +133,7 @@ namespace Zombiefied
                 }
                 catch (Exception ex)
                 {
-                    //Log.Error("Parse error with head graphic at " + graphicPath + ": " + ex.Message, false);
+                    //Log.Error("Parse error with head graphic at " + graphicPath + ": " + ex.Message);
                     this.crownType = CrownType.Undefined;
                     this.gender = Gender.None;
                 }

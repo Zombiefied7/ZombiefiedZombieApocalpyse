@@ -81,6 +81,26 @@ namespace Zombiefied
     }
     */
 
+    [HarmonyPatch(typeof(SilhouetteUtility), nameof(SilhouetteUtility.ShouldDrawSilhouette))]
+    class ZombieSilhouettePatch
+    {
+        static bool Prefix(Thing thing, ref bool __result)
+        {
+            Pawn_Zombiefied zombie = thing as Pawn_Zombiefied;
+            if (zombie != null && zombie.def != null && zombie.def.defName == "Zombie")
+            {
+                // Human zombies use the mod's legacy immediate renderer instead of PawnRenderer.RenderPawnAt.
+                // RimWorld 1.6's silhouette pass assumes RenderPawnAt populated SilhouetteGraphic, so allowing
+                // these pawns into that pass dereferences null renderer state.
+                __result = false;
+                return false;
+            }
+
+            return true;
+        }
+    }
+
+
     [HarmonyPatch(typeof(StatExtension), nameof(StatExtension.GetStatValue))]
     class StatPatch
     {

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using HugsLib;
@@ -10,7 +10,7 @@ namespace Zombiefied
 {
     public class Corpse_Zombiefied : Corpse
     {
-        public override void DrawAt(Vector3 drawLoc, bool flip = false)
+        protected override void DrawAt(Vector3 drawLoc, bool flip = false)
         {
             Building building = this.StoringThing() as Building;
             if (building != null && building.def == ThingDefOf.Grave)

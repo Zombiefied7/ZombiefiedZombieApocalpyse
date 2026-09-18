@@ -52,36 +52,6 @@ namespace Zombiefied
             if (this.pawn.GetPosture() == PawnPosture.Standing)
             {
                 this.RenderPawnInternal(drawLoc, Quaternion.identity, true, bodyDrawType, headStump);
-                if (this.pawn.carryTracker != null)
-                {
-                    Thing carriedThing = this.pawn.carryTracker.CarriedThing;
-                    if (carriedThing != null)
-                    {
-                        Vector3 vector = drawLoc;
-                        bool flag = false;
-                        bool flip = false;
-                        if (this.pawn.CurJob == null || !this.pawn.jobs.curDriver.ModifyCarriedThingDrawPos(ref vector, ref flag, ref flip))
-                        {
-                            if (carriedThing is Pawn || carriedThing is Corpse)
-                            {
-                                vector += new Vector3(0.44f, 0f, 0f);
-                            }
-                            else
-                            {
-                                vector += new Vector3(0.18f, 0f, 0.05f);
-                            }
-                        }
-                        if (flag)
-                        {
-                            vector.y -= 0.0390625f;
-                        }
-                        else
-                        {
-                            vector.y += 0.0390625f;
-                        }
-                        carriedThing.DrawAt(vector, flip);
-                    }
-                }
                 if (this.pawn.def.race.specialShadowData != null)
                 {
                     if (this.shadowGraphic == null)
@@ -108,11 +78,11 @@ namespace Zombiefied
                     Rot4 rotation = building_Bed.Rotation;
                     rotation.AsInt += 2;
                     quat = rotation.AsQuat;
-                    AltitudeLayer altLayer = (AltitudeLayer)Mathf.Max((int)building_Bed.def.altitudeLayer, 15);
+                    AltitudeLayer altLayer = (AltitudeLayer)Mathf.Max((int)building_Bed.def.altitudeLayer, 20);
                     Vector3 vector2 = this.pawn.Position.ToVector3ShiftedWithAltitude(altLayer);
-                    Vector3 vector3 = vector2;
-                    vector3.y += 0.02734375f;
-                    float d = -this.BaseHeadOffsetAt(Rot4.South).z;
+                    BodyTypeDef bodyType = this.graphics.data.bodyType ?? this.pawn.story?.bodyType;
+                    float bedOffset = bodyType != null ? bodyType.bedOffset : 0f;
+                    float d = -(this.BaseHeadOffsetAt(Rot4.South).z + bedOffset + building_Bed.def.building.bed_pawnDrawOffset);
                     Vector3 a = rotation.FacingCell.ToVector3();
                     rootLoc = vector2 + a * d;
                     rootLoc.y += 0.0078125f;
@@ -192,6 +162,14 @@ namespace Zombiefied
             {
                 this.graphics.ResolveAllGraphics();
             }
+
+            // RimWorld 1.6 applies the current life stage's body draw offset to the entire render tree.
+            // The legacy renderer predates that system, so it must apply the same offset explicitly.
+            if (this.pawn.ageTracker != null && this.pawn.ageTracker.CurLifeStage != null)
+            {
+                rootLoc += this.pawn.ageTracker.CurLifeStage.bodyDrawOffset;
+            }
+
             Mesh mesh = null;
             if (renderBody)
             {
@@ -203,26 +181,13 @@ namespace Zombiefied
                 }
                 else
                 {
-                    if (true)
-                    {
-                        mesh = MeshPool.humanlikeBodySet.MeshAt(bodyFacing);
-                    }
-                    else
-                    {
-                        mesh = this.graphics.nakedGraphic.MeshAt(bodyFacing);
-                    }
+                    mesh = this.BodyMeshAt(bodyFacing);
                     List<Material> list = this.graphics.MatsBodyBaseAt(bodyFacing, bodyDrawType);
                     for (int i = 0; i < list.Count; i++)
                     {
                         //Material damagedMat = this.graphics.flasher.GetDamagedMat(list[i]);
                         GenDraw.DrawMeshNowOrLater(mesh, loc, quat, list[i], portrait);
                         loc.y += 0.00390625f;
-                    }
-                    if (bodyDrawType == RotDrawMode.Fresh)
-                    {
-                        Vector3 drawLoc = rootLoc;
-                        drawLoc.y += 0.01953125f;
-                        this.woundOverlays.RenderOverBody(drawLoc, mesh, quat, portrait, BodyTypeDef.WoundLayer.Body, bodyFacing);
                     }
                 }
             }
@@ -245,7 +210,7 @@ namespace Zombiefied
                 Material material = this.graphics.HeadMatAt(headFacing, bodyDrawType, headStump);
                 if (material != null)
                 {
-                    Mesh mesh2 = MeshPool.humanlikeHeadSet.MeshAt(headFacing);
+                    Mesh mesh2 = this.HeadMeshAt(headFacing);
                     GenDraw.DrawMeshNowOrLater(mesh2, a + b, quat, material, portrait);
                 }
                 Vector3 loc2 = rootLoc + b;
@@ -253,33 +218,22 @@ namespace Zombiefied
                 bool flag = false;
                 if (!portrait || !Prefs.HatsOnlyOnMap)
                 {
-                    Mesh mesh3 = this.graphics.HairMeshSet.MeshAt(headFacing);
                     List<ApparelGraphicRecord> apparelGraphics = this.graphics.apparelGraphics;
                     for (int j = 0; j < apparelGraphics.Count; j++)
                     {
                         if (apparelGraphics[j].sourceApparel.def.apparel.LastLayer == ApparelLayerDefOf.Overhead)
                         {
-                            if (!apparelGraphics[j].sourceApparel.def.apparel.hatRenderedFrontOfFace)
-                            {
-                                flag = true;
-                                Material material2 = apparelGraphics[j].graphic.MatAt(bodyFacing, null);
-                                //material2 = this.graphics.flasher.GetDamagedMat(material2);
-                                GenDraw.DrawMeshNowOrLater(mesh3, loc2, quat, material2, portrait);
-                            }
-                            else
-                            {
-                                Material material3 = apparelGraphics[j].graphic.MatAt(bodyFacing, null);
-                                //material3 = this.graphics.flasher.GetDamagedMat(material3);
-                                Vector3 loc3 = rootLoc + b;
-                                loc3.y += ((!(bodyFacing == Rot4.North)) ? 0.03515625f : 0.00390625f);
-                                GenDraw.DrawMeshNowOrLater(mesh3, loc3, quat, material3, portrait);
-                            }
+                            flag = true;
+                            Graphic apparelGraphic = apparelGraphics[j].graphic;
+                            Material material2 = apparelGraphic.MatAt(bodyFacing, null);
+                            Mesh apparelMesh = this.HairMeshAt(headFacing);
+                            GenDraw.DrawMeshNowOrLater(apparelMesh, loc2, quat, material2, portrait);
                         }
                     }
                 }
                 if (!flag && bodyDrawType != RotDrawMode.Dessicated && !headStump)
                 {
-                    Mesh mesh4 = this.graphics.HairMeshSet.MeshAt(headFacing);
+                    Mesh mesh4 = this.HairMeshAt(headFacing);
                     Material mat = this.graphics.HairMatAt(headFacing);
                     GenDraw.DrawMeshNowOrLater(mesh4, loc2, quat, mat, portrait);
                 }
@@ -318,7 +272,7 @@ namespace Zombiefied
                 */
                 Vector3 bodyLoc = rootLoc;
                 bodyLoc.y += 0.04296875f;
-                this.statusOverlays.RenderStatusOverlays(bodyLoc, quat, MeshPool.humanlikeHeadSet.MeshAt(headFacing));
+                this.statusOverlays.RenderStatusOverlays(bodyLoc, quat, this.HeadMeshAt(headFacing));
             }
         }
 
@@ -467,19 +421,58 @@ namespace Zombiefied
         }
 
         // Token: 0x060041FB RID: 16891 RVA: 0x001E2270 File Offset: 0x001E0670
+        private Mesh BodyMeshAt(Rot4 facing)
+        {
+            if (this.pawn.RaceProps.Humanlike)
+            {
+                return HumanlikeMeshPoolUtility.GetHumanlikeBodySetForPawn(this.pawn).MeshAt(facing);
+            }
+
+            return this.graphics.nakedGraphic.MeshAt(facing);
+        }
+
+        private Mesh HeadMeshAt(Rot4 facing)
+        {
+            if (this.pawn.RaceProps.Humanlike)
+            {
+                return HumanlikeMeshPoolUtility.GetHumanlikeHeadSetForPawn(this.pawn).MeshAt(facing);
+            }
+
+            return this.graphics.headGraphic.MeshAt(facing);
+        }
+
+        private Mesh HairMeshAt(Rot4 facing)
+        {
+            if (this.pawn.RaceProps.Humanlike && this.pawn.story != null && this.pawn.story.headType != null)
+            {
+                return HumanlikeMeshPoolUtility.GetHumanlikeHairSetForPawn(this.pawn).MeshAt(facing);
+            }
+
+            return this.graphics.hairGraphic.MeshAt(facing);
+        }
+
         public Vector3 BaseHeadOffsetAt(Rot4 rotation)
         {
-            float num = PawnRenderer_Zombiefied.HorHeadOffsets[(int)graphics.data.bodyType.index];
+            BodyTypeDef bodyType = this.graphics.data.bodyType ?? this.pawn.story?.bodyType;
+            Vector2 headOffset = bodyType != null ? bodyType.headOffset : new Vector2(0.04f, 0.34f);
+
+            // Vanilla 1.6 scales head placement with life-stage body size. Without this, children and
+            // other nonstandard life stages get an adult-sized gap between the body and the head.
+            if (this.pawn.ageTracker != null && this.pawn.ageTracker.CurLifeStage != null)
+            {
+                headOffset *= Mathf.Sqrt(Mathf.Max(0f, this.pawn.ageTracker.CurLifeStage.bodySizeFactor));
+            }
+
             switch (rotation.AsInt)
             {
                 case 0:
-                    return new Vector3(0f, 0f, 0.34f);
+                    return new Vector3(0f, 0f, headOffset.y);
                 case 1:
-                    return new Vector3(num, 0f, 0.34f);
+                    return new Vector3(headOffset.x, 0f, headOffset.y);
                 case 2:
-                    return new Vector3(0f, 0f, 0.34f);
+                    return new Vector3(0f, 0f, headOffset.y);
                 case 3:
-                    return new Vector3(-num, 0f, 0.34f);
+                    return new Vector3(-headOffset.x, 0f, headOffset.y);
                 default:
                     Log.Error("BaseHeadOffsetAt error in " + this.pawn);
                     return Vector3.zero;
@@ -496,8 +489,8 @@ namespace Zombiefied
         // Token: 0x060041FD RID: 16893 RVA: 0x001E233D File Offset: 0x001E073D
         public void RendererTick()
         {
-            this.wiggler.WigglerTick();
-            //this.effecters.EffectersTick();
+            // RimWorld 1.6 advances downed-wiggle state through its render pipeline.
+            // This method remains as a compatibility hook for the custom draw tracker.
         }
 
         // Token: 0x060041FE RID: 16894 RVA: 0x001E2358 File Offset: 0x001E0758
@@ -574,19 +567,6 @@ namespace Zombiefied
         // Token: 0x04002DE3 RID: 11747
         private const float YOffset_Status = 0.04296875f;
 
-        // Token: 0x04002DE4 RID: 11748
-        private const float UpHeadOffset = 0.34f;
-
-        // Token: 0x04002DE5 RID: 11749
-        private static readonly float[] HorHeadOffsets = new float[]
-        {
-            0f,
-            0.04f,
-            0.1f,
-            0.09f,
-            0.1f,
-            0.09f
-        };
     }
 }
 

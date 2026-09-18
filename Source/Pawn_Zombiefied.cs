@@ -35,7 +35,45 @@ namespace Zombiefied
 
         public void newGraphics(ZombieData data)
         {
+            SynchronizeStoryWithZombieData(data);
             drawerZ = new Pawn_DrawTracker_Zombiefied(this, data);
+        }
+
+        private void SynchronizeStoryWithZombieData(ZombieData data)
+        {
+            if (data == null || story == null)
+            {
+                return;
+            }
+
+            if (data.bodyType != null)
+            {
+                story.bodyType = data.bodyType;
+            }
+
+            if (!data.headGraphicPath.NullOrEmpty())
+            {
+                HeadTypeDef matchingHead = DefDatabase<HeadTypeDef>.AllDefsListForReading
+                    .FirstOrDefault(def => def != null && def.graphicPath == data.headGraphicPath);
+
+                if (matchingHead != null)
+                {
+                    story.headType = matchingHead;
+                }
+            }
+
+            if (!data.hairGraphicPath.NullOrEmpty())
+            {
+                HairDef matchingHair = DefDatabase<HairDef>.AllDefsListForReading
+                    .FirstOrDefault(def => def != null && def.texPath == data.hairGraphicPath);
+
+                if (matchingHair != null)
+                {
+                    story.hairDef = matchingHair;
+                }
+            }
+
+            story.HairColor = data.hairColor;
         }
 
         public void newGraphics(Pawn pawn)
@@ -43,6 +81,16 @@ namespace Zombiefied
             if (pawn.RaceProps.Humanlike)
             {
                 dataZ = new ZombieData(pawn);
+
+                // Preserve the source pawn's exact geometry defs. RimWorld 1.6 derives human mesh sizes from
+                // the pawn's story head/body defs, so keeping only texture paths is no longer sufficient.
+                if (story != null && pawn.story != null)
+                {
+                    story.bodyType = pawn.story.bodyType;
+                    story.headType = pawn.story.headType;
+                    story.hairDef = pawn.story.hairDef;
+                    story.HairColor = pawn.story.HairColor;
+                }
 
                 newGraphics(dataZ);
             }
@@ -68,35 +116,7 @@ namespace Zombiefied
 
                 PawnKindDef kDef = kindDefs[(int)(Rand.RangeSeeded(0f, 1f, Find.TickManager.TicksAbs) * kindDefs.Count)];
  // Predicate<Pawn> validatorPreGear = null, Predicate<Pawn> validatorPostGear = null, IEnumerable<TraitDef> forcedTraits = null, IEnumerable<TraitDef> prohibitedTraits = null, float? minChanceToRedressWorldPawn = null, float? fixedBiologicalAge = null, float? fixedChronologicalAge = null, Gender? fixedGender = null, float? fixedMelanin = null, string fixedLastName = null, string fixedBirthName = null, RoyalTitleDef fixedTitle = null, Ideo fixedIdeo = null, bool forceNoIdeo = false, bool forceNoBackstory = false, bool forbidAnyTitle = false)
-                PawnGenerationRequest req = new PawnGenerationRequest(
-                    kDef, // Kind
-                    Faction.OfAncients, // Faction (default: null)
-                    PawnGenerationContext.NonPlayer, // context (default)
-                    -1, // tile (default)
-                    true, // force (false)
-                    false, // newborn (default)
-                    false, // allowDead (default)
-                    true, // allowDowned (false)
-                    false, // cangeneratepawnrelations (true)
-                    false, // mustBeCapableOfViolence (default)
-                    1f, // colonistRelationChanceFactor (default)
-                    false, // forceAddFreeWarmLayerIfNeeded (default)
-                    true, // allowGay (default)
-                    true, // allowFood (default)
-                    false, // allowAddictions (true)
-                    false, // inhabitant (default)
-                    false, // certainlyBeenInCryptosleep (default)
-                    false, // forceRedressWorldPawnIfFormerColonist (default)
-                    false, //worldPawnFactionDoesntMatter (default)
-                    0f, // biocodeWeaponChance (default)
-                    0f, // biocodeApparelChance (default)
-                    null, // extraPawnForExtraRelationChane (default)
-                    0f, // relationWithExtraPawnChanceFactor (1f)
-                    null, // Predicate validatorPreGear (default)
-                    null, // validatorPostGear(default)
-                    null // forcedTraits (default)
-                );
-                Pawn human = PawnGenerator.GeneratePawn(req);
+                Pawn human = PawnGenerator.GeneratePawn(kDef, Faction.OfAncients);
 
                 //Thing t = GenSpawn.Spawn(human, this.Position, this.Map);
 
@@ -106,7 +126,7 @@ namespace Zombiefied
             }
         }
 
-        public override void DrawAt(Vector3 drawLoc, bool flip = false)
+        protected override void DrawAt(Vector3 drawLoc, bool flip = false)
         {
             if (def.defName != "Zombie")
             {
@@ -119,6 +139,41 @@ namespace Zombiefied
             else
             {
                 newGraphics();
+            }
+        }
+
+        public override void DynamicDrawPhaseAt(DrawPhase phase, Vector3 drawLoc, bool flip = false)
+        {
+            if (def.defName != "Zombie")
+            {
+                base.DynamicDrawPhaseAt(phase, drawLoc, flip);
+                return;
+            }
+
+            // The legacy zombie renderer performs immediate drawing and cannot participate in RimWorld's
+            // parallel render-tree pass. Initialize its graphics on the main-thread setup phase, skip the
+            // parallel preparation phase, and issue the actual draw only during the final main-thread phase.
+            if (phase == DrawPhase.EnsureInitialized)
+            {
+                if (drawerZ == null)
+                {
+                    newGraphics();
+                }
+
+                return;
+            }
+
+            if (phase == DrawPhase.Draw)
+            {
+                if (drawerZ == null)
+                {
+                    newGraphics();
+                }
+
+                if (drawerZ != null)
+                {
+                    drawerZ.DrawAt(drawLoc);
+                }
             }
         }
 
@@ -136,19 +191,30 @@ namespace Zombiefied
                     Hediff_Injury injury = hediff as Hediff_Injury;
                     Hediff_AddedPart added = hediff as Hediff_AddedPart;
                     Hediff_MissingPart missing = hediff as Hediff_MissingPart;
-                    if (hediff is Hediff_Injury && injury != null && !health.WouldDieAfterAddingHediff(injury) && !health.hediffSet.PartIsMissing(injury.Part.parent) && !health.hediffSet.PartIsMissing(injury.Part))
+                    if (hediff is Hediff_Injury && injury != null && injury.Part != null)
                     {
-                        //float oldChance = injury.def.chanceToCauseNoPain;
-                        //injury.def.chanceToCauseNoPain = 70000f;
+                        BodyPartRecord part = injury.Part;
+                        bool parentMissing = part.parent != null && health.hediffSet.PartIsMissing(part.parent);
+                        bool partMissing = health.hediffSet.PartIsMissing(part);
 
-                        injury.Severity = injury.Severity * 0.5f;
-                        injury.PostMake();
-                        injury.ageTicks = 70000000;
-                        health.AddHediff(injury, injury.Part);
+                        if (!parentMissing && !partMissing)
+                        {
+                            Hediff_Injury copiedInjury = HediffMaker.MakeHediff(injury.def, this, part) as Hediff_Injury;
+                            if (copiedInjury != null)
+                            {
+                                copiedInjury.Severity = injury.Severity * 0.5f;
+                                copiedInjury.ageTicks = 70000000;
 
-                        //injury.def.chanceToCauseNoPain = oldChance;
+                                if (!health.WouldDieAfterAddingHediff(copiedInjury))
+                                {
+                                    health.AddHediff(copiedInjury, part);
+                                }
+                            }
+                        }
                     }
-                    else if (hediff is Hediff_MissingPart && missing != null && !health.hediffSet.PartIsMissing(missing.Part.parent) && !health.hediffSet.PartIsMissing(missing.Part))
+                    else if (hediff is Hediff_MissingPart && missing != null && missing.Part != null
+                        && (missing.Part.parent == null || !health.hediffSet.PartIsMissing(missing.Part.parent))
+                        && !health.hediffSet.PartIsMissing(missing.Part))
                     {
                         bool foundMoving = false;
                         for (int i1 = 0; i1 < missing.Part.def.tags.Count; i1++)
@@ -159,26 +225,16 @@ namespace Zombiefied
                             }
                         }
 
-                        if (!foundMoving)
+                        // RimWorld 1.6 no longer exposes the old Shredded HediffDef. Preserve the source pawn's
+                        // actual missing-part hediff instead of substituting a removed vanilla injury def.
+                        if (!foundMoving || !sourcePawn.health.hediffSet.PartIsMissing(missing.Part.parent))
                         {
                             health.AddHediff(missing.def, missing.Part);
                         }
-                        else if (!sourcePawn.health.hediffSet.PartIsMissing(missing.Part.parent))
-                        {
-                            Hediff nHediff = HediffMaker.MakeHediff(HediffDefOf.Shredded, this, null);
-                            nHediff.Severity = 3.7f;
-
-                            //float oldChance = nHediff.def.chanceToCauseNoPain;
-                            //nHediff.def.chanceToCauseNoPain = 70000f;
-
-                            nHediff.PostMake();
-                            nHediff.ageTicks = 70000000;
-                            health.AddHediff(nHediff, missing.Part);
-
-                            //nHediff.def.chanceToCauseNoPain = oldChance;
-                        }
                     }
-                    else if (hediff is Hediff_AddedPart && added != null && !health.hediffSet.PartIsMissing(added.Part.parent) && !health.hediffSet.PartIsMissing(added.Part))
+                    else if (hediff is Hediff_AddedPart && added != null && added.Part != null
+                        && (added.Part.parent == null || !health.hediffSet.PartIsMissing(added.Part.parent))
+                        && !health.hediffSet.PartIsMissing(added.Part))
                     {
                         health.AddHediff(added.def, added.Part);
                     }
@@ -220,149 +276,28 @@ namespace Zombiefied
 
         public void FixZombie()
         {
-            health.AddHediff(HediffDef.Named("Zombiefied"));
+            HediffDef zombiefiedDef = HediffDef.Named("Zombiefied");
+            if (health != null && health.hediffSet != null && !health.hediffSet.HasHediff(zombiefiedDef))
+            {
+                health.AddHediff(zombiefiedDef);
+            }
+
             if (apparel != null)
             {
                 apparel.DestroyAll();
             }
         }
 
-        //Tick + TickRare overrides for better performance
+        // RimWorld 1.6 moved substantial pawn update logic into new tracker and render systems.
+        // Delegating to Pawn keeps zombies synchronized with those systems instead of duplicating stale internals.
         public override void TickRare()
         {
-            //if (Find.TickManager.TicksGame + thingIDNumber % 77777 == 0)
-            //{
-            //    base.TickRare();
-            //}
-            //else
-            {
-                if (AllComps != null)
-                {
-                    int i = 0;
-                    int count = AllComps.Count;
-                    while (i < count)
-                    {
-                        AllComps[i].CompTickRare();
-                        i++;
-                    }
-                }
-                //base.TickRare();
-
-                //if (!base.Suspended)
-                //{
-                //    if (this.apparel != null)
-                //    {
-                //        this.apparel.ApparelTrackerTickRare();
-                //    }
-                //    this.inventory.InventoryTrackerTickRare();
-                //}
-                //if (this.training != null)
-                //{
-                //    this.training.TrainingTrackerTickRare();
-                //}
-                //if (base.Spawned && this.RaceProps.IsFlesh)
-                //{
-                //    GenTemperature.PushHeat(this, 0.3f * this.BodySize * 4.16666651f * ((!this.def.race.Humanlike) ? 0.6f : 1f));
-                //}
-            }
+            base.TickRare();
         }
 
-        public override void Tick()
+        protected override void Tick()
         {
-            //if (Find.TickManager.TicksGame + thingIDNumber % 77777 == 0)
-            //{
-            //    base.Tick();
-            //}
-            //else
-            {
-                if (AllComps != null)
-                {
-                    int i = 0;
-                    int count = AllComps.Count;
-                    while (i < count)
-                    {
-                        AllComps[i].CompTick();
-                        i++;
-                    }
-                }
-                //base.Tick();
-
-                if (Find.TickManager.TicksGame + thingIDNumber % 250 == 0)
-                {
-                    this.TickRare();
-                }
-                bool suspended = base.Suspended;
-                if (!suspended)
-                {
-                    if (base.Spawned)
-                    {
-                        this.pather.PatherTick();
-                    }
-                    if (base.Spawned)
-                    {
-                        this.stances.StanceTrackerTick();
-                        this.verbTracker.VerbsTick();
-                        this.natives.NativeVerbsTick();
-                    }
-                    if (base.Spawned)
-                    {
-                        this.jobs.JobTrackerTick();
-                    }
-                    if (base.Spawned)
-                    {
-                        this.Drawer.DrawTrackerTick();
-                        this.rotationTracker.RotationTrackerTick();
-                    }
-                    //this.health.HealthTick();
-                    if (!this.Dead)
-                    {
-                        this.mindState.MindStateTick();
-                        this.carryTracker.CarryHandsTick();
-                    }
-                }
-                if (!suspended)
-                {
-
-                    //if (this.equipment != null)
-                    //{
-                    //    this.equipment.EquipmentTrackerTick();
-                    //}
-                    //if (this.apparel != null)
-                    //{
-                    //    this.apparel.ApparelTrackerTick();
-                    //}
-                    if (this.interactions != null && base.Spawned)
-                    {
-                        this.interactions.InteractionsTrackerTick();
-                    }
-                    if (this.caller != null)
-                    {
-                        this.caller.CallTrackerTick();
-                    }
-                    //if (this.skills != null)
-                    //{
-                    //    this.skills.SkillsTick();
-                    //}
-                    //if (this.inventory != null)
-                    //{
-                    //    this.inventory.InventoryTrackerTick();
-                    //}
-                    //if (this.drafter != null)
-                    //{
-                    //    this.drafter.DraftControllerTick();
-                    //}
-                    //if (this.relations != null)
-                    //{
-                    //    this.relations.RelationsTrackerTick();
-                    //}
-                    //if (this.RaceProps.Humanlike)
-                    //{
-                    //    this.guest.GuestTrackerTick();
-                    //}
-                    this.ageTracker.AgeTick();
-                    this.records.RecordsTick();
-                }
-            }
+            base.Tick();
         }
     }
 }

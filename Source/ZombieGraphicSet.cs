@@ -19,25 +19,6 @@ namespace Zombiefied
             }
         }
 
-        // Token: 0x17000011 RID: 17
-        // (get) Token: 0x06000072 RID: 114 RVA: 0x000048AC File Offset: 0x00002AAC
-        public GraphicMeshSet HairMeshSet
-        {
-            get
-            {
-                if (this.data.crownType == CrownType.Average)
-                {
-                    return MeshPool.humanlikeHairSetAverage;
-                }
-                if (this.data.crownType == CrownType.Narrow)
-                {
-                    return MeshPool.humanlikeHairSetNarrow;
-                }
-                Log.Error("Unknown crown type: " + this.data.crownType);
-                return MeshPool.humanlikeHairSetAverage;
-            }
-        }
-
         // Token: 0x06000073 RID: 115 RVA: 0x00004905 File Offset: 0x00002B05
         public ZombieGraphicSet(ZombieData data)
         {
@@ -126,13 +107,13 @@ namespace Zombiefied
             Shader shader = ShaderDatabase.LoadShader(this.data.shaderCutoutPath);
             this.ClearCache();
             this.nakedGraphic = GraphicDatabase.Get<Graphic_Multi>(this.data.bodyType.bodyNakedGraphicPath, ShaderDatabase.CutoutSkin, Vector2.one, this.data.color);
-            this.rottingGraphic = GraphicDatabase.Get<Graphic_Multi>(this.data.bodyType.bodyNakedGraphicPath, ShaderDatabase.CutoutSkin, Vector2.one, PawnGraphicSet.RottingColorDefault);
+            this.rottingGraphic = GraphicDatabase.Get<Graphic_Multi>(this.data.bodyType.bodyNakedGraphicPath, ShaderDatabase.CutoutSkin, Vector2.one, ZombieGraphicSet.RottingColor);
             this.dessicatedGraphic = GraphicDatabase.Get<Graphic_Multi>(this.data.bodyType.bodyDessicatedGraphicPath, shader);
             this.headGraphic = GraphicDatabaseHeadRecords_Zombiefied.GetHeadNamed(this.data.headGraphicPath, this.data.color);
-            this.desiccatedHeadGraphic = GraphicDatabaseHeadRecords_Zombiefied.GetHeadNamed(this.data.headGraphicPath, PawnGraphicSet.RottingColorDefault);
-            this.skullGraphic = GraphicDatabaseHeadRecords.GetSkull();
-            this.headStumpGraphic = GraphicDatabaseHeadRecords.GetStump(this.data.color);
-            this.desiccatedHeadStumpGraphic = GraphicDatabaseHeadRecords.GetStump(PawnGraphicSet.RottingColorDefault);
+            this.desiccatedHeadGraphic = GraphicDatabaseHeadRecords_Zombiefied.GetHeadNamed(this.data.headGraphicPath, ZombieGraphicSet.RottingColor);
+            this.skullGraphic = GraphicDatabaseHeadRecords_Zombiefied.GetSkull();
+            this.headStumpGraphic = GraphicDatabaseHeadRecords_Zombiefied.GetStump(this.data.color);
+            this.desiccatedHeadStumpGraphic = GraphicDatabaseHeadRecords_Zombiefied.GetStump(ZombieGraphicSet.RottingColor);
             this.hairGraphic = GraphicDatabase.Get<Graphic_Multi>(this.data.hairGraphicPath, shader, Vector2.one, this.data.hairColor);
             this.ResolveApparelGraphics();
         }

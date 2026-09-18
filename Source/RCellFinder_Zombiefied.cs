@@ -205,7 +205,7 @@ namespace Zombiefied
                     " is greater than Region.GridSize of ",
                     12,
                     " and will break."
-                }), false);
+                }));
             }
             bool flag = false;// UnityData.isDebugBuild && DebugViewSettings.drawDestSearch;
             if (root.GetRegion(pawn.Map, RegionType.Set_Passable) != null)
@@ -519,7 +519,7 @@ namespace Zombiefied
                     MapGenerator.PlayerStartSpot,
                     ". Returning ",
                     intVec
-                }), false);
+                }));
             }
             return intVec;
         }
@@ -620,10 +620,10 @@ namespace Zombiefied
                     return false;
                 }
                 int num = 0;
-                CellRect.CellRectIterator iterator = CellRect.CenteredOn(c, walkRadius).GetIterator();
-                while (!iterator.Done())
+                CellRect walkRect = CellRect.CenteredOn(c, walkRadius).ClipInsideMap(map);
+                foreach (IntVec3 walkCell in walkRect)
                 {
-                    Room room2 = iterator.Current.GetRoom(map);
+                    Room room2 = walkCell.GetRoom(map);
                     if (room2 != room)
                     {
                         num++;
@@ -636,7 +636,6 @@ namespace Zombiefied
                     {
                         return false;
                     }
-                    iterator.MoveNext();
                 }
                 if (minColonyBuildingsLOS > 0)
                 {
@@ -759,12 +758,10 @@ namespace Zombiefied
                 IntVec3 randomCell = region2.RandomCell;
                 if (randomCell.Walkable(pawn.Map) && (float)(root - randomCell).LengthHorizontalSquared > dist * dist)
                 {
-                    using (PawnPath pawnPath = pawn.Map.pathFinder.FindPath(pawn.Position, randomCell, pawn, PathEndMode.OnCell))
+                    if (pawn.CanReach(randomCell, PathEndMode.OnCell, Danger.Deadly, false, false, TraverseMode.ByPawn))
                     {
-                        if (PawnPathUtility.TryFindCellAtIndex(pawnPath, (int)dist + 3, out result))
-                        {
-                            return true;
-                        }
+                        result = randomCell;
+                        return true;
                     }
                 }
             }
@@ -1096,7 +1093,7 @@ namespace Zombiefied
                 {
                     intVec = CellFinder.RandomCell(map);
                 }
-                Log.Error("Tried to find a siege position from an invalid cell. Using " + intVec, false);
+                Log.Error("Tried to find a siege position from an invalid cell. Using " + intVec);
                 return intVec;
             }
             IntVec3 result;
@@ -1117,7 +1114,7 @@ namespace Zombiefied
                 entrySpot,
                 ", using ",
                 entrySpot
-            }), false);
+            }));
             return entrySpot;
         }
 
@@ -1168,14 +1165,13 @@ namespace Zombiefied
                                     if (!randomCell.Roofed(map))
                                     {
                                         int num3 = 0;
-                                        CellRect.CellRectIterator iterator = CellRect.CenteredOn(randomCell, 10).ClipInsideMap(map).GetIterator();
-                                        while (!iterator.Done())
+                                        CellRect supportRect = CellRect.CenteredOn(randomCell, 10).ClipInsideMap(map);
+                                        foreach (IntVec3 supportCell in supportRect)
                                         {
-                                            if (randomCell.SupportsStructureType(map, TerrainAffordanceDefOf.Heavy) && randomCell.SupportsStructureType(map, TerrainAffordanceDefOf.Light))
+                                            if (supportCell.SupportsStructureType(map, TerrainAffordanceDefOf.Heavy) && supportCell.SupportsStructureType(map, TerrainAffordanceDefOf.Light))
                                             {
                                                 num3++;
                                             }
-                                            iterator.MoveNext();
                                         }
                                         if (num3 >= 35)
                                         {

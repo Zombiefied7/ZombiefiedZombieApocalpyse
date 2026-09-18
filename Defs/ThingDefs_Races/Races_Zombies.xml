@@ -9,7 +9,8 @@
       <LeatherAmount>50</LeatherAmount>
 	  <PainShockThreshold>1.1</PainShockThreshold>
 	  <PsychicSensitivity>0</PsychicSensitivity>
-      <ToxicSensitivity>0</ToxicSensitivity>
+      <ToxicEnvironmentResistance>1</ToxicEnvironmentResistance>
+      <Wildness>1</Wildness>
       <MoveSpeed>0.7837</MoveSpeed>
       <ComfyTemperatureMin>-8</ComfyTemperatureMin>
       <MarketValue>1000</MarketValue>
@@ -81,6 +82,7 @@
     </tools>
     <race>
       <body>Human</body>
+      <renderTree>Humanlike</renderTree>
 	  <fleshType>Zombiefied</fleshType>
 	  <intelligence>ToolUser</intelligence>
 	  <thinkTreeMain>Zombie</thinkTreeMain>
@@ -98,7 +100,6 @@
 
 	  <predator>false</predator>
 
-      <wildness>1</wildness>
       <manhunterOnTameFailChance>0</manhunterOnTameFailChance>
       <manhunterOnDamageChance>0</manhunterOnDamageChance>
       <gestationPeriodDays>22.5</gestationPeriodDays>

@@ -43,14 +43,9 @@ namespace Zombiefied
             {
                 return;
             }
-            if (Current.ProgramState == ProgramState.Playing && !Find.CameraDriver.CurrentViewRect.ExpandedBy(3).Contains(this.pawn.Position))
-            {
-                return;
-            }
-            this.jitterer.JitterHandlerTick();
-            this.footprintMaker.FootprintMakerTick();
-            this.breathMoteMaker.BreathMoteMakerTick();
-            this.leaner.LeanerTick();
+
+            // The individual visual helpers are advanced by RimWorld's 1.6 rendering pipeline.
+            // Keep this compatibility hook for callers without invoking removed per-helper Tick methods.
             this.renderer.RendererTick();
         }
 
