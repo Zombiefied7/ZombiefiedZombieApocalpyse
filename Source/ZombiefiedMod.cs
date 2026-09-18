@@ -36,6 +36,7 @@ namespace Zombiefied
             noisyLocationTicksPerMap = new List<Queue<int>>();
             zombieAmountsPerMap = new List<int>();
             this._ticksUntilNextZombieRaid = new List<int>();
+            this._reanimationRetryAfterTickByCorpseId = new Dictionary<int, int>();
 
             for (int i = 0; i < 77; i++)
             {
@@ -136,6 +137,7 @@ namespace Zombiefied
 
             disableAnimalZombies = base.Settings.GetHandle<bool>("disableAnimalZombies", "       Disable animal zombies", "Animals will not resurrect and no animal zombies will wander in.", false, null, null);
             disableZombiesAttackingAnimals = base.Settings.GetHandle<bool>("disableZombiesAttackingAnimals", "       Disable zombies attacking animals", "Zombies will ignore animals.", false, null, null);
+            colonistsUseZombieAvoidancePathing = base.Settings.GetHandle<bool>("ColonistsUseZombieAvoidancePathing", "       Colonists avoid zombies while pathing", "Colonists will prefer routes that keep their distance from zombies. This changes path costs only and does not stop colonists from attacking zombies. Disabled by default.", false, null, null);
             zombieSpeedMultiplier = base.Settings.GetHandle<float>("ZombieSpeedMultiplier", "       Zombie speed multiplier [RESTART]", "Zombie speed (in comparison to healthy) will be multiplied by this value.\n(0.03 -> Slowest, 3 -> Fastest)\n(Requires restart to work)", 0.57f, null, null);
             if (zombieSpeedMultiplier < 0.03f)
             {
@@ -188,8 +190,17 @@ namespace Zombiefied
         //
         internal static SettingHandle<bool> disableAnimalZombies;
         internal static SettingHandle<bool> disableZombiesAttackingAnimals;
+        internal static SettingHandle<bool> colonistsUseZombieAvoidancePathing;
         internal static SettingHandle<float> zombieSpeedMultiplier;
         internal static SettingHandle<int> zombieSoundReactionTimeInHours;
+
+        public static bool ColonistsUseZombieAvoidancePathing
+        {
+            get
+            {
+                return colonistsUseZombieAvoidancePathing != null && colonistsUseZombieAvoidancePathing.Value;
+            }
+        }
 
         internal static SettingHandle<bool> headlineZombieAmount;
         //
@@ -526,7 +537,25 @@ namespace Zombiefied
                                     }
                                     if (corpse.Age > ageToReanimate)
                                     {
-                                        ReanimateDeath(corpse);
+                                        int corpseId = corpse.thingIDNumber;
+                                        int retryAfterTick;
+                                        if (_reanimationRetryAfterTickByCorpseId.TryGetValue(corpseId, out retryAfterTick)
+                                            && Find.TickManager.TicksAbs < retryAfterTick)
+                                        {
+                                            continue;
+                                        }
+
+                                        Pawn reanimatedPawn = ReanimateDeath(corpse);
+                                        if (reanimatedPawn == null && corpse != null && !corpse.Destroyed)
+                                        {
+                                            // A permanently unsupported modded race must not flood the log every
+                                            // reanimation scan. Retry after one in-game day in case other state changed.
+                                            _reanimationRetryAfterTickByCorpseId[corpseId] = Find.TickManager.TicksAbs + 60000;
+                                        }
+                                        else
+                                        {
+                                            _reanimationRetryAfterTickByCorpseId.Remove(corpseId);
+                                        }
                                     }
                                 }
                             }
@@ -537,6 +566,7 @@ namespace Zombiefied
         }
 
         private List<int> _ticksUntilNextZombieRaid = new List<int>(0);
+        private Dictionary<int, int> _reanimationRetryAfterTickByCorpseId = new Dictionary<int, int>();
 
         public Pawn ReanimateDeath(Corpse corpse)
         {
@@ -650,13 +680,20 @@ namespace Zombiefied
                 newKindDef = specificKindDef;
             }
 
-            // Generate exactly one zombie. Health transfer sanitizes lethal corpse conditions in-place
-            // rather than discarding the pawn and generating an appearance-only replacement.
+            // Preserve corpse damage when possible, but never let one unusual health state make the entire
+            // reanimation fail. A fresh candidate without copied health is still preferable to a dead candidate.
             Pawn_Zombiefied zombie = GenerateZombieCandidate(newKindDef, sourcePawn, true);
+            if (zombie == null || zombie.Dead || zombie.Destroyed)
+            {
+                Log.Warning("Zombiefied could not build a healthy zombie with copied corpse conditions for "
+                    + sourcePawn + ". Retrying without copied health conditions.");
+                zombie = GenerateZombieCandidate(newKindDef, sourcePawn, false);
+            }
 
             if (zombie == null || zombie.Dead || zombie.Destroyed)
             {
-                Log.Error("Zombiefied could not generate a living replacement pawn for " + sourcePawn + ".");
+                Log.Error("Zombiefied could not generate a living replacement pawn for " + sourcePawn
+                    + " using pawn kind " + newKindDef + ".");
                 return null;
             }
 
@@ -725,14 +762,37 @@ namespace Zombiefied
                 return null;
             }
 
-            zombie.newGraphics(sourcePawn);
-            if (!zombie.copyInjuries(sourcePawn, copyHealthConditions))
+            if (zombie.Dead || zombie.Destroyed || zombie.health == null || zombie.mindState == null)
             {
+                Log.Warning("Zombiefied pawn generator produced an invalid candidate for kind " + kindDef
+                    + " before source data was copied from " + sourcePawn + ". Dead=" + zombie.Dead
+                    + ", Destroyed=" + zombie.Destroyed + ", Health=" + (zombie.health != null)
+                    + ", MindState=" + (zombie.mindState != null) + ".");
+                return null;
+            }
+
+            try
+            {
+                zombie.newGraphics(sourcePawn);
+                if (!zombie.copyInjuries(sourcePawn, copyHealthConditions))
+                {
+                    Log.Warning("Zombiefied rejected candidate " + zombie + " while copying source data from "
+                        + sourcePawn + ". CopyHealthConditions=" + copyHealthConditions + ".");
+                    return null;
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Error("Zombiefied failed while copying source data from " + sourcePawn + " to generated kind "
+                    + kindDef + ". CopyHealthConditions=" + copyHealthConditions + ". " + ex);
                 return null;
             }
 
             if (zombie.Dead || zombie.Destroyed || zombie.health == null || zombie.mindState == null)
             {
+                Log.Warning("Zombiefied candidate for " + sourcePawn + " became invalid after source data transfer."
+                    + " Dead=" + zombie.Dead + ", Destroyed=" + zombie.Destroyed
+                    + ", Health=" + (zombie.health != null) + ", MindState=" + (zombie.mindState != null) + ".");
                 return null;
             }
 
@@ -848,10 +908,13 @@ namespace Zombiefied
                         {
                             count++;
 
-                            ThingDef newThingDef = new ThingDef();
-                            if (DefDatabase<ThingDef>.GetNamed("Zombie" + sourcePawnKindDef.race.defName, false) == null)
+                            string zombieRaceDefName = "Zombie" + sourcePawnKindDef.race.defName;
+                            ThingDef newThingDef = DefDatabase<ThingDef>.GetNamed(zombieRaceDefName, false);
+                            bool createdNewThingDef = newThingDef == null;
+                            if (createdNewThingDef)
                             {
-                                newThingDef.defName = "Zombie" + sourcePawnKindDef.race.defName;
+                                newThingDef = new ThingDef();
+                                newThingDef.defName = zombieRaceDefName;
                                 newThingDef.label = "zombie " + sourcePawnKindDef.race.defName;
                                 newThingDef.description = sourcePawnKindDef.race.description;
 
@@ -1139,6 +1202,16 @@ namespace Zombiefied
                                 newThingDef.race.baseBodySize = sourcePawnKindDef.race.race.baseBodySize;
                                 newThingDef.race.baseHungerRate = sourcePawnKindDef.race.race.baseHungerRate;
                                 newThingDef.race.baseHealthScale = sourcePawnKindDef.race.race.baseHealthScale;
+
+                                // PawnGenerator uses life expectancy while choosing and validating generated ages.
+                                // A freshly constructed RaceProperties otherwise keeps its zero/default value, which
+                                // can make dynamically generated animal zombies invalid or immediately dead.
+                                newThingDef.race.lifeExpectancy = sourcePawnKindDef.race.race.lifeExpectancy;
+                                if (newThingDef.race.lifeExpectancy <= 0f)
+                                {
+                                    newThingDef.race.lifeExpectancy = zombieThingDef.race.lifeExpectancy;
+                                }
+
                                 newThingDef.race.foodType = zombieThingDef.race.foodType;
                                 newThingDef.race.predator = zombieThingDef.race.predator;
                                 newThingDef.race.makesFootprints = sourcePawnKindDef.race.race.makesFootprints;
@@ -1237,7 +1310,10 @@ namespace Zombiefied
                             if (newKindDef != null && newThingDef != null && newKindDef.RaceProps != null)
                             {
                                 DefDatabase<PawnKindDef>.Add(newKindDef);
-                                DefDatabase<ThingDef>.Add(newThingDef);
+                                if (createdNewThingDef)
+                                {
+                                    DefDatabase<ThingDef>.Add(newThingDef);
+                                }
                             }
                         }
                     }

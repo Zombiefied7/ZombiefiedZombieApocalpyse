@@ -45,3 +45,10 @@ original mission.
 Runtime Harmony pathing fix:
 - PathFinder.CreateRequest and PathFinder.FindPathNow prefixes bind original arguments by index, avoiding brittle parameter-name binding across RimWorld 1.6 builds.
 - Removed the redundant StaticConstructorOnStartup Harmony.PatchAll call because HugsLib.ModBase already applies the assembly's Harmony patches. This prevents duplicate patch application.
+
+Runtime animal reanimation fix:
+- Dynamically generated animal zombie races now inherit the source race's life expectancy, with the base zombie value as a safety fallback. This prevents PawnGenerator from producing invalid or immediately dead animal zombie candidates for races such as birds and livestock.
+- Zombie ThingDefs are now reused when multiple PawnKindDefs share the same underlying animal race instead of constructing an empty replacement ThingDef for later pawn kinds.
+- Reanimation first preserves corpse health conditions, then retries once without copied health conditions if that transfer makes the candidate invalid.
+- Failed corpse reanimations are throttled to one retry per in-game day so an unsupported modded race cannot flood the log on every reanimation scan.
+- Candidate generation now logs whether failure happened before or after source-data transfer, making remaining mod-race incompatibilities diagnosable from the player log.
