@@ -10,12 +10,14 @@ namespace Zombiefied
     {
         private const int MaxEncounterZombies = 48;
         private const float FallbackZombieCombatPower = 55f;
+        private static Faction cachedZombieFaction;
 
-        public static Faction GetZombieFaction()
+        public static void RefreshZombieFaction()
         {
+            cachedZombieFaction = null;
             if (Find.FactionManager == null)
             {
-                return null;
+                return;
             }
 
             List<Faction> factions = Find.FactionManager.AllFactionsListForReading;
@@ -24,11 +26,20 @@ namespace Zombiefied
                 Faction faction = factions[i];
                 if (faction != null && faction.def != null && faction.def.defName == "Zombie")
                 {
-                    return faction;
+                    cachedZombieFaction = faction;
+                    return;
                 }
             }
+        }
 
-            return null;
+        public static Faction GetZombieFaction()
+        {
+            if (cachedZombieFaction == null || cachedZombieFaction.def == null)
+            {
+                RefreshZombieFaction();
+            }
+
+            return cachedZombieFaction;
         }
 
         public static List<Pawn> GenerateZombieEncounterPawns(float points)

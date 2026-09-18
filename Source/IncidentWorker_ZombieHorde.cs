@@ -216,15 +216,7 @@ namespace Zombiefied
 
             Rot4 rotation = Rot4.FromAngleFlat((map.Center - entryCell).AngleFlat);
 
-            Faction zombieFaction = Faction.OfInsects;
-            foreach (Faction faction in Find.FactionManager.AllFactionsListForReading)
-            {
-                if (faction.def.defName == "Zombie")
-                {
-                    zombieFaction = faction;
-                    break;
-                }
-            }
+            Faction zombieFaction = ZombieWorldUtility.GetZombieFaction() ?? Faction.OfInsects;
 
             Pawn firstSpawnedZombie = null;
             for (int i = 0; i < zombies.Count; i++)

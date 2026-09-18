@@ -1,99 +1,154 @@
 ﻿using System;
 using System.Collections.Generic;
+using RimWorld;
 using UnityEngine;
 using Verse;
 using Verse.AI;
-using RimWorld;
 
 namespace Zombiefied
 {
-    // Token: 0x020000A4 RID: 164
     public class JobGiver_ZombieResponse : ThinkNode_JobGiver
     {
-        // Token: 0x060003E6 RID: 998 RVA: 0x0002923C File Offset: 0x0002763C
+        private const float DefaultHuntRange = 7f;
+        private static readonly IntVec3[] SearchOffsets = BuildSearchOffsets(DefaultHuntRange);
+
         protected override Job TryGiveJob(Pawn pawn)
         {
-            return this.TryGetAttackNearbyEnemyJob(pawn);
-        }
-
-        // Token: 0x060003E7 RID: 999 RVA: 0x000292AC File Offset: 0x000276AC
-        private Job TryGetAttackNearbyEnemyJob(Pawn pawn)
-        {
-            Pawn thing = BestPawnToHuntForPredator(pawn);
-            if (thing != null)
+            Pawn_Zombiefied zombie = pawn as Pawn_Zombiefied;
+            if (zombie == null || pawn.Map == null)
             {
-                return new Job(ZombiefiedMod.zombieHunt, thing)
-                {
-                    killIncappedTarget = true,
-                    expiryInterval = (int)(Rand.RangeSeeded(1f, 2f, Find.TickManager.TicksAbs) * 700),
-                    attackDoorIfTargetLost = true
-                };
+                return null;
             }
-            return null;
+
+            if (pawn.CurJob != null && pawn.CurJob.def == ZombiefiedMod.zombieHunt)
+            {
+                zombie.hunting = true;
+                return null;
+            }
+
+            zombie.hunting = false;
+            int now = GenTicks.TicksGame;
+            if (now < zombie.nextCombatScanTick)
+            {
+                return null;
+            }
+
+            ZombieMapTracker tracker = ZombieMapTrackerUtility.GetTracker(pawn.Map);
+            int interval = tracker != null ? tracker.RecommendedCombatScanInterval : 60;
+            zombie.nextCombatScanTick = now + interval + Math.Abs(zombie.thingIDNumber % 17);
+
+            Pawn target = BestPawnToHuntForPredator(pawn, DefaultHuntRange);
+            if (target == null)
+            {
+                return null;
+            }
+
+            zombie.hunting = true;
+            return new Job(ZombiefiedMod.zombieHunt, target)
+            {
+                killIncappedTarget = true,
+                expiryInterval = (int)(Rand.RangeSeeded(1f, 2f, Find.TickManager.TicksAbs + zombie.thingIDNumber) * 700),
+                attackDoorIfTargetLost = true
+            };
         }
 
-        public Pawn BestPawnToHuntForPredator(Pawn predator, float range = 7f)
+        public Pawn BestPawnToHuntForPredator(Pawn predator, float range = DefaultHuntRange)
         {
-            //List<Pawn> allPawnsSpawned = predator.Map.mapPawns.AllPawnsSpawned;
-            List<Thing> allThingsRegion = predator.GetRegion().ListerThings.AllThings;
+            if (predator == null || predator.Map == null)
+            {
+                return null;
+            }
 
-            Pawn pawnToReturn = null;
-            float num = 0f;
+            float rangeSquared = range * range;
+            IntVec3 origin = predator.Position;
+            ThingGrid thingGrid = predator.Map.thingGrid;
 
-            //for (int i = 0; i < allPawnsSpawned.Count; i++)
-            for (int i = 0; i < allThingsRegion.Count; i++)
+            // Offsets are ordered by squared distance, so the first reachable acceptable pawn is also the
+            // highest-scoring prey under the original distance-only scoring function. Reachability is only
+            // evaluated for actual nearby prey instead of for every thing in the current region.
+            for (int offsetIndex = 0; offsetIndex < SearchOffsets.Length; offsetIndex++)
+            {
+                IntVec3 cell = origin + SearchOffsets[offsetIndex];
+                if (!cell.InBounds(predator.Map) || origin.DistanceToSquared(cell) > rangeSquared)
                 {
-                Pawn pawn2 = allThingsRegion[i] as Pawn;
-                if (pawn2 != null && predator != pawn2)
+                    continue;
+                }
+
+                List<Thing> things = thingGrid.ThingsListAtFast(cell);
+                for (int thingIndex = 0; thingIndex < things.Count; thingIndex++)
                 {
-                    if (IsAcceptablePreyFor(predator, pawn2, range))
+                    Pawn prey = things[thingIndex] as Pawn;
+                    if (prey == null || prey == predator || !IsAcceptablePreyFor(predator, prey, range))
                     {
-                        if (predator.CanReach(pawn2, PathEndMode.ClosestTouch, Danger.Deadly, false, false, TraverseMode.ByPawn))
-                        {
-                            if (!pawn2.IsForbidden(predator))
-                            {
-                                float preyScoreFor = GetPreyScoreFor(predator, pawn2);
-                                if (preyScoreFor > num || pawnToReturn == null)
-                                {
-                                    num = preyScoreFor;
-                                    pawnToReturn = pawn2;
-                                }
-                            }
-                        }
+                        continue;
+                    }
+
+                    if (prey.IsForbidden(predator))
+                    {
+                        continue;
+                    }
+
+                    if (predator.CanReach(prey, PathEndMode.ClosestTouch, Danger.Deadly, false, false, TraverseMode.ByPawn))
+                    {
+                        return prey;
                     }
                 }
             }
-            return pawnToReturn;
+
+            return null;
         }
 
         public bool IsAcceptablePreyFor(Pawn predator, Pawn prey, float distance)
         {
-            Pawn_Zombiefied preyZ = prey as Pawn_Zombiefied;
-            if (preyZ != null)
-            {
-                return false;
-            }         
-            if(ZombiefiedMod.disableZombiesAttackingAnimals && !prey.RaceProps.Humanlike)
+            if (prey == null || prey.Dead || prey is Pawn_Zombiefied)
             {
                 return false;
             }
+
+            if (ZombiefiedMod.disableZombiesAttackingAnimals && !prey.RaceProps.Humanlike)
+            {
+                return false;
+            }
+
             if (!prey.RaceProps.IsFlesh)
             {
                 return false;
             }
-            float lengthHorizontal = -GetPreyScoreFor(predator, prey);
-            if (lengthHorizontal > distance)
-            {
-                return false;
-            }
-            
-            return true;
+
+            return predator.Position.DistanceToSquared(prey.Position) <= distance * distance;
         }
 
         public float GetPreyScoreFor(Pawn predator, Pawn prey)
         {
-            float lengthHorizontal = (predator.Position - prey.Position).LengthHorizontal;
-            return -lengthHorizontal;
+            return -(predator.Position - prey.Position).LengthHorizontal;
+        }
+
+        private static IntVec3[] BuildSearchOffsets(float radius)
+        {
+            int ceiling = Mathf.CeilToInt(radius);
+            float radiusSquared = radius * radius;
+            List<IntVec3> offsets = new List<IntVec3>();
+
+            for (int z = -ceiling; z <= ceiling; z++)
+            {
+                for (int x = -ceiling; x <= ceiling; x++)
+                {
+                    int distanceSquared = x * x + z * z;
+                    if (distanceSquared <= radiusSquared)
+                    {
+                        offsets.Add(new IntVec3(x, 0, z));
+                    }
+                }
+            }
+
+            offsets.Sort(delegate(IntVec3 a, IntVec3 b)
+            {
+                int aSquared = a.x * a.x + a.z * a.z;
+                int bSquared = b.x * b.x + b.z * b.z;
+                return aSquared.CompareTo(bSquared);
+            });
+
+            return offsets.ToArray();
         }
     }
 }

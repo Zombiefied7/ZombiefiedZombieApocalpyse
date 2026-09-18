@@ -1,4 +1,4 @@
-using RimWorld;
+﻿using RimWorld;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -9,6 +9,11 @@ namespace Zombiefied
     public class ColonistZombieAvoidanceAssignments : GameComponent
     {
         private List<string> enabledPawnIds = new List<string>();
+
+        // Save compatibility remains string-based, but pathfinding queries use integer IDs after their first
+        // lookup. This keeps GetUniqueLoadID() and List.Contains() out of the hot path.
+        private readonly HashSet<int> enabledRuntimePawnIds = new HashSet<int>();
+        private readonly HashSet<int> resolvedRuntimePawnIds = new HashSet<int>();
 
         public ColonistZombieAvoidanceAssignments(Game game)
         {
@@ -34,6 +39,9 @@ namespace Zombiefied
                         enabledPawnIds.RemoveAt(i);
                     }
                 }
+
+                enabledRuntimePawnIds.Clear();
+                resolvedRuntimePawnIds.Clear();
             }
         }
 
@@ -44,7 +52,25 @@ namespace Zombiefied
                 return false;
             }
 
-            return enabledPawnIds.Contains(pawn.GetUniqueLoadID());
+            int runtimeId = pawn.thingIDNumber;
+            if (enabledRuntimePawnIds.Contains(runtimeId))
+            {
+                return true;
+            }
+
+            if (resolvedRuntimePawnIds.Contains(runtimeId))
+            {
+                return false;
+            }
+
+            bool enabled = enabledPawnIds.Contains(pawn.GetUniqueLoadID());
+            resolvedRuntimePawnIds.Add(runtimeId);
+            if (enabled)
+            {
+                enabledRuntimePawnIds.Add(runtimeId);
+            }
+
+            return enabled;
         }
 
         public void SetEnabled(Pawn pawn, bool enabled)
@@ -54,9 +80,13 @@ namespace Zombiefied
                 return;
             }
 
+            int runtimeId = pawn.thingIDNumber;
             string pawnId = pawn.GetUniqueLoadID();
+            resolvedRuntimePawnIds.Add(runtimeId);
+
             if (enabled)
             {
+                enabledRuntimePawnIds.Add(runtimeId);
                 if (!enabledPawnIds.Contains(pawnId))
                 {
                     enabledPawnIds.Add(pawnId);
@@ -64,6 +94,7 @@ namespace Zombiefied
             }
             else
             {
+                enabledRuntimePawnIds.Remove(runtimeId);
                 enabledPawnIds.Remove(pawnId);
             }
         }

@@ -32,14 +32,7 @@ namespace Zombiefied
         // Token: 0x06000D17 RID: 3351 RVA: 0x00061114 File Offset: 0x0005F514
         protected override bool TryExecuteWorker(IncidentParms parms)
         {
-            Faction zFaction = Faction.OfInsects;
-            foreach (Faction faction in Find.FactionManager.AllFactionsListForReading)
-            {
-                if (faction.def.defName == "Zombie")
-                {
-                    zFaction = faction;
-                }
-            }
+            Faction zFaction = ZombieWorldUtility.GetZombieFaction() ?? Faction.OfInsects;
 
             ResolveRaidPoints(parms);
 

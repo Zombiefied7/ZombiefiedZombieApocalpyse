@@ -13,6 +13,7 @@ namespace Zombiefied
         public bool attracted = false;
         public bool fired = false;
         public int distanceToEdge = 0;
+        public int nextCombatScanTick = 0;
 
         public float armorRating_Sharp = 0f;
         public float armorRating_Blunt = 0f;
@@ -239,6 +240,7 @@ namespace Zombiefied
 
             armorRating_Sharp = TryDrawOverallArmor(sourcePawn, StatDefOf.ArmorRating_Sharp);
             armorRating_Blunt = TryDrawOverallArmor(sourcePawn, StatDefOf.ArmorRating_Blunt);
+            armorRating_Heat = TryDrawOverallArmor(sourcePawn, StatDefOf.ArmorRating_Heat);
             return true;
         }
 
@@ -451,8 +453,8 @@ namespace Zombiefied
 
         public void FixZombie()
         {
-            HediffDef zombiefiedDef = HediffDef.Named("Zombiefied");
-            if (health != null && health.hediffSet != null && !health.hediffSet.HasHediff(zombiefiedDef))
+            HediffDef zombiefiedDef = ZombiefiedDefCache.Zombiefied;
+            if (zombiefiedDef != null && health != null && health.hediffSet != null && !health.hediffSet.HasHediff(zombiefiedDef))
             {
                 health.AddHediff(zombiefiedDef);
             }
@@ -461,6 +463,25 @@ namespace Zombiefied
             {
                 apparel.DestroyAll();
             }
+        }
+
+
+        public override void SpawnSetup(Map map, bool respawningAfterLoad)
+        {
+            base.SpawnSetup(map, respawningAfterLoad);
+            if (Spawned && Map == map)
+            {
+                ZombieMapTracker tracker = ZombieMapTrackerUtility.GetTracker(map);
+                tracker?.RegisterZombie(this);
+            }
+        }
+
+        public override void DeSpawn(DestroyMode mode = DestroyMode.Vanish)
+        {
+            Map oldMap = Map;
+            ZombieMapTracker tracker = ZombieMapTrackerUtility.GetTracker(oldMap);
+            tracker?.UnregisterZombie(this);
+            base.DeSpawn(mode);
         }
 
         // RimWorld 1.6 moved substantial pawn update logic into new tracker and render systems.

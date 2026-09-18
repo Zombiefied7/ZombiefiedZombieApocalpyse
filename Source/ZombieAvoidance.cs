@@ -12,25 +12,61 @@ namespace Zombiefied
 {
     internal static class ZombieAvoidanceUtility
     {
-        // Zombies should behave like an environmental hazard to outsiders. Raiders, visitors, traders,
-        // and other foreign humanlikes should preserve their original mission and route around hordes
-        // instead of treating zombies as convenient combat objectives.
         private const float AvoidRadius = 14f;
         private const float EmergencyDisengageScanRadius = 9f;
         private const float EmergencyDisengageDistance = 18f;
         private const int EmergencyDisengageJobTicks = 240;
-        private const int SnapshotIntervalTicks = 15;
+        private const int SnapshotFallbackIntervalTicks = 30;
         private const ushort MaximumDangerCost = 4800;
 
-        private sealed class DangerSnapshot
+        private struct DangerOffset
+        {
+            public int x;
+            public int z;
+            public ushort cost;
+        }
+
+        internal sealed class DangerSnapshot
         {
             public int version;
-            public ushort[] grid;
+            public NativeArray<ushort> grid;
             public bool hasDanger;
+
+            private int users;
+            private bool retired;
+
+            public void Acquire()
+            {
+                users++;
+            }
+
+            public void Release()
+            {
+                if (users > 0)
+                {
+                    users--;
+                }
+                TryDisposeRetired();
+            }
+
+            public void Retire()
+            {
+                retired = true;
+                TryDisposeRetired();
+            }
+
+            private void TryDisposeRetired()
+            {
+                if (retired && users == 0 && grid.IsCreated)
+                {
+                    grid.Dispose();
+                }
+            }
         }
 
         private static readonly Dictionary<Map, DangerSnapshot> dangerSnapshots =
             new Dictionary<Map, DangerSnapshot>();
+        private static readonly DangerOffset[] dangerOffsets = BuildDangerOffsets();
 
         private static bool IsHumanlikeAvoidanceCandidate(Pawn pawn)
         {
@@ -50,8 +86,6 @@ namespace Zombiefied
                 return false;
             }
 
-            // Combat suppression is intentionally limited to foreign humanlikes. Player pawns can be given
-            // explicit combat orders against zombies even when their optional path avoidance is enabled.
             return pawn.Faction != null && pawn.Faction != Faction.OfPlayer;
         }
 
@@ -83,9 +117,6 @@ namespace Zombiefied
 
         public static bool ShouldRejectZombieCombat(Pawn pawn, Thing target)
         {
-            // Foreign humanlikes must never promote a zombie from environmental hazard to combat objective.
-            // Allowing close-range or melee-threat exceptions causes vanilla fight AI to cache that zombie as
-            // mindState.enemyTarget, after which ranged pawns can receive Goto jobs that actively pursue it.
             return ShouldAvoidZombies(pawn) && IsZombie(target);
         }
 
@@ -125,17 +156,19 @@ namespace Zombiefied
                 return false;
             }
 
+            ZombieMapTracker tracker = ZombieMapTrackerUtility.GetTracker(pawn.Map);
+            if (tracker != null)
+            {
+                return tracker.AnyZombieWithin(pawn.Position, radius);
+            }
+
             float radiusSquared = radius * radius;
             IReadOnlyList<Pawn> pawns = pawn.Map.mapPawns.AllPawnsSpawned;
             for (int i = 0; i < pawns.Count; i++)
             {
                 Pawn_Zombiefied zombie = pawns[i] as Pawn_Zombiefied;
-                if (zombie == null || zombie.Dead || !zombie.Spawned)
-                {
-                    continue;
-                }
-
-                if (pawn.Position.DistanceToSquared(zombie.Position) <= radiusSquared)
+                if (zombie != null && !zombie.Dead && zombie.Spawned
+                    && pawn.Position.DistanceToSquared(zombie.Position) <= radiusSquared)
                 {
                     return true;
                 }
@@ -151,68 +184,90 @@ namespace Zombiefied
                 return null;
             }
 
-            List<Thing> threats = new List<Thing>();
-            float scanRadiusSquared = EmergencyDisengageScanRadius * EmergencyDisengageScanRadius;
-            IReadOnlyList<Pawn> pawns = pawn.Map.mapPawns.AllPawnsSpawned;
-            for (int i = 0; i < pawns.Count; i++)
+            List<Thing> threats = SimplePool<List<Thing>>.Get();
+            threats.Clear();
+            List<Pawn_Zombiefied> nearbyZombies = SimplePool<List<Pawn_Zombiefied>>.Get();
+            nearbyZombies.Clear();
+
+            try
             {
-                Pawn_Zombiefied zombie = pawns[i] as Pawn_Zombiefied;
-                if (zombie == null || zombie.Dead || !zombie.Spawned)
+                ZombieMapTracker tracker = ZombieMapTrackerUtility.GetTracker(pawn.Map);
+                if (tracker != null)
                 {
-                    continue;
-                }
-
-                if (pawn.Position.DistanceToSquared(zombie.Position) <= scanRadiusSquared)
-                {
-                    threats.Add(zombie);
-                }
-            }
-
-            if (IsZombie(forcedThreat) && forcedThreat.Spawned && !threats.Contains(forcedThreat))
-            {
-                threats.Add(forcedThreat);
-            }
-
-            if (threats.Count == 0)
-            {
-                return null;
-            }
-
-            IntVec3 fleeCell = CellFinderLoose.GetFleeDest(pawn, threats, EmergencyDisengageDistance);
-            if (!fleeCell.IsValid || !fleeCell.InBounds(pawn.Map) || fleeCell == pawn.Position)
-            {
-                Thing nearestThreat = null;
-                float nearestDistanceSquared = float.MaxValue;
-                for (int i = 0; i < threats.Count; i++)
-                {
-                    Thing threat = threats[i];
-                    if (threat == null || !threat.Spawned)
+                    tracker.GetZombiesNear(pawn.Position, EmergencyDisengageScanRadius, nearbyZombies);
+                    for (int i = 0; i < nearbyZombies.Count; i++)
                     {
-                        continue;
+                        threats.Add(nearbyZombies[i]);
                     }
-
-                    float distanceSquared = pawn.Position.DistanceToSquared(threat.Position);
-                    if (distanceSquared < nearestDistanceSquared)
+                }
+                else
+                {
+                    float scanRadiusSquared = EmergencyDisengageScanRadius * EmergencyDisengageScanRadius;
+                    IReadOnlyList<Pawn> pawns = pawn.Map.mapPawns.AllPawnsSpawned;
+                    for (int i = 0; i < pawns.Count; i++)
                     {
-                        nearestDistanceSquared = distanceSquared;
-                        nearestThreat = threat;
+                        Pawn_Zombiefied zombie = pawns[i] as Pawn_Zombiefied;
+                        if (zombie != null && !zombie.Dead && zombie.Spawned
+                            && pawn.Position.DistanceToSquared(zombie.Position) <= scanRadiusSquared)
+                        {
+                            threats.Add(zombie);
+                        }
                     }
                 }
 
-                if (nearestThreat == null
-                    || !RCellFinder.TryFindDirectFleeDestination(nearestThreat.Position, 10f, pawn, out fleeCell)
-                    || !fleeCell.IsValid
-                    || fleeCell == pawn.Position)
+                if (IsZombie(forcedThreat) && forcedThreat.Spawned && !threats.Contains(forcedThreat))
+                {
+                    threats.Add(forcedThreat);
+                }
+
+                if (threats.Count == 0)
                 {
                     return null;
                 }
-            }
 
-            Job job = JobMaker.MakeJob(JobDefOf.Goto, fleeCell);
-            job.locomotionUrgency = LocomotionUrgency.Sprint;
-            job.expiryInterval = EmergencyDisengageJobTicks;
-            job.checkOverrideOnExpire = true;
-            return job;
+                IntVec3 fleeCell = CellFinderLoose.GetFleeDest(pawn, threats, EmergencyDisengageDistance);
+                if (!fleeCell.IsValid || !fleeCell.InBounds(pawn.Map) || fleeCell == pawn.Position)
+                {
+                    Thing nearestThreat = null;
+                    float nearestDistanceSquared = float.MaxValue;
+                    for (int i = 0; i < threats.Count; i++)
+                    {
+                        Thing threat = threats[i];
+                        if (threat == null || !threat.Spawned)
+                        {
+                            continue;
+                        }
+
+                        float distanceSquared = pawn.Position.DistanceToSquared(threat.Position);
+                        if (distanceSquared < nearestDistanceSquared)
+                        {
+                            nearestDistanceSquared = distanceSquared;
+                            nearestThreat = threat;
+                        }
+                    }
+
+                    if (nearestThreat == null
+                        || !RCellFinder.TryFindDirectFleeDestination(nearestThreat.Position, 10f, pawn, out fleeCell)
+                        || !fleeCell.IsValid
+                        || fleeCell == pawn.Position)
+                    {
+                        return null;
+                    }
+                }
+
+                Job job = JobMaker.MakeJob(JobDefOf.Goto, fleeCell);
+                job.locomotionUrgency = LocomotionUrgency.Sprint;
+                job.expiryInterval = EmergencyDisengageJobTicks;
+                job.checkOverrideOnExpire = true;
+                return job;
+            }
+            finally
+            {
+                nearbyZombies.Clear();
+                SimplePool<List<Pawn_Zombiefied>>.Return(nearbyZombies);
+                threats.Clear();
+                SimplePool<List<Thing>>.Return(threats);
+            }
         }
 
         public static void ClearZombieEnemyTarget(Pawn pawn)
@@ -227,8 +282,6 @@ namespace Zombiefied
                 pawn.mindState.enemyTarget = null;
             }
 
-            // meleeThreat is another persistent route by which vanilla hostility-response nodes can revive
-            // zombie combat after the normal target cache has been filtered. Outsiders ignore that signal.
             if (IsZombie(pawn.mindState.meleeThreat))
             {
                 pawn.mindState.meleeThreat = null;
@@ -237,8 +290,15 @@ namespace Zombiefied
 
         public static void ForgetMap(Map map)
         {
-            if (map != null)
+            if (map == null)
             {
+                return;
+            }
+
+            DangerSnapshot snapshot;
+            if (dangerSnapshots.TryGetValue(map, out snapshot))
+            {
+                snapshot.Retire();
                 dangerSnapshots.Remove(map);
             }
         }
@@ -250,9 +310,6 @@ namespace Zombiefied
                 return null;
             }
 
-            // Foreign humanlikes also ignore zombies as combat objectives. Player pawns only receive the path
-            // cost layer when their personal Assign-tab zombie response is set to avoid, so drafted and ordered attacks remain valid. The destination
-            // cell is cleared below to ensure a direct order can still reach a zombie when necessary.
             DangerSnapshot snapshot = GetDangerSnapshot(pawn.Map);
             if (snapshot == null || !snapshot.hasDanger)
             {
@@ -260,12 +317,15 @@ namespace Zombiefied
             }
 
             IntVec3 destinationCell = destination.IsValid ? destination.Cell : IntVec3.Invalid;
-            return new ZombiePathAvoidanceCustomizer(pawn.Map, snapshot.version, snapshot.grid, destinationCell);
+            return new ZombiePathAvoidanceCustomizer(pawn.Map, snapshot, destinationCell);
         }
 
         private static DangerSnapshot GetDangerSnapshot(Map map)
         {
-            int version = GenTicks.TicksGame / SnapshotIntervalTicks;
+            ZombieMapTracker tracker = ZombieMapTrackerUtility.GetTracker(map);
+            int version = tracker != null
+                ? tracker.DangerRevision
+                : GenTicks.TicksGame / SnapshotFallbackIntervalTicks;
 
             DangerSnapshot snapshot;
             if (dangerSnapshots.TryGetValue(map, out snapshot) && snapshot.version == version)
@@ -273,47 +333,85 @@ namespace Zombiefied
                 return snapshot;
             }
 
-            snapshot = BuildDangerSnapshot(map, version);
-            dangerSnapshots[map] = snapshot;
-            return snapshot;
+            DangerSnapshot replacement = BuildDangerSnapshot(map, tracker, version);
+            if (snapshot != null)
+            {
+                snapshot.Retire();
+            }
+            dangerSnapshots[map] = replacement;
+            return replacement;
         }
 
-        private static DangerSnapshot BuildDangerSnapshot(Map map, int version)
+        private static DangerSnapshot BuildDangerSnapshot(Map map, ZombieMapTracker tracker, int version)
         {
+            if (tracker != null && tracker.ZombieCount == 0)
+            {
+                return new DangerSnapshot
+                {
+                    version = version,
+                    grid = default(NativeArray<ushort>),
+                    hasDanger = false
+                };
+            }
+
             int cellCount = map.cellIndices.NumGridCells;
-            ushort[] grid = new ushort[cellCount];
+            NativeArray<ushort> grid = new NativeArray<ushort>(
+                cellCount,
+                Allocator.Persistent,
+                NativeArrayOptions.ClearMemory);
             bool hasDanger = false;
 
-            IReadOnlyList<Pawn> pawns = map.mapPawns.AllPawnsSpawned;
-            for (int pawnIndex = 0; pawnIndex < pawns.Count; pawnIndex++)
+            List<Pawn_Zombiefied> zombies = SimplePool<List<Pawn_Zombiefied>>.Get();
+            zombies.Clear();
+            try
             {
-                Pawn_Zombiefied zombie = pawns[pawnIndex] as Pawn_Zombiefied;
-                if (zombie == null || zombie.Dead || !zombie.Spawned)
+                if (tracker != null)
                 {
-                    continue;
+                    tracker.CopyZombiesTo(zombies);
+                }
+                else
+                {
+                    IReadOnlyList<Pawn> pawns = map.mapPawns.AllPawnsSpawned;
+                    for (int i = 0; i < pawns.Count; i++)
+                    {
+                        Pawn_Zombiefied zombie = pawns[i] as Pawn_Zombiefied;
+                        if (zombie != null && !zombie.Dead && zombie.Spawned)
+                        {
+                            zombies.Add(zombie);
+                        }
+                    }
                 }
 
-                hasDanger = true;
-                IntVec3 zombiePosition = zombie.Position;
-
-                foreach (IntVec3 cell in GenRadial.RadialCellsAround(zombiePosition, AvoidRadius, true))
+                for (int zombieIndex = 0; zombieIndex < zombies.Count; zombieIndex++)
                 {
-                    if (!cell.InBounds(map))
+                    Pawn_Zombiefied zombie = zombies[zombieIndex];
+                    if (zombie == null || zombie.Dead || !zombie.Spawned || zombie.Map != map)
                     {
                         continue;
                     }
 
-                    float distanceSquared = zombiePosition.DistanceToSquared(cell);
-                    ushort addedCost = CostForDistanceSquared(distanceSquared);
-                    if (addedCost == 0)
+                    hasDanger = true;
+                    IntVec3 zombiePosition = zombie.Position;
+                    for (int offsetIndex = 0; offsetIndex < dangerOffsets.Length; offsetIndex++)
                     {
-                        continue;
-                    }
+                        DangerOffset offset = dangerOffsets[offsetIndex];
+                        int x = zombiePosition.x + offset.x;
+                        int z = zombiePosition.z + offset.z;
+                        if (x < 0 || z < 0 || x >= map.Size.x || z >= map.Size.z)
+                        {
+                            continue;
+                        }
 
-                    int cellIndex = map.cellIndices.CellToIndex(cell);
-                    int combinedCost = grid[cellIndex] + addedCost;
-                    grid[cellIndex] = (ushort)Math.Min(MaximumDangerCost, combinedCost);
+                        int cellIndex = map.cellIndices.CellToIndex(new IntVec3(x, 0, z));
+                        int combinedCost = grid[cellIndex] + offset.cost;
+                        grid[cellIndex] = (ushort)Math.Min(MaximumDangerCost, combinedCost);
+                    }
                 }
+            }
+            finally
+            {
+                zombies.Clear();
+                SimplePool<List<Pawn_Zombiefied>>.Return(zombies);
             }
 
             return new DangerSnapshot
@@ -324,42 +422,59 @@ namespace Zombiefied
             };
         }
 
+        private static DangerOffset[] BuildDangerOffsets()
+        {
+            int ceiling = (int)Math.Ceiling(AvoidRadius);
+            float radiusSquared = AvoidRadius * AvoidRadius;
+            List<DangerOffset> offsets = new List<DangerOffset>();
+
+            for (int z = -ceiling; z <= ceiling; z++)
+            {
+                for (int x = -ceiling; x <= ceiling; x++)
+                {
+                    float distanceSquared = x * x + z * z;
+                    if (distanceSquared > radiusSquared)
+                    {
+                        continue;
+                    }
+
+                    ushort cost = CostForDistanceSquared(distanceSquared);
+                    if (cost != 0)
+                    {
+                        offsets.Add(new DangerOffset { x = x, z = z, cost = cost });
+                    }
+                }
+            }
+
+            return offsets.ToArray();
+        }
+
         private static ushort CostForDistanceSquared(float distanceSquared)
         {
-            // The outer bands start influencing routes well before contact, while the inner bands make entering
-            // a zombie cluster far more expensive than taking a sizeable detour. These remain finite costs, so
-            // an outsider can still cross the danger field when the map or mission destination leaves no sane
-            // alternative. The cumulative cap stays well below the old 9,999 value that caused failed paths.
             if (distanceSquared <= 1f)
             {
                 return 1600;
             }
-
             if (distanceSquared <= 4f)
             {
                 return 1200;
             }
-
             if (distanceSquared <= 16f)
             {
                 return 850;
             }
-
             if (distanceSquared <= 49f)
             {
                 return 500;
             }
-
             if (distanceSquared <= 100f)
             {
                 return 280;
             }
-
             if (distanceSquared <= AvoidRadius * AvoidRadius)
             {
                 return 140;
             }
-
             return 0;
         }
     }
@@ -422,28 +537,50 @@ namespace Zombiefied
     {
         private readonly Map map;
         private readonly int snapshotVersion;
+        private readonly int destinationOverrideIndex;
+        private readonly ZombieAvoidanceUtility.DangerSnapshot sharedSnapshot;
         private NativeArray<ushort> offsetGrid;
+        private readonly bool ownsGrid;
         private bool disposed;
 
-        public ZombiePathAvoidanceCustomizer(Map map, int snapshotVersion, ushort[] snapshot, IntVec3 destinationCell)
+        public ZombiePathAvoidanceCustomizer(
+            Map map,
+            ZombieAvoidanceUtility.DangerSnapshot snapshot,
+            IntVec3 destinationCell)
         {
             this.map = map;
-            this.snapshotVersion = snapshotVersion;
-            offsetGrid = new NativeArray<ushort>(
-                snapshot.Length,
-                Allocator.Persistent,
-                NativeArrayOptions.UninitializedMemory);
+            snapshotVersion = snapshot.version;
+            destinationOverrideIndex = -1;
 
-            for (int i = 0; i < snapshot.Length; i++)
-            {
-                offsetGrid[i] = snapshot[i];
-            }
-
-            // Reaching the actual mission destination must always remain possible. The surrounding cells can
-            // still be unattractive, but the goal cell itself should never carry artificial zombie cost.
+            int destinationIndex = -1;
             if (destinationCell.IsValid && destinationCell.InBounds(map))
             {
-                offsetGrid[map.cellIndices.CellToIndex(destinationCell)] = 0;
+                destinationIndex = map.cellIndices.CellToIndex(destinationCell);
+            }
+
+            // Most requests can read the immutable shared snapshot directly. Only a destination that actually
+            // carries zombie danger needs a private copy so the goal cell can be cleared for direct orders.
+            if (destinationIndex >= 0 && snapshot.grid[destinationIndex] != 0)
+            {
+                ownsGrid = true;
+                destinationOverrideIndex = destinationIndex;
+                offsetGrid = new NativeArray<ushort>(
+                    snapshot.grid.Length,
+                    Allocator.Persistent,
+                    NativeArrayOptions.UninitializedMemory);
+
+                for (int i = 0; i < snapshot.grid.Length; i++)
+                {
+                    offsetGrid[i] = snapshot.grid[i];
+                }
+                offsetGrid[destinationIndex] = 0;
+            }
+            else
+            {
+                ownsGrid = false;
+                sharedSnapshot = snapshot;
+                sharedSnapshot.Acquire();
+                offsetGrid = snapshot.grid;
             }
         }
 
@@ -460,9 +597,16 @@ namespace Zombiefied
             }
 
             disposed = true;
-            if (offsetGrid.IsCreated)
+            if (ownsGrid)
             {
-                offsetGrid.Dispose();
+                if (offsetGrid.IsCreated)
+                {
+                    offsetGrid.Dispose();
+                }
+            }
+            else if (sharedSnapshot != null)
+            {
+                sharedSnapshot.Release();
             }
         }
 
@@ -471,14 +615,16 @@ namespace Zombiefied
             ZombiePathAvoidanceCustomizer other = obj as ZombiePathAvoidanceCustomizer;
             return other != null
                 && ReferenceEquals(map, other.map)
-                && snapshotVersion == other.snapshotVersion;
+                && snapshotVersion == other.snapshotVersion
+                && destinationOverrideIndex == other.destinationOverrideIndex;
         }
 
         public override int GetHashCode()
         {
             unchecked
             {
-                return ((map != null ? map.GetHashCode() : 0) * 397) ^ snapshotVersion;
+                int hash = ((map != null ? map.GetHashCode() : 0) * 397) ^ snapshotVersion;
+                return (hash * 397) ^ destinationOverrideIndex;
             }
         }
     }

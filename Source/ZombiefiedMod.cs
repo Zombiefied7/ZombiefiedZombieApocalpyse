@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections;
-using System.Linq;
 using RimWorld;
 using UnityEngine;
 using Verse;
@@ -107,6 +106,7 @@ namespace Zombiefied
 
             customDefsInitialized = true;
             InitializeCustom();
+            ZombieArmorStatUtility.Install();
             ApplyWorldEventDefSettings();
         }
 
@@ -114,93 +114,79 @@ namespace Zombiefied
         {
             Log.Message("[Zombiefied] Loaded game runtime.");
 
-            noisyLocationsPerMap = new List<Queue<IntVec3>>();
-            noisyLocationTicksPerMap = new List<Queue<int>>();
-            zombieAmountsPerMap = new List<int>();
-            this._ticksUntilNextZombieRaid = new List<int>();
-            this._reanimationRetryAfterTickByCorpseId = new Dictionary<int, int>();
-
-            for (int i = 0; i < 77; i++)
+            ZombieWorldUtility.RefreshZombieFaction();
+            Faction zombieFaction = ZombieWorldUtility.GetZombieFaction() ?? Faction.OfInsects;
+            Faction mechanoidFaction = Faction.OfMechanoids;
+            if (zombieFaction != null && mechanoidFaction != null && zombieFaction != mechanoidFaction)
             {
-                noisyLocationsPerMap.Add(new Queue<IntVec3>());
-                noisyLocationTicksPerMap.Add(new Queue<int>());
-                zombieAmountsPerMap.Add(0);
-
-                int temp = GenerateTicksUntilNextRaid();
-                if (temp > 17777)
-                {
-                    temp = 17777;
-                }
-                this._ticksUntilNextZombieRaid.Add(temp);
+                zombieFaction.RelationWith(mechanoidFaction).kind = FactionRelationKind.Ally;
+                zombieFaction.RelationWith(mechanoidFaction).baseGoodwill = 100;
+                mechanoidFaction.RelationWith(zombieFaction).kind = FactionRelationKind.Ally;
+                mechanoidFaction.RelationWith(zombieFaction).baseGoodwill = 100;
             }
 
-            Faction zFaction = Faction.OfInsects;
-            foreach (Faction faction in Find.FactionManager.AllFactionsListForReading)
+            for (int mapIndex = 0; mapIndex < Find.Maps.Count; mapIndex++)
             {
-                if (faction.def.defName == "Zombie")
+                Map map = Find.Maps[mapIndex];
+                if (map == null)
                 {
-                    zFaction = faction;
+                    continue;
                 }
-            }
-            //Faction.OfMechanoids.TrySetNotHostileTo(zFaction);
-            zFaction.RelationWith(Faction.OfMechanoids).kind = FactionRelationKind.Ally;
-            //zFaction.RelationWith(Faction.OfMechanoids).goodwill = 100;
-            zFaction.RelationWith(Faction.OfMechanoids).baseGoodwill = 100;
-            Faction.OfMechanoids.RelationWith(zFaction).kind = FactionRelationKind.Ally;
-            Faction.OfMechanoids.RelationWith(zFaction).baseGoodwill = 100;
-            //zFaction.TrySetNotHostileTo(Faction.OfMechanoids);
-            //zFaction.TryMakeInitialRelationsWith(Faction.OfMechanoids);
 
-            int zKilled = 0;
-            int zCount = 0;
-            int zWrongFactionCount = 0;
-            foreach (Map map in Find.Maps)
-            {
-                foreach (Thing thing in map.listerThings.AllThings.ToList<Thing>())
+                if (debugRemoveZombies)
                 {
-                    if (debugRemoveZombies && (thing is Pawn_Zombiefied || thing is Corpse_Zombiefied))
+                    IReadOnlyList<Pawn> pawns = map.mapPawns.AllPawnsSpawned;
+                    for (int pawnIndex = pawns.Count - 1; pawnIndex >= 0; pawnIndex--)
                     {
-                        zKilled++;
-                        thing.Destroy(DestroyMode.Vanish);
-                    }
-                    if (!debugRemoveZombies && thing is Pawn_Zombiefied)
-                    {
-                        zCount++;
-                        if (((Pawn)thing).Faction != zFaction)
+                        Pawn_Zombiefied zombie = pawns[pawnIndex] as Pawn_Zombiefied;
+                        if (zombie != null && !zombie.Destroyed)
                         {
-                            zWrongFactionCount++;
-                            ((Pawn)thing).SetFaction(zFaction);
+                            zombie.Destroy(DestroyMode.Vanish);
                         }
-                        ((Pawn_Zombiefied)thing).FixZombie();
-                    }
-                }
-            }
-
-            /*
-            foreach (RimWorld.Planet.Site site in Find.World.worldObjects.Sites)
-            {
-                bool broken = false;
-                if (site != null)
-                {
-                    if (site.core == null || site.core.def == null || site.core.def.Worker == null || site.core.def.workerClass == null)
-                    {
-                        broken = true;
                     }
 
-                    foreach (RimWorld.Planet.SitePart part in site.parts)
+                    List<Thing> corpses = map.listerThings.ThingsInGroup(ThingRequestGroup.Corpse);
+                    if (corpses != null)
                     {
-                        if(part.def == null || part.def.Worker == null || part.def.workerClass == null)
+                        for (int corpseIndex = corpses.Count - 1; corpseIndex >= 0; corpseIndex--)
                         {
-                            broken = true;
+                            Corpse_Zombiefied zombieCorpse = corpses[corpseIndex] as Corpse_Zombiefied;
+                            if (zombieCorpse != null && !zombieCorpse.Destroyed)
+                            {
+                                zombieCorpse.Destroy(DestroyMode.Vanish);
+                            }
                         }
                     }
                 }
-                if(broken)
+                else
                 {
-                    //handle broken site here
+                    IReadOnlyList<Pawn> pawns = map.mapPawns.AllPawnsSpawned;
+                    for (int pawnIndex = 0; pawnIndex < pawns.Count; pawnIndex++)
+                    {
+                        Pawn_Zombiefied zombie = pawns[pawnIndex] as Pawn_Zombiefied;
+                        if (zombie == null)
+                        {
+                            continue;
+                        }
+
+                        if (zombieFaction != null && zombie.Faction != zombieFaction)
+                        {
+                            zombie.SetFaction(zombieFaction);
+                        }
+                        zombie.FixZombie();
+                    }
+                }
+
+                ZombieMapTracker tracker = ZombieMapTrackerUtility.GetTracker(map);
+                if (tracker != null)
+                {
+                    tracker.RebuildFromMap();
+                    if (tracker.TicksUntilNextZombieRaid < 0)
+                    {
+                        tracker.TicksUntilNextZombieRaid = Math.Min(17777, GenerateTicksUntilNextRaid());
+                    }
                 }
             }
-            */
 
             if (Settings != null && Settings.debugRemoveZombies)
             {
@@ -239,9 +225,7 @@ namespace Zombiefied
 
         internal void OnGameTick()
         {
-            this.HandleReanimation();
-            this.HandleZombieRaid();
-            this.HandleSounds();
+            HandleZombieRaid();
         }
 
         private float GetChallengeModifier()
@@ -277,281 +261,59 @@ namespace Zombiefied
 
         private void HandleZombieRaid()
         {
-            for (int currentMapIndex = 0; currentMapIndex < Find.Maps.Count; currentMapIndex++)
+            for (int mapIndex = 0; mapIndex < Find.Maps.Count; mapIndex++)
             {
-                this._ticksUntilNextZombieRaid[currentMapIndex] -= 1 + noisyLocationsPerMap[currentMapIndex].Count;
-                if (this._ticksUntilNextZombieRaid[currentMapIndex] <= 0)
+                Map map = Find.Maps[mapIndex];
+                ZombieMapTracker tracker = ZombieMapTrackerUtility.GetTracker(map);
+                if (tracker == null)
                 {
-                    this._ticksUntilNextZombieRaid[currentMapIndex] = this.GenerateTicksUntilNextRaid();
-
-
-                    if (currentMapIndex < zombieAmountsPerMap.Count && zombieAmountsPerMap[currentMapIndex] < zombieAmountSoftCap)
-                    {
-                        IncidentParms incidentParms = new IncidentParms
-                        {
-                            target = Find.Maps[currentMapIndex]
-                        };
-
-                        int ran = Rand.RangeSeeded(0, 7, Find.TickManager.TicksAbs);
-                        if (ran < 5 || disableAnimalZombies)
-                        {
-                            IncidentDef.Named("ZombieHorde").Worker.TryExecute(incidentParms);
-                        }
-                        else
-                        {
-                            IncidentDef.Named("ZombiePack").Worker.TryExecute(incidentParms);
-                        }
-                    }
-                    else
-                    {
-                    }
-                }
-            }
-        }
-
-        public static List<Queue<IntVec3>> noisyLocationsPerMap = new List<Queue<IntVec3>>(0);
-        public static List<Queue<int>> noisyLocationTicksPerMap = new List<Queue<int>>(0);
-        public static List<int> zombieAmountsPerMap = new List<int>(0);
-        public static Dictionary<string, int> shotsFiredPerPawn = new Dictionary<string, int>();
-
-        private void HandleSounds()
-        {
-            int tickAmount = 333;
-
-            if (Find.TickManager.TicksAbs % tickAmount == 0)
-            {
-                String log = "";
-
-                for (int m = 0; m < noisyLocationsPerMap.Count; m++)
-                {
-                    if (noisyLocationsPerMap[m].Count > 0)
-                    {
-                        if (Find.TickManager.TicksGame - noisyLocationTicksPerMap[m].Peek() > zombieSoundReactionTimeInHours * 2500) //7777)
-                        {
-                            noisyLocationsPerMap[m].Dequeue();
-                            noisyLocationTicksPerMap[m].Dequeue();
-                        }
-                    }
+                    continue;
                 }
 
-                for (int m = 0; m < Find.Maps.Count; m++)
+                if (tracker.TicksUntilNextZombieRaid < 0)
                 {
-                    int zombieAmount = 0;
+                    tracker.TicksUntilNextZombieRaid = Math.Min(17777, GenerateTicksUntilNextRaid());
+                }
 
-                    int bestLocationScore = -7;
-                    IntVec3 bestLocation = IntVec3.Invalid;
-                    int bestLocationTicks = 0;
+                tracker.TicksUntilNextZombieRaid -= 1 + tracker.RecentNoiseCount;
+                if (tracker.TicksUntilNextZombieRaid > 0)
+                {
+                    continue;
+                }
 
-                    if (Find.Maps[m] != null && Find.Maps[m].mapPawns != null && Find.Maps[m].listerBuildings != null)
-                    {
-                        var allPawnsSpawned = Find.Maps[m].mapPawns.AllPawnsSpawned;
-                        if (allPawnsSpawned != null)
-                        {
-                            for (int i = 0; i < allPawnsSpawned.Count; i++)
-                            {
-                                Pawn pawn2 = allPawnsSpawned[i];
-                                if (pawn2 != null)
-                                {
-                                    if (pawn2.def.defName.Length > 5 && pawn2.def.defName.Substring(0, 6) == "Zombie")
-                                    {
-                                        zombieAmount++;
-                                    }
+                tracker.TicksUntilNextZombieRaid = GenerateTicksUntilNextRaid();
+                if (tracker.ZombieCount >= zombieAmountSoftCap)
+                {
+                    continue;
+                }
 
-                                    if (pawn2.RaceProps.intelligence > Intelligence.Animal)
-                                    {
-                                        bool weapon = false;
-                                        foreach (ThingWithComps eq in pawn2.equipment.AllEquipmentListForReading)
-                                        {
-                                            if (eq.def != null && eq.def.IsRangedWeapon && eq.def.weaponTags != null)
-                                            {
-                                                bool temp = true;
-                                                foreach (String tag in eq.def.weaponTags)
-                                                {
-                                                    if (tag.Equals("Neolithic"))
-                                                    {
-                                                        temp = false;
-                                                    }
-                                                }
-                                                weapon = temp;
-                                            }
-                                        }
-                                        string key = pawn2.GetHashCode() + "";
+                IncidentParms incidentParms = new IncidentParms
+                {
+                    target = map
+                };
 
-                                        if (weapon && shotsFiredPerPawn.ContainsKey(key) &&
-                                            pawn2.records.GetAsInt(RecordDefOf.ShotsFired) > shotsFiredPerPawn[key] &&
-                                            (pawn2.LastAttackedTarget != null &&
-                                            (Find.TickManager.TicksGame - pawn2.LastAttackTargetTick < tickAmount)))
-                                        {
-                                            int tempScore = 7;
-                                            if (pawn2.Faction != null && pawn2.Faction.IsPlayer)
-                                            {
-                                                tempScore = 13;
-                                            }
-                                            if (tempScore > bestLocationScore)
-                                            {
-                                                bestLocationScore = tempScore;
-                                                bestLocation = pawn2.Position;
-                                                bestLocationTicks = pawn2.LastAttackTargetTick;
-                                            }
-
-                                            //noisyLocationsPerMap[m].Enqueue(pawn2.Position);
-                                            //noisyLocationTicksPerMap[m].Enqueue(pawn2.LastAttackTargetTick);
-                                        }
-                                        shotsFiredPerPawn[key] = pawn2.records.GetAsInt(RecordDefOf.ShotsFired);
-                                    }
-                                }
-                            }
-                        }
-
-                        if (bestLocationScore < 0)
-                        {
-                            List<Building> allBuildings = Find.Maps[m].listerBuildings.allBuildingsColonist;
-                            if (allBuildings != null)
-                            {
-                                for (int i = 0; i < allBuildings.Count; i++)
-                                {
-                                    Building_Turret building2 = allBuildings[i] as Building_Turret;
-                                    if (building2 != null)
-                                    {
-                                        if ((building2.LastAttackedTarget != null && (Find.TickManager.TicksGame - building2.LastAttackTargetTick < tickAmount)))
-                                        {
-                                            int tempScore = 3;
-                                            if (building2.Faction != null && building2.Faction.IsPlayer)
-                                            {
-                                                tempScore = 13;
-                                            }
-                                            if (tempScore > bestLocationScore)
-                                            {
-                                                bestLocationScore = tempScore;
-                                                bestLocation = building2.Position;
-                                                bestLocationTicks = building2.LastAttackTargetTick;
-                                            }
-
-                                            //noisyLocationsPerMap[m].Enqueue(building2.Position);
-                                            //noisyLocationTicksPerMap[m].Enqueue(building2.LastAttackTargetTick);
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    if (bestLocationScore > 0)
-                    {
-                        noisyLocationsPerMap[m].Enqueue(bestLocation);
-                        noisyLocationTicksPerMap[m].Enqueue(bestLocationTicks);
-                    }
-
-                    zombieAmountsPerMap[m] = zombieAmount;
-
-                    log += "map " + m + " has " + noisyLocationsPerMap[m].Count + " noisy locations and " + zombieAmountsPerMap[m] + " zombies.   ";
+                int randomChoice = Rand.RangeSeeded(0, 7, Find.TickManager.TicksAbs + map.uniqueID);
+                if (randomChoice < 5 || disableAnimalZombies)
+                {
+                    IncidentDef.Named("ZombieHorde").Worker.TryExecute(incidentParms);
+                }
+                else
+                {
+                    IncidentDef.Named("ZombiePack").Worker.TryExecute(incidentParms);
                 }
             }
         }
 
         public static IntVec3 BestNoisyLocation(Pawn predator)
         {
-            List<IntVec3> locations = null;
-            int currentMapIndex = -7;
-
-            IntVec3 location = IntVec3.Invalid;
-            float num = 0f;
-
-            for (int i = 0; i < Find.Maps.Count; i++)
+            if (predator == null || predator.Map == null)
             {
-                if (predator.Map != null && Find.Maps[i] == predator.Map)
-                {
-                    currentMapIndex = i;
-                }
+                return IntVec3.Invalid;
             }
 
-            if (currentMapIndex > -1 && currentMapIndex < noisyLocationsPerMap.Count)
-            {
-                locations = noisyLocationsPerMap[currentMapIndex].ToList();
-            }
-
-
-            if (locations != null && locations.Count > 0)
-            {
-                location = locations[locations.Count - 1];
-                /*
-                for (int i = 0; i < locations.Count; i++)
-                {
-                    if (location == IntVec3.Invalid || num > (predator.Position - locations[i]).LengthHorizontal)
-                    {
-                        location = locations[i];
-                        num = (predator.Position - locations[i]).LengthHorizontal;
-                    }
-                }
-                */
-            }
-
-            return location;
+            ZombieMapTracker tracker = ZombieMapTrackerUtility.GetTracker(predator.Map);
+            return tracker != null ? tracker.BestNoisyLocation() : IntVec3.Invalid;
         }
-
-        // Token: 0x0600001E RID: 30 RVA: 0x00002BBC File Offset: 0x00000DBC
-        private void HandleReanimation()
-        {
-            if (Find.TickManager.TicksAbs % 1777 == 7)
-            {
-                foreach (Map map in Find.Maps)
-                {
-                    //List<Thing> list = map.listerThings.ThingsInGroup(ThingRequestGroup.Corpse);
-                    List<Thing> list = map.listerThings.AllThings;
-                    if (list != null)
-                    {
-                        for (int i = 0; i < list.Count; i++)
-                        {
-                            Corpse corpse = list[i] as Corpse;
-                            if (corpse != null)
-                            {
-                                bool flag = false;
-                                foreach (Hediff hediff in corpse.InnerPawn.health.hediffSet.hediffs)
-                                {
-                                    if (hediff.def.defName.Equals("ZombieWoundInfection"))
-                                    {
-                                        flag = true;
-                                    }
-                                }
-                                if (flag && corpse.InnerPawn.health.hediffSet.GetBrain() != null && corpse.InnerPawn.RaceProps.IsFlesh && (!disableAnimalZombies || corpse.InnerPawn.RaceProps.intelligence > Intelligence.Animal))
-                                {
-                                    int ageToReanimate = 2500;
-                                    if (corpse.InnerPawn != null && corpse.InnerPawn.Faction != null && corpse.InnerPawn.Faction.IsPlayer)
-                                    {
-                                        ageToReanimate = 17500;
-                                    }
-                                    if (corpse.Age > ageToReanimate)
-                                    {
-                                        int corpseId = corpse.thingIDNumber;
-                                        int retryAfterTick;
-                                        if (_reanimationRetryAfterTickByCorpseId.TryGetValue(corpseId, out retryAfterTick)
-                                            && Find.TickManager.TicksAbs < retryAfterTick)
-                                        {
-                                            continue;
-                                        }
-
-                                        Pawn reanimatedPawn = ReanimateDeath(corpse);
-                                        if (reanimatedPawn == null && corpse != null && !corpse.Destroyed)
-                                        {
-                                            // A permanently unsupported modded race must not flood the log every
-                                            // reanimation scan. Retry after one in-game day in case other state changed.
-                                            _reanimationRetryAfterTickByCorpseId[corpseId] = Find.TickManager.TicksAbs + 60000;
-                                        }
-                                        else
-                                        {
-                                            _reanimationRetryAfterTickByCorpseId.Remove(corpseId);
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        private List<int> _ticksUntilNextZombieRaid = new List<int>(0);
-        private Dictionary<int, int> _reanimationRetryAfterTickByCorpseId = new Dictionary<int, int>();
 
         public Pawn ReanimateDeath(Corpse corpse)
         {
@@ -568,16 +330,7 @@ namespace Zombiefied
                 return null;
             }
 
-            Faction zombieFaction = Faction.OfInsects;
-            foreach (Faction faction in Find.FactionManager.AllFactionsListForReading)
-            {
-                if (faction.def.defName == "Zombie")
-                {
-                    zombieFaction = faction;
-                    break;
-                }
-            }
-
+            Faction zombieFaction = ZombieWorldUtility.GetZombieFaction() ?? Faction.OfInsects;
             zombiePawn.SetFactionDirect(zombieFaction);
 
             // A pawn that has entered RimWorld's death/destruction pipeline is not reusable. Health.Reset() can
@@ -681,16 +434,7 @@ namespace Zombiefied
                 return null;
             }
 
-            Faction zombieFaction = Faction.OfInsects;
-            foreach (Faction faction in Find.FactionManager.AllFactionsListForReading)
-            {
-                if (faction.def.defName == "Zombie")
-                {
-                    zombieFaction = faction;
-                    break;
-                }
-            }
-
+            Faction zombieFaction = ZombieWorldUtility.GetZombieFaction() ?? Faction.OfInsects;
             zombie.SetFactionDirect(zombieFaction);
             zombie.gender = sourcePawn.gender;
 

@@ -37,6 +37,10 @@
     <Compile Include="InjectedDefHasher.cs" />
     <Compile Include="ZombiefiedPatches.cs" />
     <Compile Include="ZombieAvoidance.cs" />
+    <Compile Include="ZombieMapTracker.cs" />
+    <Compile Include="ZombiePerformancePatches.cs" />
+    <Compile Include="ZombieArmorStatPart.cs" />
+    <Compile Include="ZombiefiedDefCache.cs" />
     <Compile Include="ZombieWorldUtility.cs" />
     <Compile Include="WorldObject_ZombieInfestation.cs" />
     <Compile Include="IncidentWorker_ZombieCaravanAmbush.cs" />
