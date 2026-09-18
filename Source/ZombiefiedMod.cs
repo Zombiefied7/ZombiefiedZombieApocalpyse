@@ -563,21 +563,22 @@ namespace Zombiefied
                 }
             }
 
-            // Complete all pawn-side initialization before GenSpawn registers the pawn with DynamicDrawManager.
-            // This prevents a newly raised zombie from being visible to a render frame in a half-initialized state.
             zombiePawn.SetFactionDirect(zombieFaction);
             zombiePawn.FixZombie();
 
-            IntVec3 position = corpse.Position;
-            Map map = corpse.Map;
-
-            Building_Storage storage = StoreUtility.StoringThing(corpse) as Building_Storage;
-            if (storage != null)
+            // A pawn that has entered RimWorld's death/destruction pipeline is not reusable. Health.Reset() can
+            // clear hediffs, but it does not reconstruct trackers or reverse Thing.Destroy(). Reject such pawns
+            // before GenSpawn can register a structurally invalid attack target or dynamic draw entry.
+            if (zombiePawn.Dead || zombiePawn.Destroyed || zombiePawn.health == null || zombiePawn.mindState == null)
             {
-                storage.Notify_LostThing(corpse);
+                Log.Error("Zombiefied refused to spawn invalid reanimated pawn " + zombiePawn + " for " + sourcePawn + ".");
+                return null;
             }
 
+            IntVec3 position = corpse.Position;
+            Map map = corpse.Map;
             Thing spawnedThing;
+
             try
             {
                 spawnedThing = GenSpawn.Spawn(zombiePawn, position, map);
@@ -585,15 +586,36 @@ namespace Zombiefied
             catch (Exception ex)
             {
                 Log.Error("Zombiefied failed to spawn reanimated pawn for " + sourcePawn + ". " + ex);
-                if (!zombiePawn.Destroyed)
+
+                // A failed SpawnSetup can leave a pawn partially registered. Cleanup must never escape into
+                // HugsLib's tick loop, because partially initialized pawns can also throw during DeSpawn.
+                try
                 {
-                    zombiePawn.Destroy(DestroyMode.Vanish);
+                    if (zombiePawn.Spawned && !zombiePawn.Destroyed)
+                    {
+                        zombiePawn.DeSpawn(DestroyMode.Vanish);
+                    }
+                    else if (!zombiePawn.Destroyed)
+                    {
+                        zombiePawn.Destroy(DestroyMode.Vanish);
+                    }
                 }
+                catch (Exception cleanupEx)
+                {
+                    Log.Error("Zombiefied could not fully clean up failed reanimation pawn " + zombiePawn + ". " + cleanupEx);
+                }
+
                 return null;
             }
 
-            // The source pawn is safely copied at this point. Destroying the corpse directly avoids another
-            // damage/death pipeline while the replacement pawn is already registered on the map.
+            // Notify storage only after the replacement pawn has actually spawned. A failed resurrection leaves
+            // the original corpse untouched and still valid in its storage owner.
+            Building_Storage storage = StoreUtility.StoringThing(corpse) as Building_Storage;
+            if (storage != null)
+            {
+                storage.Notify_LostThing(corpse);
+            }
+
             if (!corpse.Destroyed)
             {
                 corpse.Destroy(DestroyMode.Vanish);
@@ -609,57 +631,109 @@ namespace Zombiefied
 
         public static Pawn_Zombiefied GenerateZombieFromSource(Pawn sourcePawn)
         {
+            if (sourcePawn == null || sourcePawn.kindDef == null)
+            {
+                return null;
+            }
+
             PawnKindDef newKindDef = PawnKindDef.Named("Zombie");
-            if (DefDatabase<PawnKindDef>.GetNamed("Zombie" + sourcePawn.kindDef.defName, false) != null)
+            PawnKindDef specificKindDef = DefDatabase<PawnKindDef>.GetNamed("Zombie" + sourcePawn.kindDef.defName, false);
+            if (specificKindDef != null)
             {
-                newKindDef = PawnKindDef.Named("Zombie" + sourcePawn.kindDef.defName);
+                newKindDef = specificKindDef;
             }
 
-            Pawn pawn = PawnGenerator.GeneratePawn(newKindDef);
-            Pawn_Zombiefied z = pawn as Pawn_Zombiefied;
-            if (z != null)
+            Pawn_Zombiefied zombie = GenerateZombieCandidate(newKindDef, sourcePawn, true);
+            if (zombie == null)
             {
-                z.newGraphics(sourcePawn);
-                z.copyInjuries(sourcePawn);
+                Log.Warning("Zombiefied could not safely copy all health conditions from " + sourcePawn
+                    + ". Generating a fresh zombie with appearance and armor data only.");
+                zombie = GenerateZombieCandidate(newKindDef, sourcePawn, false);
             }
 
+            if (zombie == null || zombie.Dead || zombie.Destroyed)
+            {
+                Log.Error("Zombiefied could not generate a living replacement pawn for " + sourcePawn + ".");
+                return null;
+            }
 
-            Faction zFaction = Faction.OfInsects;
+            Faction zombieFaction = Faction.OfInsects;
             foreach (Faction faction in Find.FactionManager.AllFactionsListForReading)
             {
                 if (faction.def.defName == "Zombie")
                 {
-                    zFaction = faction;
+                    zombieFaction = faction;
+                    break;
                 }
             }
-            pawn.SetFactionDirect(zFaction);
 
-            // Pawn_RecordsTracker owns a back-reference to its pawn. Reusing the corpse pawn's tracker makes
-            // the new zombie tick records against a dead pawn, so keep the tracker generated for the zombie.
-            pawn.gender = sourcePawn.gender;
-            //pawn.needs.SetInitialLevels();
+            zombie.SetFactionDirect(zombieFaction);
+            zombie.gender = sourcePawn.gender;
 
             if (sourcePawn.Faction != null && sourcePawn.Faction.IsPlayer)
             {
                 NameSingle nameSingle = sourcePawn.Name as NameSingle;
-                if(nameSingle != null)
+                if (nameSingle != null)
                 {
-                    pawn.Name = new NameSingle("Zombie " + nameSingle.Name);
+                    zombie.Name = new NameSingle("Zombie " + nameSingle.Name);
                 }
+
                 NameTriple nameTriple = sourcePawn.Name as NameTriple;
                 if (nameTriple != null)
                 {
-                    pawn.Name = new NameSingle("Zombie " + nameTriple.Nick);
+                    zombie.Name = new NameSingle("Zombie " + nameTriple.Nick);
                 }
             }
 
-            pawn.ageTracker.AgeBiologicalTicks = sourcePawn.ageTracker.AgeBiologicalTicks;
-            pawn.ageTracker.BirthAbsTicks = sourcePawn.ageTracker.BirthAbsTicks;
-            pawn.ageTracker.AgeChronologicalTicks = sourcePawn.ageTracker.AgeChronologicalTicks;
+            if (zombie.ageTracker != null && sourcePawn.ageTracker != null)
+            {
+                zombie.ageTracker.AgeBiologicalTicks = sourcePawn.ageTracker.AgeBiologicalTicks;
+                zombie.ageTracker.BirthAbsTicks = sourcePawn.ageTracker.BirthAbsTicks;
+                zombie.ageTracker.AgeChronologicalTicks = sourcePawn.ageTracker.AgeChronologicalTicks;
+            }
 
+            return zombie;
+        }
 
+        private static Pawn_Zombiefied GenerateZombieCandidate(PawnKindDef kindDef, Pawn sourcePawn, bool copyHealthConditions)
+        {
+            Pawn generatedPawn;
+            try
+            {
+                generatedPawn = PawnGenerator.GeneratePawn(kindDef);
+            }
+            catch (Exception ex)
+            {
+                Log.Error("Zombiefied failed to generate pawn kind " + kindDef + " from source " + sourcePawn + ". " + ex);
+                return null;
+            }
 
-            return z;
+            if (generatedPawn == null)
+            {
+                Log.Error("Zombiefied pawn generator returned null for pawn kind " + kindDef + " from source " + sourcePawn + ".");
+                return null;
+            }
+
+            Pawn_Zombiefied zombie = generatedPawn as Pawn_Zombiefied;
+            if (zombie == null)
+            {
+                Log.Error("Zombiefied pawn kind " + kindDef + " generated " + generatedPawn.GetType()
+                    + " instead of Pawn_Zombiefied.");
+                return null;
+            }
+
+            zombie.newGraphics(sourcePawn);
+            if (!zombie.copyInjuries(sourcePawn, copyHealthConditions))
+            {
+                return null;
+            }
+
+            if (zombie.Dead || zombie.Destroyed || zombie.health == null || zombie.mindState == null)
+            {
+                return null;
+            }
+
+            return zombie;
         }
 
         public void InitializeCustom()

@@ -41,22 +41,19 @@ namespace Zombiefied
         // Token: 0x060051D1 RID: 20945 RVA: 0x0025ECEC File Offset: 0x0025D0EC
         public static Graphic_Multi GetHeadNamed(string graphicPath, Color skinColor)
         {
-            GraphicDatabaseHeadRecords_Zombiefied.HeadGraphicRecord HGR = new GraphicDatabaseHeadRecords_Zombiefied.HeadGraphicRecord(graphicPath);
-            return HGR.GetGraphic(skinColor, false);
+            return (Graphic_Multi)GraphicDatabase.Get<Graphic_Multi>(graphicPath, ShaderDatabase.CutoutSkin, Vector2.one, skinColor);
         }
 
         // Token: 0x060051D2 RID: 20946 RVA: 0x0025ED66 File Offset: 0x0025D166
         public static Graphic_Multi GetSkull()
         {
-            GraphicDatabaseHeadRecords_Zombiefied.BuildDatabaseIfNecessary();
-            return GraphicDatabaseHeadRecords_Zombiefied.skull.GetGraphic(Color.white, true);
+            return (Graphic_Multi)GraphicDatabase.Get<Graphic_Multi>(GraphicDatabaseHeadRecords_Zombiefied.SkullPath, ShaderDatabase.Cutout, Vector2.one, Color.white);
         }
 
         // Token: 0x060051D3 RID: 20947 RVA: 0x0025ED7D File Offset: 0x0025D17D
         public static Graphic_Multi GetStump(Color skinColor)
         {
-            GraphicDatabaseHeadRecords_Zombiefied.BuildDatabaseIfNecessary();
-            return GraphicDatabaseHeadRecords_Zombiefied.stump.GetGraphic(skinColor, false);
+            return (Graphic_Multi)GraphicDatabase.Get<Graphic_Multi>(GraphicDatabaseHeadRecords_Zombiefied.StumpPath, ShaderDatabase.CutoutSkin, Vector2.one, skinColor);
         }
 
         // Token: 0x060051D4 RID: 20948 RVA: 0x0025ED90 File Offset: 0x0025D190

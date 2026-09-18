@@ -180,18 +180,23 @@ namespace Zombiefied
         public ZombieData dataZ;
         public Pawn_DrawTracker_Zombiefied drawerZ;
 
-        public void copyInjuries(Pawn sourcePawn)
+        public bool copyInjuries(Pawn sourcePawn, bool copyHealthConditions = true)
         {
-            if (this.def.race.body == sourcePawn.def.race.body)
+            if (sourcePawn == null || sourcePawn.health == null || health == null)
+            {
+                return false;
+            }
+
+            if (copyHealthConditions && this.def.race.body == sourcePawn.def.race.body)
             {
                 for (int i = sourcePawn.health.hediffSet.hediffs.Count - 1; i >= 0; i--)
                 {
                     Hediff hediff = sourcePawn.health.hediffSet.hediffs[i];
-
                     Hediff_Injury injury = hediff as Hediff_Injury;
                     Hediff_AddedPart added = hediff as Hediff_AddedPart;
                     Hediff_MissingPart missing = hediff as Hediff_MissingPart;
-                    if (hediff is Hediff_Injury && injury != null && injury.Part != null)
+
+                    if (injury != null && injury.Part != null)
                     {
                         BodyPartRecord part = injury.Part;
                         bool parentMissing = part.parent != null && health.hediffSet.PartIsMissing(part.parent);
@@ -208,44 +213,78 @@ namespace Zombiefied
                                 if (!health.WouldDieAfterAddingHediff(copiedInjury))
                                 {
                                     health.AddHediff(copiedInjury, part);
+                                    if (Dead || Destroyed)
+                                    {
+                                        return false;
+                                    }
                                 }
                             }
                         }
                     }
-                    else if (hediff is Hediff_MissingPart && missing != null && missing.Part != null
+                    else if (missing != null && missing.Part != null
                         && (missing.Part.parent == null || !health.hediffSet.PartIsMissing(missing.Part.parent))
                         && !health.hediffSet.PartIsMissing(missing.Part))
                     {
                         bool foundMoving = false;
-                        for (int i1 = 0; i1 < missing.Part.def.tags.Count; i1++)
+                        if (missing.Part.def.tags != null)
                         {
-                            if (missing.Part.def.tags[i1].defName.Contains("Moving"))
+                            for (int i1 = 0; i1 < missing.Part.def.tags.Count; i1++)
                             {
-                                foundMoving = true;
+                                if (missing.Part.def.tags[i1].defName.Contains("Moving"))
+                                {
+                                    foundMoving = true;
+                                }
                             }
                         }
 
-                        // RimWorld 1.6 no longer exposes the old Shredded HediffDef. Preserve the source pawn's
-                        // actual missing-part hediff instead of substituting a removed vanilla injury def.
-                        if (!foundMoving || !sourcePawn.health.hediffSet.PartIsMissing(missing.Part.parent))
+                        if (!foundMoving || missing.Part.parent == null || !sourcePawn.health.hediffSet.PartIsMissing(missing.Part.parent))
                         {
-                            health.AddHediff(missing.def, missing.Part);
+                            Hediff copiedMissing = HediffMaker.MakeHediff(missing.def, this, missing.Part);
+                            if (copiedMissing != null && !health.WouldDieAfterAddingHediff(copiedMissing))
+                            {
+                                health.AddHediff(copiedMissing, missing.Part);
+                                if (Dead || Destroyed)
+                                {
+                                    return false;
+                                }
+                            }
                         }
                     }
-                    else if (hediff is Hediff_AddedPart && added != null && added.Part != null
+                    else if (added != null && added.Part != null
                         && (added.Part.parent == null || !health.hediffSet.PartIsMissing(added.Part.parent))
                         && !health.hediffSet.PartIsMissing(added.Part))
                     {
-                        health.AddHediff(added.def, added.Part);
+                        Hediff copiedAddedPart = HediffMaker.MakeHediff(added.def, this, added.Part);
+                        if (copiedAddedPart != null)
+                        {
+                            copiedAddedPart.Severity = added.Severity;
+                            if (!health.WouldDieAfterAddingHediff(copiedAddedPart))
+                            {
+                                health.AddHediff(copiedAddedPart, added.Part);
+                                if (Dead || Destroyed)
+                                {
+                                    return false;
+                                }
+                            }
+                        }
                     }
                 }
             }
-           
+
+            if (Dead || Destroyed)
+            {
+                return false;
+            }
+
             FixZombie();
+            if (Dead || Destroyed)
+            {
+                return false;
+            }
 
             armorRating_Sharp = TryDrawOverallArmor(sourcePawn, StatDefOf.ArmorRating_Sharp);
             armorRating_Blunt = TryDrawOverallArmor(sourcePawn, StatDefOf.ArmorRating_Blunt);
-            //armorRating_Heat = TryDrawOverallArmor(sourcePawn, StatDefOf.ArmorRating_Heat);
+            return true;
         }
 
         private float TryDrawOverallArmor(Pawn sourcePawn, StatDef stat)

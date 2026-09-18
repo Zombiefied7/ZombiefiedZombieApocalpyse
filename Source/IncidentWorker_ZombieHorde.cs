@@ -195,7 +195,7 @@ namespace Zombiefied
 
             if (sourcePawns.Count == 0)
             {
-                Log.Warning("Zombiefied raid pawn-group generation returned no pawns for " + parms
+                Log.Message("Zombiefied raid pawn-group generation returned no pawns for " + parms
                     + ". Using generic human source pawns for the zombie horde instead.");
                 sourcePawns = GenerateFallbackSourcePawns(parms);
             }

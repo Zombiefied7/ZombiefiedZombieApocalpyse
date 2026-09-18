@@ -28,6 +28,12 @@ namespace Zombiefied
             
             this.hairGraphicPath = "Things/Pawn/Humanlike/Hairs/Bob";
             this.crownType = CrownType.Average;
+            this.bodySizeFactor = 1f;
+            this.bodyDrawOffset = Vector3.zero;
+            this.bodyMeshWidth = 1.5f;
+            this.headMeshWidth = 1.5f;
+            this.hairMeshWidth = 1.5f;
+            this.hairMeshHeight = 1.5f;
 
             this.wornApparelDefs = new List<ThingDef>();
             this.wornApparelColors = new List<Color>();
@@ -40,6 +46,8 @@ namespace Zombiefied
             this.color = color;
             this.hairColor = hairColor;
             this.shaderCutoutPath = shaderCutoutPath;
+            this.bodySizeFactor = 1f;
+            this.bodyDrawOffset = Vector3.zero;
         }
 
         // Token: 0x0600006C RID: 108 RVA: 0x00004648 File Offset: 0x00002848
@@ -66,6 +74,29 @@ namespace Zombiefied
             this.hairColor = story != null ? story.HairColor : Color.green;
             this.shaderCutoutPath = "Map/Cutout";
 
+            LifeStageDef lifeStage = pawn.ageTracker != null ? pawn.ageTracker.CurLifeStage : null;
+            this.bodySizeFactor = lifeStage != null ? lifeStage.bodySizeFactor : 1f;
+            this.bodyDrawOffset = lifeStage != null ? lifeStage.bodyDrawOffset : Vector3.zero;
+
+            // Humanlike rendering in RimWorld 1.6 separates texture draw size from mesh geometry.
+            // Preserve the source pawn's mesh dimensions here because the zombie race deliberately remains ToolUser.
+            float headSizeFactor = 1f;
+            this.bodyMeshWidth = 1.5f;
+            if (ModsConfig.BiotechActive && lifeStage != null && lifeStage.bodyWidth.HasValue)
+            {
+                this.bodyMeshWidth = lifeStage.bodyWidth.Value;
+            }
+            if (ModsConfig.BiotechActive && lifeStage != null && lifeStage.headSizeFactor.HasValue)
+            {
+                headSizeFactor = lifeStage.headSizeFactor.Value;
+            }
+
+            this.headMeshWidth = 1.5f * headSizeFactor;
+            Vector2 hairMeshSize = headType != null ? headType.hairMeshSize : new Vector2(1.5f, 1.5f);
+            hairMeshSize *= headSizeFactor;
+            this.hairMeshWidth = hairMeshSize.x;
+            this.hairMeshHeight = hairMeshSize.y;
+
             this.wornApparelDefs = new List<ThingDef>();
             this.wornApparelColors = new List<Color>();
             if (pawn.apparel != null)
@@ -88,6 +119,12 @@ namespace Zombiefied
             this.color = color;
             this.hairColor = hairColor;
             this.shaderCutoutPath = shaderCutoutPath;
+            this.bodySizeFactor = source.bodySizeFactor;
+            this.bodyDrawOffset = source.bodyDrawOffset;
+            this.bodyMeshWidth = source.bodyMeshWidth;
+            this.headMeshWidth = source.headMeshWidth;
+            this.hairMeshWidth = source.hairMeshWidth;
+            this.hairMeshHeight = source.hairMeshHeight;
             //this.wornApparelDefs = new List<ThingDef>(source.wornApparelDefs);
         }
 
@@ -113,6 +150,12 @@ namespace Zombiefied
             Scribe_Values.Look<Color>(ref this.color, "color", default(Color), false);
             Scribe_Values.Look<Color>(ref this.hairColor, "hairColor", default(Color), false);
             Scribe_Values.Look<string>(ref this.shaderCutoutPath, "shaderCutoutPath", null, false);
+            Scribe_Values.Look<float>(ref this.bodySizeFactor, "bodySizeFactor", 1f, false);
+            Scribe_Values.Look<Vector3>(ref this.bodyDrawOffset, "bodyDrawOffset", Vector3.zero, false);
+            Scribe_Values.Look<float>(ref this.bodyMeshWidth, "bodyMeshWidth", 1.5f, false);
+            Scribe_Values.Look<float>(ref this.headMeshWidth, "headMeshWidth", 1.5f, false);
+            Scribe_Values.Look<float>(ref this.hairMeshWidth, "hairMeshWidth", 1.5f, false);
+            Scribe_Values.Look<float>(ref this.hairMeshHeight, "hairMeshHeight", 1.5f, false);
             Scribe_Collections.Look<ThingDef>(ref this.wornApparelDefs, "wornApparelDefs", LookMode.Def, new object[0]);
             Scribe_Collections.Look<Color>(ref this.wornApparelColors, "wornApparelColors", LookMode.Value, new object[0]);
         }
@@ -146,6 +189,18 @@ namespace Zombiefied
         public Color color;
 
         public Color hairColor;
+
+        public float bodySizeFactor = 1f;
+
+        public Vector3 bodyDrawOffset = Vector3.zero;
+
+        public float bodyMeshWidth = 1.5f;
+
+        public float headMeshWidth = 1.5f;
+
+        public float hairMeshWidth = 1.5f;
+
+        public float hairMeshHeight = 1.5f;
 
         // Token: 0x04000061 RID: 97
         public string shaderCutoutPath;

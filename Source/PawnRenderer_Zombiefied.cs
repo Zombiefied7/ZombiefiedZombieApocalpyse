@@ -163,11 +163,11 @@ namespace Zombiefied
                 this.graphics.ResolveAllGraphics();
             }
 
-            // RimWorld 1.6 applies the current life stage's body draw offset to the entire render tree.
-            // The legacy renderer predates that system, so it must apply the same offset explicitly.
-            if (this.pawn.ageTracker != null && this.pawn.ageTracker.CurLifeStage != null)
+            // The zombie race intentionally remains ToolUser, so its own AnimalAdult life stage is not a
+            // valid source of humanoid render geometry. ZombieData stores the source pawn's draw offset.
+            if (this.graphics.data != null)
             {
-                rootLoc += this.pawn.ageTracker.CurLifeStage.bodyDrawOffset;
+                rootLoc += this.graphics.data.bodyDrawOffset;
             }
 
             Mesh mesh = null;
@@ -423,32 +423,25 @@ namespace Zombiefied
         // Token: 0x060041FB RID: 16891 RVA: 0x001E2270 File Offset: 0x001E0670
         private Mesh BodyMeshAt(Rot4 facing)
         {
-            if (this.pawn.RaceProps.Humanlike)
-            {
-                return HumanlikeMeshPoolUtility.GetHumanlikeBodySetForPawn(this.pawn).MeshAt(facing);
-            }
-
-            return this.graphics.nakedGraphic.MeshAt(facing);
+            float width = this.graphics.data != null ? this.graphics.data.bodyMeshWidth : 1.5f;
+            width = Mathf.Max(0.1f, width);
+            return MeshPool.GetMeshSetForSize(width, width).MeshAt(facing);
         }
 
         private Mesh HeadMeshAt(Rot4 facing)
         {
-            if (this.pawn.RaceProps.Humanlike)
-            {
-                return HumanlikeMeshPoolUtility.GetHumanlikeHeadSetForPawn(this.pawn).MeshAt(facing);
-            }
-
-            return this.graphics.headGraphic.MeshAt(facing);
+            float width = this.graphics.data != null ? this.graphics.data.headMeshWidth : 1.5f;
+            width = Mathf.Max(0.1f, width);
+            return MeshPool.GetMeshSetForSize(width, width).MeshAt(facing);
         }
 
         private Mesh HairMeshAt(Rot4 facing)
         {
-            if (this.pawn.RaceProps.Humanlike && this.pawn.story != null && this.pawn.story.headType != null)
-            {
-                return HumanlikeMeshPoolUtility.GetHumanlikeHairSetForPawn(this.pawn).MeshAt(facing);
-            }
-
-            return this.graphics.hairGraphic.MeshAt(facing);
+            float width = this.graphics.data != null ? this.graphics.data.hairMeshWidth : 1.5f;
+            float height = this.graphics.data != null ? this.graphics.data.hairMeshHeight : 1.5f;
+            width = Mathf.Max(0.1f, width);
+            height = Mathf.Max(0.1f, height);
+            return MeshPool.GetMeshSetForSize(width, height).MeshAt(facing);
         }
 
         public Vector3 BaseHeadOffsetAt(Rot4 rotation)
@@ -456,11 +449,10 @@ namespace Zombiefied
             BodyTypeDef bodyType = this.graphics.data.bodyType ?? this.pawn.story?.bodyType;
             Vector2 headOffset = bodyType != null ? bodyType.headOffset : new Vector2(0.04f, 0.34f);
 
-            // Vanilla 1.6 scales head placement with life-stage body size. Without this, children and
-            // other nonstandard life stages get an adult-sized gap between the body and the head.
-            if (this.pawn.ageTracker != null && this.pawn.ageTracker.CurLifeStage != null)
+            // Scale with the source pawn's life stage, not the zombie race's intentionally animal-style life stages.
+            if (this.graphics.data != null)
             {
-                headOffset *= Mathf.Sqrt(Mathf.Max(0f, this.pawn.ageTracker.CurLifeStage.bodySizeFactor));
+                headOffset *= Mathf.Sqrt(Mathf.Max(0.01f, this.graphics.data.bodySizeFactor));
             }
 
             switch (rotation.AsInt)
