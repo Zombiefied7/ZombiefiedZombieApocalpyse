@@ -37,12 +37,16 @@
     <Compile Include="InjectedDefHasher.cs" />
     <Compile Include="ZombiefiedPatches.cs" />
     <Compile Include="ZombieAvoidance.cs" />
+    <Compile Include="ZombieWorldUtility.cs" />
+    <Compile Include="WorldObject_ZombieInfestation.cs" />
+    <Compile Include="IncidentWorker_ZombieCaravanAmbush.cs" />
+    <Compile Include="SitePartWorker_ZombieThreat.cs" />
+    <Compile Include="GenStep_ZombieThreat.cs" />
     <Compile Include="ColonistZombieAvoidanceAssignments.cs" />
     <Compile Include="IncidentWorker_ZombieHorde.cs" />
     <Compile Include="IncidentWorker_ZombiePack.cs" />
     <Compile Include="JobDriver_ZombieMove.cs" />
     <Compile Include="JobGiver_ZombieResponse.cs" />
-    <Compile Include="GenStep_Outpost_Zombies.cs" />
     <Compile Include="Corpse_Zombiefied.cs" />
     <Compile Include="JobDriver_ZombieHunt.cs" />
     <Compile Include="GraphicDatabaseHeadRecords_Zombiefied.cs" />

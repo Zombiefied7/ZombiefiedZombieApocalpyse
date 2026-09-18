@@ -51,3 +51,11 @@ Runtime animal reanimation fix:
 - Reanimation first preserves corpse health conditions, then retries once without copied health conditions if that transfer makes the candidate invalid.
 - Failed corpse reanimations are throttled to one retry per in-game day so an unsupported modded race cannot flood the log on every reanimation scan.
 - Candidate generation now logs whether failure happened before or after source-data transfer, making remaining mod-race incompatibilities diagnosable from the player log.
+
+Event-driven world integration
+------------------------------
+- Zombie caravan ambushes are registered as normal Caravan-target storyteller incidents. RimWorld's existing ambush machinery creates the temporary encounter map and moves the caravan into it.
+- Zombie infestations are registered as a SitePartDef threat rather than as a permanent world-tile infection simulation.
+- Vanilla quest/site systems may select the zombie infestation anywhere they request compatible threat tags, including item-stash, rescue, mineral-scanner, and generic active-threat sites. Rewards and objectives remain owned by the vanilla quest that selected the threat.
+- Zombie infestation site parts are deliberately factionless so world sites do not claim that an unrelated pirate or tribal faction owns the zombies.
+- Both world-site zombie threats and caravan zombie encounters can be enabled or disabled independently in the native mod settings.

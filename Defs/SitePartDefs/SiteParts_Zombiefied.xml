@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Defs>
+  <SitePartDef>
+    <defName>Zombiefied_ZombieInfestation</defName>
+    <label>zombie infestation</label>
+    <description>A mass of wandering dead has occupied this site.</description>
+    <workerClass>Zombiefied.SitePartWorker_ZombieThreat</workerClass>
+    <siteTexture>World/WorldObjects/Sites/GenericSite</siteTexture>
+    <expandingIconTexture>World/WorldObjects/Expanding/Sites/Ambush</expandingIconTexture>
+    <arrivedLetter>The area is infested with zombies. Clear the dead before attempting to secure the site's objective.</arrivedLetter>
+    <arrivedLetterDef>ThreatBig</arrivedLetterDef>
+    <wantsThreatPoints>true</wantsThreatPoints>
+    <minThreatPoints>120</minThreatPoints>
+    <selectionWeight>1</selectionWeight>
+    <mainPartAllThreatsLabel>Zombie infestation</mainPartAllThreatsLabel>
+    <tags>
+      <li>ItemStashQuestThreat</li>
+      <li>DownedRefugeeQuestThreat</li>
+      <li>PrisonerRescueQuestThreat</li>
+      <li>MineralScannerPreciousLumpThreat</li>
+      <li>QuestActiveThreat</li>
+      <li>QuestActiveThreatDefense</li>
+      <li>QuestActiveThreatDefenseNoHidden</li>
+    </tags>
+  </SitePartDef>
+
+  <GenStepDef>
+    <defName>Zombiefied_ZombieInfestation</defName>
+    <linkWithSite>Zombiefied_ZombieInfestation</linkWithSite>
+    <order>1600</order>
+    <genStep Class="Zombiefied.GenStep_ZombieThreat" />
+  </GenStepDef>
+</Defs>

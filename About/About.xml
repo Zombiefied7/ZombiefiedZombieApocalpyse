@@ -33,6 +33,8 @@ For every living thing in your modded game a unique ZombiePawn is generated. Whe
 -Zombie generation for any given Pawn
 -Zombies get attracted by noise
 -Zombies will attack any lifeform on sight
+-Zombie ambushes can occur as normal caravan threats
+-Zombie infestations can be selected as threats at vanilla world quest and reward sites
 
 &lt;size=22&gt;Mod compatibility&lt;/size&gt;
 -Compatible with most modded animals

@@ -23,6 +23,7 @@ namespace Zombiefied
         private string zombieAmountSoftCapBuffer;
         private string zombieRaidAmountMultiplierBuffer;
         private string zombieRaidFrequencyMultiplierBuffer;
+        private string zombieCaravanEncounterMultiplierBuffer;
 
         public ZombiefiedMod(ModContentPack content) : base(content)
         {
@@ -33,6 +34,7 @@ namespace Zombiefied
             zombieAmountSoftCapBuffer = Settings.zombieAmountSoftCap.ToString();
             zombieRaidAmountMultiplierBuffer = Settings.zombieRaidAmountMultiplier.ToString();
             zombieRaidFrequencyMultiplierBuffer = Settings.zombieRaidFrequencyMultiplier.ToString();
+            zombieCaravanEncounterMultiplierBuffer = Settings.zombieCaravanEncounterMultiplier.ToString();
 
             // Runtime patches and dynamic zombie Def generation are initialized after all XML Defs load.
             // This preserves the previous post-Def-load initialization timing.
@@ -80,6 +82,15 @@ namespace Zombiefied
             listing.CheckboxLabeled("Zombie resurrect notifications", ref settings.zombieResurrectNotifications, "Show a notification when a zombie resurrects.");
 
             listing.Gap();
+            listing.Label("World apocalypse");
+            listing.GapLine();
+            listing.CheckboxLabeled("Zombie threats at world sites", ref settings.enableZombieWorldSiteThreats, "Allow zombies to be selected as a threat at vanilla quest and reward sites, such as item stashes and rescue sites.");
+            listing.CheckboxLabeled("Zombie caravan encounters", ref settings.enableCaravanZombieEncounters, "Allow the storyteller to select zombie ambushes as one of the normal threats that can hit travelling caravans.");
+            listing.Label((TaggedString)"Caravan zombie encounter frequency multiplier", -1f, "Changes the storyteller selection weight of zombie caravan ambushes. Range: 0.1 to 5.");
+            listing.TextFieldNumeric(ref settings.zombieCaravanEncounterMultiplier, ref zombieCaravanEncounterMultiplierBuffer, 0.1f, 5f);
+            ApplyWorldEventDefSettings();
+
+            listing.Gap();
             listing.Label("Debug settings");
             listing.GapLine();
             listing.CheckboxLabeled("Debug remove zombies [RELOAD]", ref settings.debugRemoveZombies, "Remove all zombies on the next game load, then automatically turn this option off.");
@@ -96,6 +107,7 @@ namespace Zombiefied
 
             customDefsInitialized = true;
             InitializeCustom();
+            ApplyWorldEventDefSettings();
         }
 
         internal void OnWorldLoaded()
@@ -210,6 +222,18 @@ namespace Zombiefied
 
         internal static int zombieAmountSoftCap => Settings != null ? Settings.zombieAmountSoftCap : 133;
         internal static bool zombieRaidNotifications => Settings == null || Settings.zombieRaidNotifications;
+        internal static bool enableZombieWorldSiteThreats => Settings == null || Settings.enableZombieWorldSiteThreats;
+        internal static bool enableCaravanZombieEncounters => Settings == null || Settings.enableCaravanZombieEncounters;
+        internal static float zombieCaravanEncounterMultiplier => Settings != null ? Mathf.Clamp(Settings.zombieCaravanEncounterMultiplier, 0.1f, 5f) : 1f;
+
+        internal static void ApplyWorldEventDefSettings()
+        {
+            IncidentDef caravanAmbush = DefDatabase<IncidentDef>.GetNamed("ZombieCaravanAmbush", false);
+            if (caravanAmbush != null)
+            {
+                caravanAmbush.baseChance = enableCaravanZombieEncounters ? 1f * zombieCaravanEncounterMultiplier : 0f;
+            }
+        }
         internal static bool zombieResurrectNotifications => Settings != null && Settings.zombieResurrectNotifications;
         internal static bool debugRemoveZombies => Settings != null && Settings.debugRemoveZombies;
 
@@ -623,7 +647,6 @@ namespace Zombiefied
             {
                 Find.LetterStack.ReceiveLetter("Zombie", "A zombie resurrected.", LetterDefOf.NeutralEvent, spawnedThing, null);
             }
-
             return zombiePawn;
         }
 

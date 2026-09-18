@@ -31,4 +31,20 @@
 	<tale>Raid</tale>
   </IncidentDef>
 
+
+  <IncidentDef>
+    <defName>ZombieCaravanAmbush</defName>
+    <label>zombie ambush</label>
+    <targetTags>
+      <li>Caravan</li>
+    </targetTags>
+    <workerClass>Zombiefied.IncidentWorker_ZombieCaravanAmbush</workerClass>
+    <baseChance>1</baseChance>
+    <category>ThreatSmall</category>
+    <minRefireDays>5</minRefireDays>
+    <pointsScaleable>true</pointsScaleable>
+    <letterLabel>Zombie ambush</letterLabel>
+    <letterText>Your caravan has crossed zombie-infested territory. The dead are closing in.</letterText>
+    <letterDef>ThreatBig</letterDef>
+  </IncidentDef>
 </Defs>

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using UnityEngine;
 using Verse;
 using Verse.AI;
 using Verse.AI.Group;
@@ -253,7 +254,6 @@ namespace Zombiefied
                 Log.Error("Zombiefied generated a zombie horde but failed to spawn any zombie pawns on " + map + ".");
                 return false;
             }
-
             if (ZombiefiedMod.zombieRaidNotifications)
             {
                 Find.LetterStack.ReceiveLetter(

@@ -14,6 +14,9 @@ namespace Zombiefied
         public bool zombieRaidNotifications = true;
         public bool zombieResurrectNotifications = false;
         public bool debugRemoveZombies = false;
+        public bool enableZombieWorldSiteThreats = true;
+        public bool enableCaravanZombieEncounters = true;
+        public float zombieCaravanEncounterMultiplier = 1f;
 
         public override void ExposeData()
         {
@@ -27,6 +30,9 @@ namespace Zombiefied
             Scribe_Values.Look(ref zombieRaidNotifications, "ZombieRaidNotifications", true);
             Scribe_Values.Look(ref zombieResurrectNotifications, "ZombieResurrectNotifications", false);
             Scribe_Values.Look(ref debugRemoveZombies, "DebugRemoveZombies", false);
+            Scribe_Values.Look(ref enableZombieWorldSiteThreats, "EnableZombieWorldSiteThreats", true);
+            Scribe_Values.Look(ref enableCaravanZombieEncounters, "EnableCaravanZombieEncounters", true);
+            Scribe_Values.Look(ref zombieCaravanEncounterMultiplier, "ZombieCaravanEncounterMultiplier", 1f);
             base.ExposeData();
         }
     }
