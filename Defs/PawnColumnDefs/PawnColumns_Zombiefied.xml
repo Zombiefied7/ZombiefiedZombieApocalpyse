@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs>
+  <PawnColumnDef>
+    <defName>Zombiefied_AvoidZombies</defName>
+    <workerClass>Zombiefied.PawnColumnWorker_ZombieAvoidance</workerClass>
+    <sortable>true</sortable>
+    <headerIcon>UI/Icons/HostilityResponse/Flee</headerIcon>
+    <headerIconSize>(24,24)</headerIconSize>
+    <headerTip>Sets how each colonist treats zombie danger while pathing. Normal pathing ignores the zombie danger-cost layer. Avoid zombies prefers routes farther from zombies without blocking drafted or manually ordered attacks.</headerTip>
+  </PawnColumnDef>
+</Defs>

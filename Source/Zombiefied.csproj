@@ -36,6 +36,7 @@
     <Compile Include="ReflectionClass.cs" />
     <Compile Include="ZombiefiedPatches.cs" />
     <Compile Include="ZombieAvoidance.cs" />
+    <Compile Include="ColonistZombieAvoidanceAssignments.cs" />
     <Compile Include="IncidentWorker_ZombieHorde.cs" />
     <Compile Include="IncidentWorker_ZombiePack.cs" />
     <Compile Include="JobDriver_ZombieMove.cs" />

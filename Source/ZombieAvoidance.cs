@@ -55,6 +55,12 @@ namespace Zombiefied
             return pawn.Faction != null && pawn.Faction != Faction.OfPlayer;
         }
 
+        public static bool CanUsePlayerAvoidanceAssignment(Pawn pawn)
+        {
+            return IsHumanlikeAvoidanceCandidate(pawn)
+                && pawn.Faction == Faction.OfPlayer;
+        }
+
         public static bool ShouldUseZombieAvoidancePathing(Pawn pawn)
         {
             if (!IsHumanlikeAvoidanceCandidate(pawn) || pawn.Faction == null)
@@ -64,7 +70,7 @@ namespace Zombiefied
 
             if (pawn.Faction == Faction.OfPlayer)
             {
-                return ZombiefiedMod.ColonistsUseZombieAvoidancePathing;
+                return ColonistZombieAvoidanceAssignments.IsEnabledFor(pawn);
             }
 
             return true;
@@ -245,7 +251,7 @@ namespace Zombiefied
             }
 
             // Foreign humanlikes also ignore zombies as combat objectives. Player pawns only receive the path
-            // cost layer when the option is enabled, so drafted and ordered attacks remain valid. The destination
+            // cost layer when their personal Assign-tab zombie response is set to avoid, so drafted and ordered attacks remain valid. The destination
             // cell is cleared below to ensure a direct order can still reach a zombie when necessary.
             DangerSnapshot snapshot = GetDangerSnapshot(pawn.Map);
             if (snapshot == null || !snapshot.hasDanger)
