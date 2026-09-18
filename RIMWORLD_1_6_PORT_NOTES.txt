@@ -31,14 +31,16 @@ Runtime zombie-horde generation fix:
 Outsider zombie avoidance
 -------------------------
 Foreign humanlike pawns now receive a RimWorld 1.6 PathRequest custom cost grid around spawned zombies.
-The cost field extends nine cells from each zombie, overlaps up to a traversable maximum of 9999, and
-updates four times per second. Player pawns, zombies, animals, factionless pawns, and mechanoids are not
+The cost field extends fourteen cells from each zombie, overlaps up to a traversable maximum of 4,800, and
+updates four times per second. The outer danger bands now begin at a meaningful cost so outsiders choose broad
+detours before reaching a horde, while the stronger inner bands make cutting through a cluster extremely unattractive. Player pawns, zombies, animals, factionless pawns, and mechanoids are not
 affected. Existing path customizers supplied by other mods are left untouched for compatibility.
 
-Foreign melee-focused pawns exclude zombies during normal attack-target searches. A final Pawn_JobTracker
-guard also prevents proactive AttackMelee jobs against zombies, including the one-swing job vanilla pathing
-creates when a hostile pawn blocks the next cell. Jobs explicitly marked as reacting to a melee threat remain
-allowed, so a visitor or raider that is already being mauled can still defend itself.
+Foreign humanlike pawns exclude zombies from the hostile-target cache and normal attack-target searches.
+Sticky enemyTarget and meleeThreat references are cleared, direct Goto-nearest-hostile pursuit is rejected,
+and proactive melee/static attack jobs against zombies are suppressed. This keeps zombies as pathing hazards
+rather than secondary combat objectives while raiders, visitors, traders, and similar outsiders pursue their
+original mission.
 
 Runtime Harmony pathing fix:
 - PathFinder.CreateRequest and PathFinder.FindPathNow prefixes bind original arguments by index, avoiding brittle parameter-name binding across RimWorld 1.6 builds.
