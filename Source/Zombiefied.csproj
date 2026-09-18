@@ -34,6 +34,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="ReflectionClass.cs" />
+    <Compile Include="InjectedDefHasher.cs" />
     <Compile Include="ZombiefiedPatches.cs" />
     <Compile Include="ZombieAvoidance.cs" />
     <Compile Include="ColonistZombieAvoidanceAssignments.cs" />
@@ -54,6 +55,9 @@
     <Compile Include="ZombieGraphicSet.cs" />
     <Compile Include="HediffGiver_Zombiefied.cs" />
     <Compile Include="ZombiefiedMod.cs" />
+    <Compile Include="ZombiefiedSettings.cs" />
+    <Compile Include="ZombiefiedGameComponent.cs" />
+    <Compile Include="ZombiefiedStartup.cs" />
     <Compile Include="DamageWorker_ZombieBite.cs" />
     <Compile Include="JobGiver_WanderZombieHerd.cs" />
     <Compile Include="Pawn_Zombiefied.cs" />
@@ -72,10 +76,6 @@
     </PackageReference>
     <PackageReference Include="Lib.Harmony">
       <Version>2.4.2</Version>
-      <ExcludeAssets>runtime</ExcludeAssets>
-    </PackageReference>
-    <PackageReference Include="UnlimitedHugs.Rimworld.HugsLib">
-      <Version>12.0.0</Version>
       <ExcludeAssets>runtime</ExcludeAssets>
     </PackageReference>
   </ItemGroup>

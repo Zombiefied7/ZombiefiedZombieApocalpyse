@@ -1,4 +1,4 @@
-name: Build
+﻿name: Build
 
 on:
   push:
@@ -33,5 +33,4 @@ jobs:
           About
           Assemblies
           Defs
-          !HugsLib*
           !0Harmony*

@@ -2,9 +2,6 @@
 using System.Collections.Generic;
 using System.Collections;
 using System.Linq;
-using HugsLib;
-using HugsLib.Settings;
-using HugsLib.Utils;
 using RimWorld;
 using UnityEngine;
 using Verse;
@@ -12,25 +9,98 @@ using Verse;
 namespace Zombiefied
 {
     // Token: 0x02000008 RID: 8
-    public class ZombiefiedMod : ModBase
+    public class ZombiefiedMod : Mod
     {
         public static JobDef zombieHunt;
         public static JobDef zombieMove;
 
-        // Token: 0x17000001 RID: 1
-        // (get) Token: 0x06000018 RID: 24 RVA: 0x00002A68 File Offset: 0x00000C68
-        public override string ModIdentifier
+        public static ZombiefiedMod Instance { get; private set; }
+        public static ZombiefiedSettings Settings { get; private set; }
+
+        private bool customDefsInitialized;
+        private string zombieSpeedMultiplierBuffer;
+        private string zombieSoundReactionTimeInHoursBuffer;
+        private string zombieAmountSoftCapBuffer;
+        private string zombieRaidAmountMultiplierBuffer;
+        private string zombieRaidFrequencyMultiplierBuffer;
+
+        public ZombiefiedMod(ModContentPack content) : base(content)
         {
-            get
-            {
-                return "Zombiefied";
-            }
+            Instance = this;
+            Settings = GetSettings<ZombiefiedSettings>();
+            zombieSpeedMultiplierBuffer = Settings.zombieSpeedMultiplier.ToString();
+            zombieSoundReactionTimeInHoursBuffer = Settings.zombieSoundReactionTimeInHours.ToString();
+            zombieAmountSoftCapBuffer = Settings.zombieAmountSoftCap.ToString();
+            zombieRaidAmountMultiplierBuffer = Settings.zombieRaidAmountMultiplier.ToString();
+            zombieRaidFrequencyMultiplierBuffer = Settings.zombieRaidFrequencyMultiplier.ToString();
+
+            // Runtime patches and dynamic zombie Def generation are initialized after all XML Defs load.
+            // This preserves the previous post-Def-load initialization timing.
         }
 
-        // Token: 0x06000019 RID: 25 RVA: 0x00002A82 File Offset: 0x00000C82
-        public override void WorldLoaded()
+        public override string SettingsCategory()
         {
-            base.Logger.Message("loaded", new object[0]);
+            return "Zombiefied (Zombie Apocalypse)";
+        }
+
+        public override void DoSettingsWindowContents(Rect inRect)
+        {
+            ZombiefiedSettings settings = Settings;
+            if (settings == null)
+            {
+                return;
+            }
+
+            Listing_Standard listing = new Listing_Standard();
+            listing.Begin(inRect);
+
+            listing.Label("Zombie settings");
+            listing.GapLine();
+            listing.CheckboxLabeled("Disable animal zombies", ref settings.disableAnimalZombies, "Animals will not resurrect and no animal zombies will wander in.");
+            listing.CheckboxLabeled("Disable zombies attacking animals", ref settings.disableZombiesAttackingAnimals, "Zombies will ignore animals.");
+            listing.Label((TaggedString)"Zombie speed multiplier [RESTART]", -1f, "Zombie speed compared with a healthy pawn. Range: 0.03 to 3. Requires a restart to affect dynamically generated zombie races.");
+            listing.TextFieldNumeric(ref settings.zombieSpeedMultiplier, ref zombieSpeedMultiplierBuffer, 0.03f, 3f);
+            listing.Label((TaggedString)"Zombie sound memory time (in-game hours)", -1f, "How long zombies remember a sound location.");
+            listing.TextFieldNumeric(ref settings.zombieSoundReactionTimeInHours, ref zombieSoundReactionTimeInHoursBuffer, 0f, 1000000000f);
+
+            listing.Gap();
+            listing.Label("Amount settings");
+            listing.GapLine();
+            listing.Label((TaggedString)"Zombie amount soft cap", -1f, "Expected zombie population per map before new wandering raids are suppressed.");
+            listing.TextFieldNumeric(ref settings.zombieAmountSoftCap, ref zombieAmountSoftCapBuffer, 0f, 1000000000f);
+            listing.Label((TaggedString)"Zombie raid size multiplier", -1f, "Zombie raid size multiplier. Range: 0.1 to 7.");
+            listing.TextFieldNumeric(ref settings.zombieRaidAmountMultiplier, ref zombieRaidAmountMultiplierBuffer, 0.1f, 7f);
+            listing.Label((TaggedString)"Zombie raid frequency multiplier", -1f, "Zombie raid frequency multiplier. Range: 0.1 to 7.");
+            listing.TextFieldNumeric(ref settings.zombieRaidFrequencyMultiplier, ref zombieRaidFrequencyMultiplierBuffer, 0.1f, 7f);
+
+            listing.Gap();
+            listing.Label("Notification settings");
+            listing.GapLine();
+            listing.CheckboxLabeled("Zombie raid notifications", ref settings.zombieRaidNotifications, "Show a notification when zombies wander in.");
+            listing.CheckboxLabeled("Zombie resurrect notifications", ref settings.zombieResurrectNotifications, "Show a notification when a zombie resurrects.");
+
+            listing.Gap();
+            listing.Label("Debug settings");
+            listing.GapLine();
+            listing.CheckboxLabeled("Debug remove zombies [RELOAD]", ref settings.debugRemoveZombies, "Remove all zombies on the next game load, then automatically turn this option off.");
+
+            listing.End();
+        }
+
+        internal void InitializeCustomOnce()
+        {
+            if (customDefsInitialized)
+            {
+                return;
+            }
+
+            customDefsInitialized = true;
+            InitializeCustom();
+        }
+
+        internal void OnWorldLoaded()
+        {
+            Log.Message("[Zombiefied] Loaded game runtime.");
 
             noisyLocationsPerMap = new List<Queue<IntVec3>>();
             noisyLocationTicksPerMap = new List<Queue<int>>();
@@ -115,129 +185,35 @@ namespace Zombiefied
                 }
                 if(broken)
                 {
-                    base.Logger.Message("found a broken site.");
                     //handle broken site here
                 }
             }
             */
 
-            debugRemoveZombies.Value = false;
-            //base.Logger.Message("found " + zCount + " Zombies. " + zWrongFactionCount + " of them were repaired.", new object[0]);
-        }
-
-        public override void DefsLoaded()
-        {
-            Predicate<Rect> predicate = delegate (Rect input)
+            if (Settings != null && Settings.debugRemoveZombies)
             {
-                return false;
-            };
-            headlineZombieOptions = base.Settings.GetHandle<bool>("headlineZombies", "\nZombie settings:", "Zombie settings", false, null, null);
-            headlineZombieOptions.CustomDrawer = new SettingHandle.DrawCustomControl(predicate);
-            //headlineZombieOptions.CustomDrawerHeight = 37f;
-
-            disableAnimalZombies = base.Settings.GetHandle<bool>("disableAnimalZombies", "       Disable animal zombies", "Animals will not resurrect and no animal zombies will wander in.", false, null, null);
-            disableZombiesAttackingAnimals = base.Settings.GetHandle<bool>("disableZombiesAttackingAnimals", "       Disable zombies attacking animals", "Zombies will ignore animals.", false, null, null);
-            zombieSpeedMultiplier = base.Settings.GetHandle<float>("ZombieSpeedMultiplier", "       Zombie speed multiplier [RESTART]", "Zombie speed (in comparison to healthy) will be multiplied by this value.\n(0.03 -> Slowest, 3 -> Fastest)\n(Requires restart to work)", 0.57f, null, null);
-            if (zombieSpeedMultiplier < 0.03f)
-            {
-                zombieSpeedMultiplier.Value = 0.03f;
-            }
-            else if (zombieSpeedMultiplier > 3f)
-            {
-                zombieSpeedMultiplier.Value = 3f;
-            }
-
-            zombieSoundReactionTimeInHours = base.Settings.GetHandle<int>("ZombieSoundReactionTimeInHours", "       Zombie sound memory time", "The amount of time zombies will remember a sound's location.\n(in hours, ingame time)", 5, null, null);
-
-            headlineZombieAmount = base.Settings.GetHandle<bool>("headlineAmounts", "\nAmount settings:", "Amount settings", false, null, null);
-            headlineZombieAmount.CustomDrawer = new SettingHandle.DrawCustomControl(predicate);
-            //headlineZombieAmount.CustomDrawerHeight = 37f;
-
-            //easyMode = base.Settings.GetHandle<bool>("EasyMode", "Easy mode", "Keep in mind that you are not meant to kill all zombies at all times and losing is part of the game.", false, null, null);
-            zombieAmountSoftCap = base.Settings.GetHandle<int>("ZombieAmountSoftCap", "       Zombie amount soft cap", "The expected amount of zombies per map.", 133, null, null);
-
-            zombieRaidAmountMultiplier = base.Settings.GetHandle<float>("ZombieRaidAmountMultiplier", "       Zombie raid size multiplier", "Zombie raid size will be multiplied by this value.\n(0.1 -> Easiest, 7 -> Hardest)", 1f, null, null);
-            zombieRaidFrequencyMultiplier = base.Settings.GetHandle<float>("ZombieRaidFrequencyMultiplier", "       Zombie raid frequency multiplier", "Zombie raid frequency will be multiplied by this value.\n(0.1 -> Easiest, 7 -> Hardest)", 1f, null, null);
-
-            headlineNotifications = base.Settings.GetHandle<bool>("headlineNotifications", "\nNotification settings:", "Notification settings", false, null, null);
-            headlineNotifications.CustomDrawer = new SettingHandle.DrawCustomControl(predicate);
-            //headlineNotifications.CustomDrawerHeight = 37f;
-
-            zombieRaidNotifications = base.Settings.GetHandle<bool>("ZombieRaidNotifications", "       Zombie raid notifications", "Get a notification when zombies wander in.", true, null, null);
-            zombieResurrectNotifications = base.Settings.GetHandle<bool>("ZombieResurrectNotifications", "       Zombie resurrect notifications", "Get a notification when a zombie resurrects.", false, null, null);
-
-            headlineDebug = base.Settings.GetHandle<bool>("headlineDebug", "\nDebug settings:", "Debug settings", false, null, null);
-            headlineDebug.CustomDrawer = new SettingHandle.DrawCustomControl(predicate);
-            //headlineDebug.CustomDrawerHeight = 37f;
-
-            debugRemoveZombies = base.Settings.GetHandle<bool>("DebugRemoveZombies", "       Debug remove zombies [RELOAD]", "Enable this and reload to remove all zombies on next load.", false, null, null);
-
-            /*
-            zombieSoundReactionTimeInHours.CustomDrawerHeight = 77;
-            zombieAmountSoftCap.CustomDrawerHeight = 77;
-            zombieRaidAmountMultiplier.CustomDrawerHeight = 77;
-            zombieRaidFrequencyMultiplier.CustomDrawerHeight = 77;
-            zombieRaidNotifications.CustomDrawerHeight = 77;
-            zombieResurrectNotifications.CustomDrawerHeight = 77;
-            debugRemoveZombies.CustomDrawerHeight = 77;
-            */
-
-            InitializeCustom();
-        }
-
-        internal static SettingHandle<bool> headlineZombieOptions;
-        //
-        internal static SettingHandle<bool> disableAnimalZombies;
-        internal static SettingHandle<bool> disableZombiesAttackingAnimals;
-        internal static SettingHandle<float> zombieSpeedMultiplier;
-        internal static SettingHandle<int> zombieSoundReactionTimeInHours;
-
-        internal static SettingHandle<bool> headlineZombieAmount;
-        //
-        internal static SettingHandle<float> zombieRaidFrequencyMultiplier;
-        public static float ZombieRaidFrequencyMultiplier
-        {
-            get
-            {
-                if (zombieRaidFrequencyMultiplier < 0.1f)
-                {
-                    return 0.1f;
-                }
-                else if (zombieRaidFrequencyMultiplier > 7f)
-                {
-                    return 7f;
-                }
-                return zombieRaidFrequencyMultiplier;
+                Settings.debugRemoveZombies = false;
+                WriteSettings();
             }
         }
-        internal static SettingHandle<float> zombieRaidAmountMultiplier;
-        public static float ZombieRaidAmountMultiplier
-        {
-            get
-            {
-                if (zombieRaidAmountMultiplier < 0.1f)
-                {
-                    return 0.1f;
-                }
-                else if (zombieRaidAmountMultiplier > 7f)
-                {
-                    return 7f;
-                }
-                return zombieRaidAmountMultiplier;
-            }
-        }
-        internal static SettingHandle<int> zombieAmountSoftCap;
 
-        internal static SettingHandle<bool> headlineNotifications;
-        //
-        internal static SettingHandle<bool> zombieRaidNotifications;
-        internal static SettingHandle<bool> zombieResurrectNotifications;
+        internal static bool disableAnimalZombies => Settings != null && Settings.disableAnimalZombies;
+        internal static bool disableZombiesAttackingAnimals => Settings != null && Settings.disableZombiesAttackingAnimals;
+        internal static float zombieSpeedMultiplier => Settings != null ? Mathf.Clamp(Settings.zombieSpeedMultiplier, 0.03f, 3f) : 0.57f;
+        internal static int zombieSoundReactionTimeInHours => Settings != null ? Settings.zombieSoundReactionTimeInHours : 5;
 
-        internal static SettingHandle<bool> headlineDebug;
-        //
-        internal static SettingHandle<bool> debugRemoveZombies;
+        internal static float zombieRaidFrequencyMultiplier => Settings != null ? Mathf.Clamp(Settings.zombieRaidFrequencyMultiplier, 0.1f, 7f) : 1f;
+        public static float ZombieRaidFrequencyMultiplier => zombieRaidFrequencyMultiplier;
 
-        public override void Tick(int currentTick)
+        internal static float zombieRaidAmountMultiplier => Settings != null ? Mathf.Clamp(Settings.zombieRaidAmountMultiplier, 0.1f, 7f) : 1f;
+        public static float ZombieRaidAmountMultiplier => zombieRaidAmountMultiplier;
+
+        internal static int zombieAmountSoftCap => Settings != null ? Settings.zombieAmountSoftCap : 133;
+        internal static bool zombieRaidNotifications => Settings == null || Settings.zombieRaidNotifications;
+        internal static bool zombieResurrectNotifications => Settings != null && Settings.zombieResurrectNotifications;
+        internal static bool debugRemoveZombies => Settings != null && Settings.debugRemoveZombies;
+
+        internal void OnGameTick()
         {
             this.HandleReanimation();
             this.HandleZombieRaid();
@@ -272,7 +248,6 @@ namespace Zombiefied
             //int num = UnityEngine.Random.Range((int)((float)ZombiesDefOf.ZombiesSettings.MinRaidTicksBase * challengeModifier), (int)((float)ZombiesDefOf.ZombiesSettings.MaxRaidTicksBase * challengeModifier));
             int num = Rand.RangeSeeded((int)((float)7777 * challengeModifier), (int)((float)280000 * challengeModifier), Find.TickManager.TicksAbs + Find.World.ConstantRandSeed);
             //if (first && num < ZombiesDefOf.ZombiesSettings.MinTicksBeforeFirstRaid)
-            //base.Logger.Message("next zombieraid in " + num + " ticks.", new object[0]);
             return num;
         }
 
@@ -285,7 +260,6 @@ namespace Zombiefied
                 {
                     this._ticksUntilNextZombieRaid[currentMapIndex] = this.GenerateTicksUntilNextRaid();
 
-                    //base.Logger.Message("setting up zombieraid for map " + currentMapIndex + ".", new object[0]);
 
                     if (currentMapIndex < zombieAmountsPerMap.Count && zombieAmountsPerMap[currentMapIndex] < zombieAmountSoftCap)
                     {
@@ -303,11 +277,9 @@ namespace Zombiefied
                         {
                             IncidentDef.Named("ZombiePack").Worker.TryExecute(incidentParms);
                         }
-                        //base.Logger.Message("Zombieraid started on map " + currentMapIndex + ".", new object[0]);
                     }
                     else
                     {
-                        //base.Logger.Message("Zombieraid failed on map " + currentMapIndex + " because map invalid or more zombies are already on the map than cap allows.", new object[0]);
                     }
                 }
             }
@@ -450,7 +422,6 @@ namespace Zombiefied
 
                     log += "map " + m + " has " + noisyLocationsPerMap[m].Count + " noisy locations and " + zombieAmountsPerMap[m] + " zombies.   ";
                 }
-                //base.Logger.Message(log, new object[0]);
             }
         }
 
@@ -615,7 +586,7 @@ namespace Zombiefied
                 Log.Error("Zombiefied failed to spawn reanimated pawn for " + sourcePawn + ". " + ex);
 
                 // A failed SpawnSetup can leave a pawn partially registered. Cleanup must never escape into
-                // HugsLib's tick loop, because partially initialized pawns can also throw during DeSpawn.
+                // the game-component tick loop, because partially initialized pawns can also throw during DeSpawn.
                 try
                 {
                     if (zombiePawn.Spawned && !zombiePawn.Destroyed)
@@ -880,7 +851,6 @@ namespace Zombiefied
                         }
                         log += sourcePawnKindDef.weaponTags[t] + " ";
                     }
-                    //base.Logger.Message(log);
                 }
 
 
@@ -1254,7 +1224,6 @@ namespace Zombiefied
                             //newKindDef.shortHash = z;
                             InjectedDefHasher.GiveShortHashToDef(newKindDef, typeof(PawnKindDef));
 
-                            //base.Logger.Message((newKindDef.RaceProps != null) + "");
 
                             //newKindDef.lifeStages = PawnKindDef.Named("Zombie").lifeStages;
 
@@ -1296,7 +1265,6 @@ namespace Zombiefied
 
                                 //newKindDef.lifeStages.Add(n);
                             }
-                            //base.Logger.Message((newKindDef.RaceProps != null) + "");
                             if (newKindDef != null && newThingDef != null && newKindDef.RaceProps != null)
                             {
                                 DefDatabase<PawnKindDef>.Add(newKindDef);
@@ -1309,11 +1277,11 @@ namespace Zombiefied
                     }
                     catch
                     {
-                        base.Logger.Warning("Error while setting up zombie for " + sourcePawnKindDef.defName + ".", new object[0]);
+                        Log.Warning("[Zombiefied] Error while setting up zombie for " + sourcePawnKindDef.defName + ".");
                     }
                 }
             }
-            base.Logger.Message("set up zombies for " + count + " animals.", new object[0]);
+            Log.Message("[Zombiefied] Set up zombies for " + count + " animals.");
         }
     }
 }

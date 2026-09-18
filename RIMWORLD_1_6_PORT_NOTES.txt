@@ -4,7 +4,6 @@ Target build references:
 - .NET Framework 4.7.2
 - Krafs.Rimworld.Ref 1.6.4871
 - Lib.Harmony 2.4.2
-- UnlimitedHugs.Rimworld.HugsLib 12.0.0
 
 The stale pre-port Assemblies/Zombiefied.dll was intentionally removed.
 Build the solution on Windows with Visual Studio/MSBuild so the resulting DLL is written to Assemblies/.
@@ -44,7 +43,7 @@ original mission.
 
 Runtime Harmony pathing fix:
 - PathFinder.CreateRequest and PathFinder.FindPathNow prefixes bind original arguments by index, avoiding brittle parameter-name binding across RimWorld 1.6 builds.
-- Removed the redundant StaticConstructorOnStartup Harmony.PatchAll call because HugsLib.ModBase already applies the assembly's Harmony patches. This prevents duplicate patch application.
+- HugsLib was removed. Zombiefied now uses vanilla ModSettings, a GameComponent for lifecycle ticks, and an explicit Harmony.PatchAll call.
 
 Runtime animal reanimation fix:
 - Dynamically generated animal zombie races now inherit the source race's life expectancy, with the base zombie value as a safety fallback. This prevents PawnGenerator from producing invalid or immediately dead animal zombie candidates for races such as birds and livestock.
