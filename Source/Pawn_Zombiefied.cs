@@ -41,9 +41,14 @@ namespace Zombiefied
 
         private void SynchronizeStoryWithZombieData(ZombieData data)
         {
-            if (data == null || story == null)
+            if (data == null)
             {
                 return;
+            }
+
+            if (story == null)
+            {
+                story = new Pawn_StoryTracker(this);
             }
 
             if (data.bodyType != null)
@@ -51,7 +56,11 @@ namespace Zombiefied
                 story.bodyType = data.bodyType;
             }
 
-            if (!data.headGraphicPath.NullOrEmpty())
+            if (data.headTypeDef != null)
+            {
+                story.headType = data.headTypeDef;
+            }
+            else if (!data.headGraphicPath.NullOrEmpty())
             {
                 HeadTypeDef matchingHead = DefDatabase<HeadTypeDef>.AllDefsListForReading
                     .FirstOrDefault(def => def != null && def.graphicPath == data.headGraphicPath);
@@ -62,7 +71,11 @@ namespace Zombiefied
                 }
             }
 
-            if (!data.hairGraphicPath.NullOrEmpty())
+            if (data.hairDef != null)
+            {
+                story.hairDef = data.hairDef;
+            }
+            else if (!data.hairGraphicPath.NullOrEmpty())
             {
                 HairDef matchingHair = DefDatabase<HairDef>.AllDefsListForReading
                     .FirstOrDefault(def => def != null && def.texPath == data.hairGraphicPath);
@@ -73,7 +86,32 @@ namespace Zombiefied
                 }
             }
 
+            // Gene render nodes ask the pawn story tracker for their colors and fur definition.
+            // These are visual snapshots only; the zombie itself remains a ToolUser with no copied genes.
             story.HairColor = data.hairColor;
+            story.SkinColorBase = data.color;
+            story.skinColorOverride = data.color;
+            story.furDef = data.furDef;
+
+            if (style == null)
+            {
+                style = new Pawn_StyleTracker(this);
+            }
+
+            if (data.beardDef != null)
+            {
+                style.beardDef = data.beardDef;
+            }
+            else if (!data.beardGraphicPath.NullOrEmpty())
+            {
+                BeardDef matchingBeard = DefDatabase<BeardDef>.AllDefsListForReading
+                    .FirstOrDefault(def => def != null && def.texPath == data.beardGraphicPath);
+
+                if (matchingBeard != null)
+                {
+                    style.beardDef = matchingBeard;
+                }
+            }
         }
 
         public void newGraphics(Pawn pawn)
@@ -81,17 +119,6 @@ namespace Zombiefied
             if (pawn.RaceProps.Humanlike)
             {
                 dataZ = new ZombieData(pawn);
-
-                // Preserve the source pawn's exact geometry defs. RimWorld 1.6 derives human mesh sizes from
-                // the pawn's story head/body defs, so keeping only texture paths is no longer sufficient.
-                if (story != null && pawn.story != null)
-                {
-                    story.bodyType = pawn.story.bodyType;
-                    story.headType = pawn.story.headType;
-                    story.hairDef = pawn.story.hairDef;
-                    story.HairColor = pawn.story.HairColor;
-                }
-
                 newGraphics(dataZ);
             }
         }

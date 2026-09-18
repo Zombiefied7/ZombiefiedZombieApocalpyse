@@ -17,7 +17,7 @@ namespace Zombiefied
             this.wiggler = new PawnDownedWiggler(pawn);
             this.statusOverlays = new PawnHeadOverlays(pawn);
             this.woundOverlays = new PawnWoundDrawer(pawn);
-            this.graphics = new ZombieGraphicSet(data);
+            this.graphics = new ZombieGraphicSet(pawn, data);
             //this.graphics = gra;
             //this.effecters = new PawnStatusEffecters(pawn);
         }
@@ -234,8 +234,17 @@ namespace Zombiefied
                 if (!flag && bodyDrawType != RotDrawMode.Dessicated && !headStump)
                 {
                     Mesh mesh4 = this.HairMeshAt(headFacing);
-                    Material mat = this.graphics.HairMatAt(headFacing);
-                    GenDraw.DrawMeshNowOrLater(mesh4, loc2, quat, mat, portrait);
+                    Material beardMat = this.graphics.BeardMatAt(headFacing);
+                    if (beardMat != null)
+                    {
+                        GenDraw.DrawMeshNowOrLater(mesh4, loc2, quat, beardMat, portrait);
+                    }
+
+                    Material hairMat = this.graphics.HairMatAt(headFacing);
+                    if (hairMat != null)
+                    {
+                        GenDraw.DrawMeshNowOrLater(mesh4, loc2, quat, hairMat, portrait);
+                    }
                 }
             }
             if (renderBody)
@@ -257,6 +266,8 @@ namespace Zombiefied
                 Graphics.DrawMesh(mesh, vector, quat, this.graphics.packGraphic.MatAt(bodyFacing, null), 0);
             }
             */
+            this.DrawVisualGeneNodes(rootLoc, quat, bodyFacing, headFacing, bodyDrawType, portrait);
+
             if (!portrait)
             {
                 this.DrawEquipment(rootLoc);
@@ -273,6 +284,205 @@ namespace Zombiefied
                 Vector3 bodyLoc = rootLoc;
                 bodyLoc.y += 0.04296875f;
                 this.statusOverlays.RenderStatusOverlays(bodyLoc, quat, this.HeadMeshAt(headFacing));
+            }
+        }
+
+        private void DrawVisualGeneNodes(Vector3 rootLoc, Quaternion bodyRotation, Rot4 bodyFacing, Rot4 headFacing, RotDrawMode bodyDrawType, bool portrait)
+        {
+            if (this.graphics.visualGeneNodes == null || this.graphics.visualGeneNodes.Count == 0)
+            {
+                return;
+            }
+
+            PawnDrawParms parms = PawnDrawParms.DefaultFor(this.pawn);
+            parms.rotDrawMode = bodyDrawType;
+            parms.posture = this.pawn.GetPosture();
+            parms.dead = this.pawn.Dead;
+            parms.tint = Color.white;
+            parms.bed = this.pawn.CurrentBed();
+
+            if (portrait)
+            {
+                parms.flags |= PawnRenderFlags.Portrait | PawnRenderFlags.DrawNow;
+            }
+
+            ApplySnapshotHeadgearSkipFlags(ref parms, portrait);
+
+            for (int i = 0; i < this.graphics.visualGeneNodes.Count; i++)
+            {
+                ZombieGraphicSet.VisualGeneNodeRecord record = this.graphics.visualGeneNodes[i];
+                if (record == null || record.node == null)
+                {
+                    continue;
+                }
+
+                parms.facing = record.attachedToHead ? headFacing : bodyFacing;
+                Vector3 anchor = rootLoc;
+                if (record.attachedToHead)
+                {
+                    anchor += bodyRotation * this.BaseHeadOffsetAt(headFacing);
+                }
+
+                Matrix4x4 matrix = Matrix4x4.TRS(anchor, bodyRotation, Vector3.one);
+                try
+                {
+                    DrawVisualGeneNodeRecursive(record.node, parms, matrix, record.attachedToHead);
+                }
+                catch (Exception ex)
+                {
+                    string geneName = record.node.gene?.def?.defName ?? "unknown visual gene";
+                    Log.WarningOnce(
+                        "Zombiefied skipped visual gene render node " + geneName + " for " + this.pawn + ". " + ex,
+                        Gen.HashCombine(this.pawn.thingIDNumber, 912337 + i));
+                }
+            }
+        }
+
+        private void ApplySnapshotHeadgearSkipFlags(ref PawnDrawParms parms, bool portrait)
+        {
+            if (portrait && Prefs.HatsOnlyOnMap)
+            {
+                return;
+            }
+
+            for (int i = 0; i < this.graphics.apparelGraphics.Count; i++)
+            {
+                Apparel apparel = this.graphics.apparelGraphics[i].sourceApparel;
+                if (apparel == null || apparel.def?.apparel == null)
+                {
+                    continue;
+                }
+
+                if (apparel.def.apparel.renderSkipFlags != null)
+                {
+                    foreach (RenderSkipFlagDef skipFlag in apparel.def.apparel.renderSkipFlags)
+                    {
+                        if (skipFlag != null && skipFlag != RenderSkipFlagDefOf.None)
+                        {
+                            parms.skipFlags |= skipFlag;
+                        }
+                    }
+                }
+                else
+                {
+                    if (apparel.def.apparel.bodyPartGroups.Contains(BodyPartGroupDefOf.UpperHead))
+                    {
+                        parms.skipFlags |= RenderSkipFlagDefOf.Hair;
+                    }
+                    if (apparel.def.apparel.bodyPartGroups.Contains(BodyPartGroupDefOf.FullHead))
+                    {
+                        parms.skipFlags |= RenderSkipFlagDefOf.Hair;
+                        parms.skipFlags |= RenderSkipFlagDefOf.Beard;
+                        parms.skipFlags |= RenderSkipFlagDefOf.Eyes;
+                    }
+                }
+
+                if (apparel.def.apparel.forceEyesVisibleForRotations != null
+                    && apparel.def.apparel.forceEyesVisibleForRotations.Contains(parms.facing.AsInt))
+                {
+                    parms.skipFlags &= ~(ulong)RenderSkipFlagDefOf.Eyes;
+                }
+            }
+        }
+
+        private void DrawVisualGeneNodeRecursive(PawnRenderNode node, PawnDrawParms parms, Matrix4x4 parentMatrix, bool attachedToHead)
+        {
+            if (node == null || node.Worker == null || node.Props == null || !node.Worker.CanDrawNow(node, parms))
+            {
+                return;
+            }
+
+            foreach (PawnRenderSubWorker subWorker in node.Props.SubWorkers)
+            {
+                if (!subWorker.CanDrawNowSub(node, parms))
+                {
+                    return;
+                }
+            }
+
+            node.GetTransform(parms, out Vector3 offset, out Vector3 pivot, out Quaternion rotation, out Vector3 scale);
+            Matrix4x4 transformed = parentMatrix;
+            ApplyRenderTransform(ref transformed, offset, pivot, rotation, scale);
+
+            Matrix4x4 drawMatrix = transformed;
+            float altitude = node.Worker.AltitudeFor(node, parms);
+            if (altitude != 0f)
+            {
+                drawMatrix *= Matrix4x4.Translate(Vector3.up * altitude);
+            }
+
+            if (node.Props.useGraphic)
+            {
+                Material material = node.Worker.GetFinalizedMaterial(node, parms);
+                Mesh mesh = MeshForVisualGeneNode(node, parms, attachedToHead, node.GetMesh(parms));
+                if (material != null && mesh != null)
+                {
+                    node.Worker.PreDraw(node, material, parms);
+                    MaterialPropertyBlock block = node.Worker.GetMaterialPropertyBlock(node, material, parms);
+                    foreach (PawnRenderSubWorker subWorker in node.Props.SubWorkers)
+                    {
+                        subWorker.EditMaterialPropertyBlock(node, material, parms, ref block);
+                    }
+
+                    GenDraw.DrawMeshNowOrLater(mesh, drawMatrix, material, parms.DrawNow, block);
+                    if (block != null)
+                    {
+                        block.Clear();
+                    }
+                    node.Worker.PostDraw(node, parms, mesh, drawMatrix);
+                }
+            }
+
+            if (node.children == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < node.children.Length; i++)
+            {
+                DrawVisualGeneNodeRecursive(node.children[i], parms, transformed, attachedToHead);
+            }
+        }
+
+        private Mesh MeshForVisualGeneNode(PawnRenderNode node, PawnDrawParms parms, bool attachedToHead, Mesh fallback)
+        {
+            if (node == null || node.Props == null || node.Props.overrideMeshSize.HasValue)
+            {
+                return fallback;
+            }
+
+            Mesh mesh = attachedToHead || node is PawnRenderNode_AttachmentHead
+                ? this.HairMeshAt(parms.facing)
+                : this.BodyMeshAt(parms.facing);
+
+            if (node.FlipGraphic(parms))
+            {
+                mesh = MeshPool.GridPlaneFlip(mesh);
+            }
+            return mesh;
+        }
+
+        private static void ApplyRenderTransform(ref Matrix4x4 matrix, Vector3 offset, Vector3 pivot, Quaternion rotation, Vector3 scale)
+        {
+            if (offset != Vector3.zero)
+            {
+                matrix *= Matrix4x4.Translate(offset);
+            }
+            if (pivot != Vector3.zero)
+            {
+                matrix *= Matrix4x4.Translate(pivot);
+            }
+            if (rotation != Quaternion.identity)
+            {
+                matrix *= Matrix4x4.Rotate(rotation);
+            }
+            if (scale != Vector3.one)
+            {
+                matrix *= Matrix4x4.Scale(scale);
+            }
+            if (pivot != Vector3.zero)
+            {
+                matrix *= Matrix4x4.Translate(pivot).inverse;
             }
         }
 

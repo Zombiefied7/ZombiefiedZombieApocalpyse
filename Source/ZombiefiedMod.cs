@@ -646,8 +646,8 @@ namespace Zombiefied
             Pawn_Zombiefied zombie = GenerateZombieCandidate(newKindDef, sourcePawn, true);
             if (zombie == null)
             {
-                Log.Warning("Zombiefied could not safely copy all health conditions from " + sourcePawn
-                    + ". Generating a fresh zombie with appearance and armor data only.");
+                // Corpse health frequently contains lethal combinations. Falling back to appearance and
+                // armor data is expected behavior, not an error condition worth flooding the player log.
                 zombie = GenerateZombieCandidate(newKindDef, sourcePawn, false);
             }
 

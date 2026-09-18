@@ -101,6 +101,34 @@ namespace Zombiefied
     }
 
 
+
+    [HarmonyPatch(typeof(ITab_Pawn_Character), "get_IsVisible")]
+    class ZombieCharacterTabPatch
+    {
+        static void Postfix(ref bool __result)
+        {
+            Thing selected = Find.Selector.SingleSelectedThing;
+            Pawn_Zombiefied zombie = selected as Pawn_Zombiefied;
+
+            if (zombie == null)
+            {
+                Corpse corpse = selected as Corpse;
+                if (corpse != null)
+                {
+                    zombie = corpse.InnerPawn as Pawn_Zombiefied;
+                }
+            }
+
+            if (zombie != null)
+            {
+                // The vanilla character card is built for human character trackers and dereferences data
+                // that ToolUser zombies intentionally do not own. Health and gear remain available through
+                // their dedicated tabs; the human biography/skills card is not a valid zombie interface.
+                __result = false;
+            }
+        }
+    }
+
     [HarmonyPatch(typeof(StatExtension), nameof(StatExtension.GetStatValue))]
     class StatPatch
     {

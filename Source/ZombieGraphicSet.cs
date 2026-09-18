@@ -6,33 +6,37 @@ using Verse;
 
 namespace Zombiefied
 {
-    // Token: 0x02000017 RID: 23
     public class ZombieGraphicSet
     {
-        // Token: 0x17000010 RID: 16
-        // (get) Token: 0x06000071 RID: 113 RVA: 0x000048A1 File Offset: 0x00002AA1
-        public bool AllResolved
+        public sealed class VisualGeneNodeRecord
         {
-            get
-            {
-                return this.nakedGraphic != null;
-            }
+            public PawnRenderNode node;
+            public bool attachedToHead;
         }
 
-        // Token: 0x06000073 RID: 115 RVA: 0x00004905 File Offset: 0x00002B05
-        public ZombieGraphicSet(ZombieData data)
+        private readonly Pawn pawn;
+        private PawnRenderTree visualGeneTree;
+        private PawnRenderNode furRenderNode;
+
+        public ZombieGraphicSet(Pawn pawn, ZombieData data)
         {
+            this.pawn = pawn;
             this.data = data;
         }
 
-        // Token: 0x06000074 RID: 116 RVA: 0x00004934 File Offset: 0x00002B34
+        public bool AllResolved
+        {
+            get { return this.nakedGraphic != null; }
+        }
+
         public List<Material> MatsBodyBaseAt(Rot4 facing, RotDrawMode bodyCondition = RotDrawMode.Fresh)
         {
-            int num = facing.AsInt + 1000 * (int)bodyCondition;
-            if (num != this.cachedMatsBodyBaseHash)
+            int hash = facing.AsInt + 1000 * (int)bodyCondition;
+            if (hash != this.cachedMatsBodyBaseHash)
             {
                 this.cachedMatsBodyBase.Clear();
-                this.cachedMatsBodyBaseHash = num;
+                this.cachedMatsBodyBaseHash = hash;
+
                 if (bodyCondition == RotDrawMode.Fresh)
                 {
                     this.cachedMatsBodyBase.Add(this.nakedGraphic.MatAt(facing, null));
@@ -45,212 +49,337 @@ namespace Zombiefied
                 {
                     this.cachedMatsBodyBase.Add(this.dessicatedGraphic.MatAt(facing, null));
                 }
+
+                Material furMaterial = FurMatAt(facing, bodyCondition);
+                if (furMaterial != null && bodyCondition != RotDrawMode.Dessicated)
+                {
+                    // Fur is a skin overlay in RimWorld's render tree. Keeping it immediately above the
+                    // naked body makes ToolUser zombies retain xenotype fur without giving them genes.
+                    this.cachedMatsBodyBase.Add(furMaterial);
+                }
+
                 for (int i = 0; i < this.apparelGraphics.Count; i++)
                 {
-                    if (this.apparelGraphics[i].sourceApparel.def.apparel.LastLayer != ApparelLayerDefOf.Shell && this.apparelGraphics[i].sourceApparel.def.apparel.LastLayer != ApparelLayerDefOf.Overhead)
+                    Apparel apparel = this.apparelGraphics[i].sourceApparel;
+                    if (apparel.def.apparel.LastLayer != ApparelLayerDefOf.Shell
+                        && apparel.def.apparel.LastLayer != ApparelLayerDefOf.Overhead)
                     {
                         this.cachedMatsBodyBase.Add(this.apparelGraphics[i].graphic.MatAt(facing, null));
                     }
                 }
             }
+
             return this.cachedMatsBodyBase;
         }
 
-        // Token: 0x06000075 RID: 117 RVA: 0x00004A54 File Offset: 0x00002C54
         public Material HeadMatAt(Rot4 facing, RotDrawMode bodyCondition = RotDrawMode.Fresh, bool stump = false)
         {
-            Material result = null;
             if (bodyCondition == RotDrawMode.Fresh)
             {
-                if (stump)
-                {
-                    result = this.headStumpGraphic.MatAt(facing, null);
-                }
-                else
-                {
-                    result = this.headGraphic.MatAt(facing, null);
-                }
+                return stump ? this.headStumpGraphic.MatAt(facing, null) : this.headGraphic.MatAt(facing, null);
             }
-            else if (bodyCondition == RotDrawMode.Rotting)
+
+            if (bodyCondition == RotDrawMode.Rotting)
             {
-                if (stump)
-                {
-                    result = this.desiccatedHeadStumpGraphic.MatAt(facing, null);
-                }
-                else
-                {
-                    result = this.desiccatedHeadGraphic.MatAt(facing, null);
-                }
+                return stump ? this.desiccatedHeadStumpGraphic.MatAt(facing, null) : this.desiccatedHeadGraphic.MatAt(facing, null);
             }
-            else if (bodyCondition == RotDrawMode.Dessicated && !stump)
+
+            if (bodyCondition == RotDrawMode.Dessicated && !stump)
             {
-                result = this.skullGraphic.MatAt(facing, null);
+                return this.skullGraphic.MatAt(facing, null);
             }
-            return result;
+
+            return null;
         }
 
-        // Token: 0x06000076 RID: 118 RVA: 0x00004AC6 File Offset: 0x00002CC6
         public Material HairMatAt(Rot4 facing)
         {
-            return this.hairGraphic.MatAt(facing, null);
+            return this.hairGraphic != null ? this.hairGraphic.MatAt(facing, null) : null;
         }
 
-        // Token: 0x06000077 RID: 119 RVA: 0x00004AD5 File Offset: 0x00002CD5
+        public Material BeardMatAt(Rot4 facing)
+        {
+            return this.beardGraphic != null ? this.beardGraphic.MatAt(facing, null) : null;
+        }
+
         public void ClearCache()
         {
             this.cachedMatsBodyBaseHash = -1;
         }
 
-        // Token: 0x06000078 RID: 120 RVA: 0x00004AE0 File Offset: 0x00002CE0
         public void ResolveAllGraphics(float scale = 1f)
         {
             Shader shader = ShaderDatabase.LoadShader(this.data.shaderCutoutPath);
             this.ClearCache();
-            this.nakedGraphic = GraphicDatabase.Get<Graphic_Multi>(this.data.bodyType.bodyNakedGraphicPath, ShaderDatabase.CutoutSkin, Vector2.one, this.data.color);
-            this.rottingGraphic = GraphicDatabase.Get<Graphic_Multi>(this.data.bodyType.bodyNakedGraphicPath, ShaderDatabase.CutoutSkin, Vector2.one, ZombieGraphicSet.RottingColor);
-            this.dessicatedGraphic = GraphicDatabase.Get<Graphic_Multi>(this.data.bodyType.bodyDessicatedGraphicPath, shader);
+
+            BodyTypeDef bodyType = this.data.bodyType ?? BodyTypeDefOf.Female;
+            this.nakedGraphic = GraphicDatabase.Get<Graphic_Multi>(bodyType.bodyNakedGraphicPath, ShaderDatabase.CutoutSkin, Vector2.one, this.data.color);
+            this.rottingGraphic = GraphicDatabase.Get<Graphic_Multi>(bodyType.bodyNakedGraphicPath, ShaderDatabase.CutoutSkin, Vector2.one, RottingColor);
+            this.dessicatedGraphic = GraphicDatabase.Get<Graphic_Multi>(bodyType.bodyDessicatedGraphicPath, shader);
             this.headGraphic = GraphicDatabaseHeadRecords_Zombiefied.GetHeadNamed(this.data.headGraphicPath, this.data.color);
-            this.desiccatedHeadGraphic = GraphicDatabaseHeadRecords_Zombiefied.GetHeadNamed(this.data.headGraphicPath, ZombieGraphicSet.RottingColor);
+            this.desiccatedHeadGraphic = GraphicDatabaseHeadRecords_Zombiefied.GetHeadNamed(this.data.headGraphicPath, RottingColor);
             this.skullGraphic = GraphicDatabaseHeadRecords_Zombiefied.GetSkull();
             this.headStumpGraphic = GraphicDatabaseHeadRecords_Zombiefied.GetStump(this.data.color);
-            this.desiccatedHeadStumpGraphic = GraphicDatabaseHeadRecords_Zombiefied.GetStump(ZombieGraphicSet.RottingColor);
-            this.hairGraphic = GraphicDatabase.Get<Graphic_Multi>(this.data.hairGraphicPath, shader, Vector2.one, this.data.hairColor);
-            this.ResolveApparelGraphics();
+            this.desiccatedHeadStumpGraphic = GraphicDatabaseHeadRecords_Zombiefied.GetStump(RottingColor);
+            this.hairGraphic = this.data.hairGraphicPath.NullOrEmpty()
+                ? null
+                : GraphicDatabase.Get<Graphic_Multi>(this.data.hairGraphicPath, shader, Vector2.one, this.data.hairColor);
+            this.beardGraphic = this.data.beardGraphicPath.NullOrEmpty()
+                ? null
+                : GraphicDatabase.Get<Graphic_Multi>(this.data.beardGraphicPath, shader, Vector2.one, this.data.hairColor);
+
+            ResolveApparelGraphics();
+            ResolveVisualGeneNodes();
         }
 
-        // Token: 0x06000079 RID: 121 RVA: 0x00004BF8 File Offset: 0x00002DF8
         public void ResolveApparelGraphics()
         {
-            /*
-            Shader shader = ShaderDatabase.LoadShader(this.data.shaderCutoutPath);
             this.ClearCache();
             this.apparelGraphics.Clear();
-            for(int i = 0; i < data.wornApparel.Count; i++)
+
+            for (int i = 0; i < this.data.wornApparelDefs.Count; i++)
             {
-                ApparelGraphicRecord item;
-                if (ZombieGraphicSet.TryGetGraphicApparel(data.wornApparel[i], data.wornApparel[i].DrawColor, this.data.bodyType, shader, out item))
+                ThingDef def = this.data.wornApparelDefs[i];
+                if (def == null || !def.IsApparel)
                 {
-                    this.apparelGraphics.Add(item);
+                    continue;
+                }
+
+                Apparel apparel;
+                try
+                {
+                    apparel = MakeApparel(i);
+                }
+                catch (Exception ex)
+                {
+                    Log.WarningOnce("Zombiefied could not reconstruct apparel " + def.defName + ": " + ex, Gen.HashCombine(def.shortHash, 186323));
+                    continue;
+                }
+
+                ApparelGraphicRecord record;
+                string savedWornPath = this.data.wornApparelGraphicPaths.Count > i
+                    ? this.data.wornApparelGraphicPaths[i]
+                    : null;
+
+                bool savedRenderAsPack = this.data.wornApparelRenderAsPack != null
+                    && this.data.wornApparelRenderAsPack.Count > i
+                    ? this.data.wornApparelRenderAsPack[i]
+                    : apparel.RenderAsPack();
+
+                if (TryGetGraphicApparel(apparel, savedWornPath, this.data.bodyType, savedRenderAsPack, out record))
+                {
+                    this.apparelGraphics.Add(record);
                 }
             }
-            */
-            Shader shader = ShaderDatabase.LoadShader(this.data.shaderCutoutPath);
-            this.ClearCache();
-            this.apparelGraphics.Clear();
-            for(int i = 0; i < this.data.wornApparelDefs.Count; i++)
-            {
-                ApparelGraphicRecord item;
-                Apparel newApparel = MakeApparel(i);
-                if (ZombieGraphicSet.TryGetGraphicApparel(newApparel, newApparel.DrawColor, this.data.bodyType, shader, out item))
-                {
-                    this.apparelGraphics.Add(item);
-                }
-            }
-            /*
-            using (List<ThingDef>.Enumerator enumerator = this.data.wornApparelDefs.GetEnumerator())
-            {
-                while (enumerator.MoveNext())
-                {
-                    ApparelGraphicRecord item;
-                    Apparel newApparel = ZombieGraphicSet.MakeApparel(enumerator.Current, this.data.color);
-                    if (ZombieGraphicSet.TryGetGraphicApparel(newApparel, newApparel.DrawColor, this.data.bodyType, shader, out item))
-                    {
-                        this.apparelGraphics.Add(item);
-                    }
-                }
-            }
-            */
         }
 
-        // Token: 0x0600007A RID: 122 RVA: 0x00004CA8 File Offset: 0x00002EA8
         private Apparel MakeApparel(int index)
         {
             ThingDef def = this.data.wornApparelDefs[index];
-            Apparel apparel = (Apparel)ThingMaker.MakeThing(def, GenStuff.DefaultStuffFor(def));
-            if(this.data.wornApparelColors.Count > index && this.data.wornApparelDefs[index] != null)
+            ThingDef stuff = null;
+
+            if (def.MadeFromStuff)
+            {
+                if (this.data.wornApparelStuffDefs.Count > index)
+                {
+                    stuff = this.data.wornApparelStuffDefs[index];
+                }
+
+                if (stuff == null || !stuff.IsStuff)
+                {
+                    stuff = GenStuff.DefaultStuffFor(def);
+                }
+            }
+
+            Apparel apparel = (Apparel)ThingMaker.MakeThing(def, stuff);
+
+            if (this.data.wornApparelStyleDefs.Count > index)
+            {
+                apparel.StyleDef = this.data.wornApparelStyleDefs[index];
+            }
+
+            if (this.data.wornApparelColors.Count > index)
             {
                 apparel.SetColor(this.data.wornApparelColors[index], false);
-            }                      
+            }
+
             return apparel;
         }
 
-        // Token: 0x0600007B RID: 123 RVA: 0x00004CC4 File Offset: 0x00002EC4
-        private static bool TryGetGraphicApparel(Apparel apparel, Color color, BodyTypeDef bodyType, Shader shader, out ApparelGraphicRecord rec)
+        private static bool TryGetGraphicApparel(Apparel apparel, string savedWornPath, BodyTypeDef bodyType, bool renderAsPack, out ApparelGraphicRecord record)
         {
-            /*
-            if (bodyType == BodyTypeDefOf.)
+            if (bodyType == null)
             {
-                Log.Error("Getting apparel graphic with undefined body type.");
-                bodyType = BodyType.Male;
+                bodyType = BodyTypeDefOf.Male;
             }
-            */
-            if (apparel.def.apparel.wornGraphicPath.NullOrEmpty())
+
+            string wornPath = savedWornPath.NullOrEmpty() ? apparel.WornGraphicPath : savedWornPath;
+            if (wornPath.NullOrEmpty())
             {
-                rec = new ApparelGraphicRecord(null, null);
+                record = new ApparelGraphicRecord(null, null);
                 return false;
             }
-            string path;
-            if (apparel.def.apparel.LastLayer == ApparelLayerDefOf.Overhead)
+
+            string path = wornPath;
+            bool usesBodyTypeSuffix = apparel.def.apparel.LastLayer != ApparelLayerDefOf.Overhead
+                && apparel.def.apparel.LastLayer != ApparelLayerDefOf.EyeCover
+                && !renderAsPack
+                && wornPath != BaseContent.PlaceholderImagePath
+                && wornPath != BaseContent.PlaceholderGearImagePath;
+
+            if (usesBodyTypeSuffix)
             {
-                path = apparel.def.apparel.wornGraphicPath;
+                string bodyTypePath = wornPath + "_" + bodyType.defName;
+                if (GraphicMultiPathExists(bodyTypePath) || !GraphicMultiPathExists(wornPath))
+                {
+                    path = bodyTypePath;
+                }
             }
-            else
+            else if (!GraphicMultiPathExists(path))
             {
-                path = apparel.def.apparel.wornGraphicPath + "_" + bodyType.ToString();
+                // Old saves do not have the persisted RenderAsPack flag. If a supposedly pack-like item
+                // actually has body-type textures, prefer the only path that exists instead of logging a
+                // missing-texture error every frame.
+                string bodyTypePath = wornPath + "_" + bodyType.defName;
+                if (GraphicMultiPathExists(bodyTypePath))
+                {
+                    path = bodyTypePath;
+                }
             }
 
-            Graphic graphic = GraphicDatabase.Get<Graphic_Multi>(path, shader, apparel.def.graphicData.drawSize, color);
-
-            if(graphic != null && graphic.MatEast != null && graphic.MatEast.mainTexture != null)
+            Shader shader = ShaderDatabase.Cutout;
+            if (apparel.StyleDef != null
+                && apparel.StyleDef.graphicData != null
+                && apparel.StyleDef.graphicData.shaderType != null)
             {
-                rec = new ApparelGraphicRecord(graphic, apparel);
-                return true;
+                shader = apparel.StyleDef.graphicData.shaderType.Shader;
+            }
+            else if ((apparel.StyleDef == null && apparel.def.apparel.useWornGraphicMask)
+                || (apparel.StyleDef != null && apparel.StyleDef.UseWornGraphicMask))
+            {
+                shader = ShaderDatabase.CutoutComplex;
             }
 
-            rec = new ApparelGraphicRecord();
-            return false;
+            Graphic graphic = GraphicDatabase.Get<Graphic_Multi>(path, shader, apparel.def.graphicData.drawSize, apparel.DrawColor);
+            record = new ApparelGraphicRecord(graphic, apparel);
+            return graphic != null;
         }
 
-        // Token: 0x04000063 RID: 99
+        private static bool GraphicMultiPathExists(string path)
+        {
+            if (path.NullOrEmpty())
+            {
+                return false;
+            }
+
+            return ContentFinder<Texture2D>.Get(path + "_south", false) != null
+                || ContentFinder<Texture2D>.Get(path + "_north", false) != null
+                || ContentFinder<Texture2D>.Get(path + "_east", false) != null
+                || ContentFinder<Texture2D>.Get(path + "_west", false) != null;
+        }
+
+        private void ResolveVisualGeneNodes()
+        {
+            this.visualGeneNodes.Clear();
+            this.furRenderNode = null;
+            this.visualGeneTree = null;
+
+            if (!ModsConfig.BiotechActive || this.pawn == null || this.data.visualGeneDefs == null || this.data.visualGeneDefs.Count == 0)
+            {
+                return;
+            }
+
+            this.visualGeneTree = new PawnRenderTree(this.pawn);
+
+            for (int i = 0; i < this.data.visualGeneDefs.Count; i++)
+            {
+                GeneDef geneDef = this.data.visualGeneDefs[i];
+                if (geneDef == null || geneDef.RenderNodeProperties.NullOrEmpty())
+                {
+                    continue;
+                }
+
+                Gene visualGene = new Gene();
+                visualGene.def = geneDef;
+                visualGene.pawn = this.pawn;
+                visualGene.loadID = this.data.visualGeneLoadIds.Count > i
+                    ? this.data.visualGeneLoadIds[i]
+                    : Gen.HashCombine(this.pawn.thingIDNumber, geneDef.shortHash);
+
+                for (int j = 0; j < geneDef.RenderNodeProperties.Count; j++)
+                {
+                    PawnRenderNodeProperties properties = geneDef.RenderNodeProperties[j];
+                    if (properties == null || properties.nodeClass == null)
+                    {
+                        continue;
+                    }
+
+                    try
+                    {
+                        PawnRenderNode node = (PawnRenderNode)Activator.CreateInstance(properties.nodeClass, this.pawn, properties, this.visualGeneTree);
+                        node.gene = visualGene;
+                        node.EnsureInitialized((PawnRenderFlags)0);
+
+                        if (node is PawnRenderNode_Fur)
+                        {
+                            this.furRenderNode = node;
+                            continue;
+                        }
+
+                        VisualGeneNodeRecord record = new VisualGeneNodeRecord();
+                        record.node = node;
+                        record.attachedToHead = properties.parentTagDef == PawnRenderNodeTagDefOf.Head
+                            || node is PawnRenderNode_AttachmentHead;
+                        this.visualGeneNodes.Add(record);
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.WarningOnce(
+                            "Zombiefied could not reconstruct visual gene node " + geneDef.defName + "/" + properties.nodeClass + ": " + ex,
+                            Gen.HashCombine(geneDef.shortHash, properties.nodeClass.GetHashCode()));
+                    }
+                }
+            }
+        }
+
+        private Material FurMatAt(Rot4 facing, RotDrawMode bodyCondition)
+        {
+            if (this.furRenderNode == null || this.furRenderNode.Worker == null || this.pawn == null)
+            {
+                return null;
+            }
+
+            PawnDrawParms parms = PawnDrawParms.DefaultFor(this.pawn);
+            parms.facing = facing;
+            parms.rotDrawMode = bodyCondition;
+            parms.posture = this.pawn.GetPosture();
+            parms.tint = Color.white;
+
+            if (!this.furRenderNode.Worker.CanDrawNow(this.furRenderNode, parms))
+            {
+                return null;
+            }
+
+            return this.furRenderNode.Worker.GetFinalizedMaterial(this.furRenderNode, parms);
+        }
+
         public ZombieData data;
-
-        // Token: 0x04000064 RID: 100
         public Graphic nakedGraphic;
-
-        // Token: 0x04000065 RID: 101
         public Graphic rottingGraphic;
-
-        // Token: 0x04000066 RID: 102
         public Graphic dessicatedGraphic;
-
-        // Token: 0x04000067 RID: 103
         public Graphic headGraphic;
-
-        // Token: 0x04000068 RID: 104
         public Graphic desiccatedHeadGraphic;
-
-        // Token: 0x04000069 RID: 105
         public Graphic skullGraphic;
-
-        // Token: 0x0400006A RID: 106
         public Graphic headStumpGraphic;
-
-        // Token: 0x0400006B RID: 107
         public Graphic desiccatedHeadStumpGraphic;
-
-        // Token: 0x0400006C RID: 108
         public Graphic hairGraphic;
-
-        // Token: 0x0400006D RID: 109
+        public Graphic beardGraphic;
         public List<ApparelGraphicRecord> apparelGraphics = new List<ApparelGraphicRecord>();
+        public List<VisualGeneNodeRecord> visualGeneNodes = new List<VisualGeneNodeRecord>();
 
-        // Token: 0x0400006E RID: 110
-        private List<Material> cachedMatsBodyBase = new List<Material>();
-
-        // Token: 0x0400006F RID: 111
+        private readonly List<Material> cachedMatsBodyBase = new List<Material>();
         private int cachedMatsBodyBaseHash = -1;
 
-        // Token: 0x04000070 RID: 112
         public static readonly Color RottingColor = new Color(0.34f, 0.32f, 0.3f);
     }
 }
